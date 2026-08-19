@@ -22,7 +22,7 @@ páginas, agenda, catálogo…): cualquier módulo nuevo se descubre solo.
 
 ```bash
 cd /ruta/del/sitio/public_html
-git clone https://github.com/TU-USUARIO/bacano-mail.git mail
+git clone https://github.com/jurecode/bacano-mail.git mail
 ```
 
 ### Sin git

@@ -100,9 +100,8 @@ function mj_pedir(string $url, ?string $destino = null, int $espera = 30): ?stri
       CURLOPT_USERAGENT      => $ua,
       CURLOPT_HTTPHEADER     => ['Accept: application/vnd.github+json'],
     ]);
-    $r    = curl_exec($ch);
+    $r      = curl_exec($ch);
     $codigo = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-    curl_close($ch);
     if ($r === false || $codigo >= 400) return null;
   } else {
     if (!ini_get('allow_url_fopen')) return null;
@@ -186,7 +185,7 @@ function mj_aplicar_actualizacion(array $info): array
   $sello    = date('Y-m-d_His');
   $respaldo = $raiz . '/respaldos/' . $sello;
   @mkdir($respaldo, 0755, true);
-  mj_copiar_dir($raiz, $respaldo, array_merge(mj_protegidos(), ['respaldos', 'data']));
+  mj_copiar_dir($raiz, $respaldo, mj_protegidos());
 
   $copiados = mj_copiar_dir($origen, $raiz, mj_protegidos());
   mj_borrar_dir($tmp);

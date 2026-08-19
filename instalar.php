@@ -115,7 +115,7 @@ $SECCIONES = [
   ],
 
   'Actualizaciones' => [
-    'actualizaciones.repositorio' => ['t' => 'texto', 'l' => 'Repositorio en GitHub', 'a' => 'Formato usuario/proyecto', 'p' => 'TU-USUARIO/bacano-mail'],
+    'actualizaciones.repositorio' => ['t' => 'texto', 'l' => 'Repositorio en GitHub', 'a' => 'Formato usuario/proyecto', 'p' => 'jurecode/bacano-mail'],
     'actualizaciones.revisar'     => ['t' => 'bool',  'l' => 'Avisarme cuando haya una versión nueva'],
   ],
 

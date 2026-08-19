@@ -251,7 +251,7 @@ return [
      Si instalaste con git, basta con "git pull" en el servidor.
      --------------------------------------------------------- */
   'actualizaciones' => [
-    'repositorio' => 'TU-USUARIO/bacano-mail',
+    'repositorio' => 'jurecode/bacano-mail',
     'revisar'     => true,       // avisa en el panel cuando hay versión nueva
   ],
 
