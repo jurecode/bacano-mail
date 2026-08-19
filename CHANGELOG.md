@@ -10,6 +10,23 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.1.0] — 2026-08-19
+
+### Agregado
+- Lectura real de la casilla por IMAP: `MjProveedorImap` conecta, lista los
+  últimos mensajes, decodifica cabeceras MIME y cuerpos en base64 o
+  quoted-printable, convierte a UTF-8 y detecta adjuntos.
+- `mj_fallo_imap()` expone por qué no se pudo leer la casilla, para que el
+  panel no muestre datos de ejemplo creyendo que son reales.
+
+### Cambiado
+- La fábrica de proveedores intenta la conexión antes de decidir: una casilla
+  vacía ya no se confunde con un fallo.
+
+### Pendiente
+- Envío por SMTP desde la ventana de redacción.
+- Probado contra una casilla real (requiere la extensión imap en el hosting).
+
 ## [1.0.0] — 2026-08-19
 
 Primera versión publicable.
