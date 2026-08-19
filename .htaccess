@@ -1,0 +1,11 @@
+# Bloquea el acceso directo a configuración y respaldos.
+<FilesMatch "^(config\.local\.php|config\.php|VERSION)$">
+  Require all denied
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+RedirectMatch 404 ^/.*/respaldos/
+RedirectMatch 404 ^/.*/\.git

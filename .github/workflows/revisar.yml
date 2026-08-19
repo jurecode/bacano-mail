@@ -1,0 +1,35 @@
+name: Revisar
+
+# Comprueba que ningún archivo PHP tenga errores de sintaxis
+# y que el JSON de ejemplo sea válido, en cada push y pull request.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  sintaxis:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.0', '8.3']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+
+      - name: Sintaxis de los archivos PHP
+        run: find . -name '*.php' -not -path './respaldos/*' -print0 | xargs -0 -n1 php -l
+
+      - name: JSON de ejemplo
+        run: php -r 'json_decode(file_get_contents("data/demo.json"), true, 512, JSON_THROW_ON_ERROR); echo "demo.json válido\n";'
+
+      - name: La versión del CHANGELOG coincide con VERSION
+        run: |
+          V=$(cat VERSION)
+          grep -q "\[$V\]" CHANGELOG.md || { echo "Falta la entrada [$V] en CHANGELOG.md"; exit 1; }
+          echo "VERSION $V documentada"

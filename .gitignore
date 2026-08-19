@@ -1,0 +1,15 @@
+# Configuración de cada instalación: contiene claves del correo.
+config.local.php
+
+# Respaldos que crea el actualizador
+respaldos/
+
+# Caché interna
+data/.cache-*.json
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
