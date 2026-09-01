@@ -484,6 +484,7 @@ class MjProveedorImapSocket implements MjProveedor
                     // Raíz de la conversación: la primera referencia, o el
                     // propio identificador si el mensaje la empieza.
                     'hilo'       => mj_hilo_de($m),
+                    'id_mensaje' => (string) ($m['id_mensaje'] ?? ''),
                     'de'         => $m['de'],
                     'para'       => $m['para'],
                     'cc'         => $m['cc'],

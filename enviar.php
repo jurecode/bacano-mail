@@ -40,6 +40,7 @@ $para   = trim((string) ($_POST['para'] ?? ''));
 $cc     = trim((string) ($_POST['cc'] ?? ''));
 $asunto = trim((string) ($_POST['asunto'] ?? '')) ?: '(sin asunto)';
 $cuerpo = trim((string) ($_POST['cuerpo'] ?? ''));
+$responde = trim((string) ($_POST['responde_a'] ?? ''), " <>");
 
 if ($para === '')                                    $responder(false, 'Falta el destinatario.');
 if (!filter_var($para, FILTER_VALIDATE_EMAIL))       $responder(false, 'La dirección "' . $para . '" no es válida.');
@@ -68,7 +69,7 @@ if ($firma !== '') {
     $cuerpo .= "\n\n--\n" . $firma;
 }
 
-$r = mj_smtp_enviar($conf, $para, $asunto, $cuerpo);
+$r = mj_smtp_enviar($conf, $para, $asunto, $cuerpo, '', '', $responde);
 
 // Copia en la carpeta de enviados del servidor, para que quede en la casilla
 if ($r['ok']) {
@@ -87,6 +88,10 @@ if ($r['ok']) {
                    . "To: <$para>\r\n"
                    . 'Subject: =?UTF-8?B?' . base64_encode($asunto) . "?=\r\n"
                    . 'Date: ' . date('r') . "\r\n"
+                   // mismo identificador que el correo enviado: sin esto, la
+                   // copia y la respuesta caen en conversaciones distintas
+                   . 'Message-ID: <' . ($r['id_mensaje'] ?? '') . ">\r\n"
+                   . ($responde !== '' ? "In-Reply-To: <$responde>\r\nReferences: <$responde>\r\n" : '')
                    . "MIME-Version: 1.0\r\n"
                    . "Content-Type: text/plain; charset=UTF-8\r\n\r\n"
                    . $cuerpo;

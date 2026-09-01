@@ -10,7 +10,7 @@
 declare(strict_types=1);
 
 /** Diálogo SMTP. Devuelve ['ok'=>bool,'mensaje'=>string,'registro'=>array] */
-function mj_smtp_enviar(array $c, string $para, string $asunto, string $cuerpo, string $responderA = '', string $nombreResponde = ''): array
+function mj_smtp_enviar(array $c, string $para, string $asunto, string $cuerpo, string $responderA = '', string $nombreResponde = '', string $respondeA = ''): array
 {
     $registro = [];
     $falla = function (string $m) use (&$registro): array {
@@ -119,17 +119,26 @@ function mj_smtp_enviar(array $c, string $para, string $asunto, string $cuerpo, 
     if ($codigo !== 354) { fclose($sock); return $falla('El servidor no aceptó el envío del texto.'); }
 
     $codificar = fn(string $s) => '=?UTF-8?B?' . base64_encode($s) . '?=';
+
+    // Un solo identificador para el envío y para la copia en Enviados: es lo
+    // que permite que la respuesta quede en la misma conversación.
+    $idMensaje = bin2hex(random_bytes(12)) . '@' . $servidor;
+
     $cabeceras = [
         'Date: ' . date('r'),
         'From: ' . $codificar($nombre) . ' <' . $desde . '>',
         'To: <' . $para . '>',
         'Subject: ' . $codificar($asunto),
-        'Message-ID: <' . bin2hex(random_bytes(12)) . '@' . $servidor . '>',
+        'Message-ID: <' . $idMensaje . '>',
         'MIME-Version: 1.0',
         'Content-Type: text/plain; charset=UTF-8',
         'Content-Transfer-Encoding: base64',
         'X-Mailer: Madeja',
     ];
+    if ($respondeA !== '') {
+        $cabeceras[] = 'In-Reply-To: <' . $respondeA . '>';
+        $cabeceras[] = 'References: <' . $respondeA . '>';
+    }
     if ($responderA !== '' && filter_var($responderA, FILTER_VALIDATE_EMAIL)) {
         $cabeceras[] = 'Reply-To: ' . ($nombreResponde !== '' ? $codificar($nombreResponde) . ' ' : '')
                      . '<' . $responderA . '>';
@@ -146,6 +155,6 @@ function mj_smtp_enviar(array $c, string $para, string $asunto, string $cuerpo, 
     @fclose($sock);
 
     return $codigo === 250
-        ? ['ok' => true, 'mensaje' => 'Correo enviado.', 'registro' => $registro]
+        ? ['ok' => true, 'mensaje' => 'Correo enviado.', 'registro' => $registro, 'id_mensaje' => $idMensaje]
         : $falla('El servidor no aceptó el mensaje. ' . $texto);
 }

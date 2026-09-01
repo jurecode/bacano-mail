@@ -10,6 +10,16 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.5.1] — 2026-09-01
+
+### Corregido
+- **Lo enviado no se agrupaba con su respuesta.** La copia que se guarda en
+  Enviados no llevaba `Message-ID`, así que quedaba en una conversación
+  distinta a la respuesta que la citaba. Ahora el envío y su copia comparten
+  el mismo identificador.
+- Al responder desde la bandeja, el correo sale con `In-Reply-To` y
+  `References`: quien lo reciba lo verá dentro del hilo, no suelto.
+
 ## [1.5.0] — 2026-09-01
 
 ### Agregado

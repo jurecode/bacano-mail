@@ -610,6 +610,7 @@ function mj_v_lector_contenido(array $cfg, array $m, array $conversacion = []): 
   <article class="mj-msg"
            data-id="<?= mj_e($m['id']) ?>"
            data-nombre="<?= mj_e($m['de']['nombre']) ?>"
+           data-id-mensaje="<?= mj_e($m['id_mensaje'] ?? '') ?>"
            data-email="<?= mj_e($m['de']['email']) ?>"
            data-asunto="<?= mj_e($m['asunto']) ?>"
            data-todos="<?= mj_e(implode(', ', array_filter(array_merge(
@@ -749,6 +750,7 @@ function mj_v_compositor(array $cfg): void
       <form class="mj-form" data-rol="form-redactar" data-token="<?= mj_e(function_exists('mj_token_sesion') ? mj_token_sesion() : '') ?>">
         <label class="mj-campo">
           <span><?= mj_e($t['para']) ?></span>
+          <input type="hidden" name="responde_a" value="">
           <input type="email" name="para" multiple placeholder="destinatario@correo.cl" autocomplete="off">
         </label>
         <label class="mj-campo">

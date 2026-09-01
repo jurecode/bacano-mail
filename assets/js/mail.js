@@ -403,6 +403,12 @@
       var msg = lector && lector.querySelector('.mj-msg');
       if (!msg) { abrirModal('redactar'); return; }
       var asunto = msg.dataset.asunto || '';
+
+      // Se guarda a qué mensaje responde: así el correo lleva In-Reply-To y
+      // la conversación no se parte en dos.
+      var oculto = raiz.querySelector('[data-rol="form-redactar"] [name="responde_a"]');
+      if (oculto) oculto.value = (tipo === 'reenviar') ? '' : (msg.dataset.idMensaje || '');
+
       abrirModal('redactar', {
         para: tipo === 'reenviar' ? '' : (msg.dataset.email || ''),
         cc: tipo === 'todos' ? (msg.dataset.todos || '') : '',
