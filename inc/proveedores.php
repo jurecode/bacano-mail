@@ -401,7 +401,87 @@ class MjProveedorImap implements MjProveedor
   }
 }
 
-require_once __DIR__ . '/imap-cliente.php';
+/* ============================================================
+   Proveedor de respaldo: la misma casilla, leída por sockets
+   ------------------------------------------------------------
+   Se usa cuando el hosting no tiene la extensión imap (que dejó
+   de venir de serie en PHP 8.4). Cumple el mismo contrato que
+   MjProveedorImap, así que la vista no nota la diferencia.
+   ============================================================ */
+class MjProveedorImapSocket implements MjProveedor
+{
+    private ?array $cache = null;
+    private ?string $fallo = null;
+
+    public function __construct(private array $conf, private array $cfg = []) {}
+
+    public static function disponible(): bool
+    {
+        return function_exists('stream_socket_client') && extension_loaded('openssl');
+    }
+
+    public function nombre(): string
+    {
+        return 'IMAP · ' . ($this->conf['usuario'] ?? $this->conf['host'] ?? '');
+    }
+
+    public function fallo(): ?string { return $this->fallo; }
+
+    public function mensajes(): array
+    {
+        if ($this->cache !== null) return $this->cache;
+        $this->cache = [];
+
+        $imap = new MjImap($this->conf);
+        if (!$imap->conectar() || !$imap->entrar()) {
+            $this->fallo = $imap->error;
+            return $this->cache;
+        }
+
+        $total  = $imap->abrir((string) ($this->conf['carpeta'] ?? 'INBOX'));
+        $limite = max(1, min(200, (int) ($this->conf['limite'] ?? 50)));
+
+        foreach ($imap->cabeceras($total, $limite) as $m) {
+            $this->cache[] = [
+                'id'         => 'imap-' . $m['uid'],
+                'carpeta'    => 'entrada',
+                'de'         => $m['de'],
+                'para'       => $m['para'],
+                'cc'         => $m['cc'],
+                'asunto'     => $m['asunto'],
+                'extracto'   => '',
+                'cuerpo'     => '',
+                'fecha'      => $m['fecha'],
+                'leido'      => $m['leido'],
+                'destacado'  => $m['destacado'],
+                'importante' => false,
+                'silenciado' => false,
+                'etiquetas'  => [],
+                'adjuntos'   => [],
+            ];
+        }
+        $imap->cerrar();
+        return $this->cache;
+    }
+
+    public function mensaje(string $id): ?array
+    {
+        foreach ($this->mensajes() as $m) {
+            if ($m['id'] !== $id) continue;
+
+            if ($m['cuerpo'] === '' && preg_match('/^imap-(\d+)$/', $id, $c)) {
+                $imap = new MjImap($this->conf);
+                if ($imap->conectar() && $imap->entrar()) {
+                    $imap->abrir((string) ($this->conf['carpeta'] ?? 'INBOX'));
+                    $m['cuerpo'] = $imap->cuerpo((int) $c[1]);
+                    $imap->cerrar();
+                }
+            }
+            return $m;
+        }
+        return null;
+    }
+}
 
 /* ------------------------------------------------------------
    Fábrica: entrega el proveedor según config.php

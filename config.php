@@ -264,6 +264,9 @@ return [
      --------------------------------------------------------- */
   'acceso' => [
     'proteger' => true,
+    // 'casilla' = se entra con el correo y su contraseña (se comprueban
+    // contra el servidor IMAP). 'clave' = una sola clave para todos.
+    'modo'     => 'casilla',
   ],
 
   /* ---------------------------------------------------------

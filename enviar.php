@@ -9,8 +9,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/inc/acceso.php';   // antes del config: la sesión manda
 require __DIR__ . '/correo.php';
-require_once __DIR__ . '/inc/acceso.php';
 require_once __DIR__ . '/inc/smtp.php';
 
 header('Content-Type: application/json; charset=utf-8');

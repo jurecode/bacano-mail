@@ -48,6 +48,47 @@ function mj_token_valido(?string $token): bool
         && hash_equals($_SESSION['mj_token'], $token);
 }
 
+/** La casilla con la que se entró, si la sesión es de tipo correo. */
+function mj_credenciales(): ?array
+{
+    mj_sesion();
+    if (empty($_SESSION['mj_usuario']) || !isset($_SESSION['mj_clave'])) {
+        return null;
+    }
+    return ['usuario' => (string) $_SESSION['mj_usuario'], 'clave' => (string) $_SESSION['mj_clave']];
+}
+
+/**
+ * Aplica al config la casilla con la que se entró: se lee y se envía con
+ * esa cuenta, sin necesidad de dejar la clave guardada en el servidor.
+ */
+function mj_aplicar_credenciales(array $cfg): array
+{
+    $cred = mj_credenciales();
+    if ($cred === null) {
+        return $cfg;
+    }
+
+    $cfg['origen']['tipo'] = 'imap';
+    $cfg['origen']['imap']['usuario'] = $cred['usuario'];
+    $cfg['origen']['imap']['clave']   = $cred['clave'];
+
+    $cfg['origen']['smtp']['usuario'] = $cred['usuario'];
+    $cfg['origen']['smtp']['clave']   = $cred['clave'];
+    if (trim((string) ($cfg['origen']['smtp']['desde'] ?? '')) === '') {
+        $cfg['origen']['smtp']['desde'] = $cred['usuario'];
+    }
+    if (trim((string) ($cfg['origen']['smtp']['host'] ?? '')) === '') {
+        $cfg['origen']['smtp']['host'] = (string) ($cfg['origen']['imap']['host'] ?? '');
+    }
+
+    $cfg['usuario']['email'] = $cred['usuario'];
+    if (($cfg['usuario']['nombre'] ?? '') === 'Mi cuenta') {
+        $cfg['usuario']['nombre'] = ucfirst(strtok($cred['usuario'], '@') ?: 'Mi cuenta');
+    }
+    return $cfg;
+}
+
 /**
  * Puerta de entrada. Si no hay sesión, dibuja el acceso y corta la página.
  * Devuelve true cuando se puede seguir.
@@ -59,40 +100,78 @@ function mj_exigir_acceso(array $cfg): bool
     }
 
     mj_sesion();
-    $hash = (string) ($cfg['admin']['clave_hash'] ?? '');
-
-    if ($hash === '') {
-        mj_pantalla_acceso($cfg, 'Todavía no defines la clave. Ábrela en instalar.php.', true);
-        return false;
-    }
 
     if (isset($_GET['salir'])) {
         mj_salir();
         header('Location: ./');
         exit;
     }
-
     if (mj_dentro()) {
         return true;
+    }
+
+    $modo = ($cfg['acceso']['modo'] ?? 'casilla') === 'clave' ? 'clave' : 'casilla';
+    $hash = (string) ($cfg['admin']['clave_hash'] ?? '');
+    $servidor = trim((string) ($cfg['origen']['imap']['host'] ?? ''));
+
+    if ($modo === 'casilla' && $servidor === '') {
+        mj_pantalla_acceso($cfg, 'Falta indicar el servidor IMAP en instalar.php.', true, $modo);
+        return false;
+    }
+    if ($modo === 'clave' && $hash === '') {
+        mj_pantalla_acceso($cfg, 'Todavía no defines la clave. Ábrela en instalar.php.', true, $modo);
+        return false;
     }
 
     $error = '';
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['mj_clave'])) {
         usleep(400000);                    // pequeño freno contra la fuerza bruta
-        if (password_verify((string) $_POST['mj_clave'], $hash)) {
-            session_regenerate_id(true);
-            $_SESSION['mj_acceso'] = true;
-            header('Location: ./');
-            exit;
+        $clave = (string) $_POST['mj_clave'];
+
+        if ($modo === 'clave') {
+            if (password_verify($clave, $hash)) {
+                session_regenerate_id(true);
+                $_SESSION['mj_acceso'] = true;
+                header('Location: ./');
+                exit;
+            }
+            $error = 'Clave incorrecta.';
+        } else {
+            $correo = trim((string) ($_POST['mj_correo'] ?? ''));
+
+            if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+                $error = 'Escribe tu dirección de correo completa.';
+            } else {
+                require_once __DIR__ . '/imap-cliente.php';
+
+                $imap = new MjImap([
+                    'host'    => $servidor,
+                    'puerto'  => (int) ($cfg['origen']['imap']['puerto'] ?? 993),
+                    'cifrado' => (string) ($cfg['origen']['imap']['cifrado'] ?? 'ssl'),
+                    'validar_certificado' => !empty($cfg['origen']['imap']['validar_certificado']),
+                    'usuario' => $correo,
+                    'clave'   => $clave,
+                ]);
+
+                if ($imap->conectar() && $imap->entrar()) {
+                    $imap->cerrar();
+                    session_regenerate_id(true);
+                    $_SESSION['mj_acceso']  = true;
+                    $_SESSION['mj_usuario'] = $correo;
+                    $_SESSION['mj_clave']   = $clave;
+                    header('Location: ./');
+                    exit;
+                }
+                $error = $imap->error ?: 'No se pudo entrar con esos datos.';
+            }
         }
-        $error = 'Clave incorrecta.';
     }
 
-    mj_pantalla_acceso($cfg, $error);
+    mj_pantalla_acceso($cfg, $error, false, $modo);
     return false;
 }
 
-function mj_pantalla_acceso(array $cfg, string $error = '', bool $soloAviso = false): void
+function mj_pantalla_acceso(array $cfg, string $error = '', bool $soloAviso = false, string $modo = 'casilla'): void
 {
     $marca = $cfg['marca']['nombre'] ?? 'Correo';
     http_response_code($soloAviso ? 503 : 401);
@@ -139,14 +218,25 @@ function mj_pantalla_acceso(array $cfg, string $error = '', bool $soloAviso = fa
 <body>
   <div class="caja">
     <h1><?= mj_e($marca) ?></h1>
-    <p class="sub">Esta casilla es privada.</p>
+    <p class="sub"><?= $modo === 'casilla'
+        ? 'Entra con tu cuenta de correo.'
+        : 'Esta casilla es privada.' ?></p>
 
     <?php if ($error !== ''): ?><p class="error"><?= mj_e($error) ?></p><?php endif; ?>
 
     <?php if (!$soloAviso): ?>
-    <form method="post" autocomplete="off">
-      <label for="c">Clave de acceso</label>
-      <input type="password" id="c" name="mj_clave" required autofocus autocomplete="current-password">
+    <form method="post">
+      <?php if ($modo === 'casilla'): ?>
+        <label for="u">Correo</label>
+        <input type="email" id="u" name="mj_correo" required autofocus
+               autocomplete="username" placeholder="tucorreo@tudominio.cl"
+               value="<?= mj_e((string) ($_POST['mj_correo'] ?? '')) ?>">
+        <label for="c" style="margin-top:12px">Contraseña</label>
+      <?php else: ?>
+        <label for="c">Clave de acceso</label>
+      <?php endif; ?>
+      <input type="password" id="c" name="mj_clave" required
+             <?= $modo === 'clave' ? 'autofocus' : '' ?> autocomplete="current-password">
       <button type="submit">Entrar</button>
     </form>
     <?php endif; ?>

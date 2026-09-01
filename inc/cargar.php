@@ -31,6 +31,11 @@ function mj_config(array $ov = []): array
 
     $cfg = mj_fusionar($cfg, $usr);
     $cfg = mj_config_entorno($cfg);
+
+    // Si se entró con una casilla, esa cuenta manda sobre la configurada.
+    if (function_exists('mj_aplicar_credenciales')) {
+      $cfg = mj_aplicar_credenciales($cfg);
+    }
     $cache = $cfg;
   }
 

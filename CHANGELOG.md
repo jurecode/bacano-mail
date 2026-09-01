@@ -13,6 +13,10 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 ## [1.2.0] — 2026-09-01
 
 ### Agregado
+- **Se entra con el correo y su contraseña**, comprobados contra el servidor
+  IMAP. La sesión usa esa casilla para leer y enviar, así que ya no hace falta
+  dejar la clave guardada en el servidor. Queda disponible el modo de clave
+  única con `acceso.modo => 'clave'`.
 - **La bandeja pide clave.** Antes cualquiera con la dirección veía la
   casilla; ahora se entra con la misma clave del panel. Se puede desactivar
   con `acceso.proteger` sólo si se incrusta en una página que ya pide acceso.
