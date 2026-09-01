@@ -71,10 +71,15 @@ function mj_correo(array $ov = []): void
 
   $lista = array_slice($lista, 0, (int) ($cfg['interfaz']['mensajes_por_pagina'] ?? 50));
 
-  // Mensaje abierto: el de la URL, o el primero de la lista
+  // Mensaje abierto: el que venga en la URL. Sólo se abre uno solo si está
+  // pedido en la configuración; si no, el lector espera a que elijas.
+  // Se busca entre todos los mensajes, no sólo en la lista agrupada: al
+  // abrir uno de dentro de una conversación no está como fila propia.
   $sel = null;
-  foreach ($lista as $m) { if ($m['id'] === $activo) { $sel = $m; break; } }
-  if (!$sel && $cfg['interfaz']['panel_lectura'] !== 'oculto') {
+  foreach ($msgs as $m) { if ($m['id'] === $activo) { $sel = $m; break; } }
+
+  if (!$sel && !empty($cfg['interfaz']['abrir_primero'])
+      && $cfg['interfaz']['panel_lectura'] !== 'oculto') {
     foreach ($lista as $m) {
       if ($filtro === 'todos' || ($filtro === 'leidos') === (bool) $m['leido']) { $sel = $m; break; }
     }

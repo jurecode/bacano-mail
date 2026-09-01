@@ -10,6 +10,16 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.6.1] — 2026-09-01
+
+### Cambiado
+- **Al entrar ya no se abre solo el primer correo**: el lector espera a que
+  elijas uno. Quien prefiera lo anterior, `interfaz.abrir_primero => true`.
+
+### Corregido
+- Con la lista agrupada, abrir un mensaje que no fuera el más reciente de su
+  conversación no mostraba nada: se buscaba sólo entre las filas visibles.
+
 ## [1.6.0] — 2026-09-01
 
 ### Agregado
