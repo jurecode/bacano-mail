@@ -10,6 +10,12 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.3.1] — 2026-09-01
+
+### Agregado
+- Botón para cerrar sesión, junto a la cuenta en la barra lateral. Antes se
+  entraba con el correo y no había manera de salir sin conocer `?salir=1`.
+
 ## [1.3.0] — 2026-09-01
 
 ### Agregado

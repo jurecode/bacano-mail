@@ -858,3 +858,7 @@
   cursor: default;
   pointer-events: none;
 }
+
+/* Cerrar sesión, junto a la cuenta */
+.mj-salir{ display:grid; place-items:center; text-decoration:none; color:inherit }
+.mj-salir:hover{ color:#ef4444 }

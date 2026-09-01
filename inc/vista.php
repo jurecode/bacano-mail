@@ -293,6 +293,11 @@ function mj_v_carpetas(array $cfg, string $carpeta, array $conteo): void
           <span><?= mj_e($cfg['usuario']['email']) ?></span>
         </div>
       </div>
+      <?php if (function_exists('mj_dentro') && mj_dentro()): ?>
+        <a class="mj-icono-btn mj-salir" href="?salir=1" title="Cerrar sesión" aria-label="Cerrar sesión">
+          <?= mj_icono('salir', 18) ?>
+        </a>
+      <?php endif; ?>
       <?php if ($cfg['tema']['permitir_cambio_modo']): ?>
         <button class="mj-icono-btn" type="button" data-accion="modo" aria-label="Cambiar entre modo claro y oscuro">
           <span class="mj-modo-claro"><?= mj_icono('luna', 18) ?></span>

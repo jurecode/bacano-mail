@@ -59,6 +59,7 @@ function mj_iconos_lista(): array
     'check'      => '<path d="m5 12.5 4.5 4.5L19 7"/>',
     'refrescar'  => '<path d="M20 11.5A8 8 0 0 0 6.3 6.3L4 8.5"/><path d="M4 4v4.5h4.5"/><path d="M4 12.5a8 8 0 0 0 13.7 5.2L20 15.5"/><path d="M20 20v-4.5h-4.5"/>',
     'filtro'     => '<path d="M3.5 5.5h17l-6.5 7.6V19l-4 2v-7.9Z"/>',
+    'salir'      => '<path d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H15"/><path d="M10 12h10"/><path d="m16 8 4 4-4 4"/>',
     'usuario'    => '<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
   ];
 }
