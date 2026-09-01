@@ -10,6 +10,14 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.3.2] — 2026-09-01
+
+### Corregido
+- **Los estilos y el JavaScript quedaban cacheados para siempre.** Se pedían
+  con un `?v=1.0` escrito a mano, que nunca cambiaba: después de actualizar,
+  el navegador seguía ejecutando la versión vieja. Ahora la dirección lleva la
+  versión instalada, así cada actualización refresca la caché sola.
+
 ## [1.3.1] — 2026-09-01
 
 ### Agregado

@@ -12,6 +12,7 @@ require_once __DIR__ . '/iconos.php';
 require_once __DIR__ . '/cargar.php';
 require_once __DIR__ . '/modulos.php';
 require_once __DIR__ . '/proveedores.php';
+require_once __DIR__ . '/actualizador.php';   // mj_version(): sirve para refrescar la caché
 
 /** Punto de entrada. $ov permite sobrescribir cualquier opción del config. */
 function mj_correo(array $ov = []): void
@@ -69,7 +70,7 @@ function mj_correo(array $ov = []): void
       echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family='
          . mj_e($cfg['tema']['fuente_google']) . '&display=swap">' . "\n";
     }
-    echo '<link rel="stylesheet" href="' . mj_e($base) . '/assets/css/mail.css?v=1.0">' . "\n";
+    echo '<link rel="stylesheet" href="' . mj_e($base) . '/assets/css/mail.css?v=' . mj_e(mj_version()) . '">' . "\n";
   }
 
   // ---- Variables de tema en línea ----
@@ -154,7 +155,7 @@ function mj_correo(array $ov = []): void
   </div>
   <?php
   if ($instancias === 1) {
-    echo '<script src="' . mj_e($base) . '/assets/js/mail.js?v=1.0" defer></script>' . "\n";
+    echo '<script src="' . mj_e($base) . '/assets/js/mail.js?v=' . mj_e(mj_version()) . '" defer></script>' . "\n";
   }
 }
 
