@@ -314,7 +314,12 @@
 }
 .mj-usuario{ display:flex; align-items:center; gap:9px; min-width:0; flex:1 1 auto; }
 .mj-usuario-txt{ min-width:0; display:flex; flex-direction:column; line-height:1.25; }
-.mj-usuario-txt strong{ font-size:12.5px; }
+.mj-usuario-txt strong{
+  font-size:12.5px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+/* Los botones de la derecha no se encogen ni se montan sobre el nombre */
+.mj-carpetas-pie > .mj-icono-btn{ flex:none }
 .mj-usuario-txt span{ font-size:11px; color:var(--mj-txt3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 /* ============================================================

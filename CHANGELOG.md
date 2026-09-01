@@ -10,6 +10,13 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.6.3] — 2026-09-01
+
+### Corregido
+- En la ficha de la cuenta, los botones se montaban sobre el nombre: el
+  nombre no se recortaba y empujaba a los iconos. Ahora se corta con puntos
+  suspensivos y los botones no se encogen.
+
 ## [1.6.2] — 2026-09-01
 
 ### Corregido
