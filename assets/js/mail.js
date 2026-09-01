@@ -155,8 +155,8 @@
         case 'responder_todo': responder('todos'); break;
         case 'reenviar':       responder('reenviar'); break;
 
-        case 'eliminar':   quitar(itemActivo(), 'eliminado'); break;
-        case 'archivar':   quitar(itemActivo(), 'archivado'); break;
+        case 'eliminar':   quitar(itemActivo(), 'eliminado', 'papelera'); break;
+        case 'archivar':   quitar(itemActivo(), 'archivado', 'archivo'); break;
         case 'importante': destacar(itemActivo()); break;
 
         case 'mostrar-imagenes':
@@ -216,12 +216,34 @@
     /* ---------------------------------------------------
        ESTADOS DEL MENSAJE
        --------------------------------------------------- */
+    /* Envía una acción al servidor. Si falla, avisa: la pantalla ya cambió,
+       pero la persona debe saber que en la casilla no se aplicó. */
+    function accionServidor(accion, id, valor) {
+      var token = raiz.querySelector('[data-rol="form-redactar"]');
+      token = token ? (token.dataset.token || '') : '';
+      if (!token || !id) return Promise.resolve({ ok: false });
+
+      var datos = new FormData();
+      datos.append('accion', accion);
+      datos.append('id', id);
+      datos.append('valor', valor || '');
+      datos.append('token', token);
+
+      return fetch('acciones.php', { method: 'POST', body: datos, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          if (!r.ok && r.mensaje) aviso(r.mensaje);
+          return r;
+        })
+        .catch(function () { return { ok: false }; });
+    }
+
     function marcarLeido(item, leido) {
       if (!item || (item.dataset.leido === '1') === leido) return;
       item.dataset.leido = leido ? '1' : '0';
       item.classList.toggle('is-nuevo', !leido);
       badge(leido ? -1 : 1);
-      //  ⇢ API: marcar leído/no leído en el servidor
+      accionServidor(leido ? 'leido' : 'no_leido', item.dataset.id);
     }
 
     function destacar(item, color) {
@@ -235,10 +257,10 @@
         b.setAttribute('aria-pressed', on ? 'false' : 'true');
         b.style.setProperty('--mj-estrella', c);
       }
-      //  ⇢ API: guardar el destacado
+      accionServidor(on ? 'quitar_destacado' : 'destacar', item.dataset.id, c);
     }
 
-    function quitar(item, verbo) {
+    function quitar(item, verbo, destino) {
       if (!item) return;
       if (OP.confirmar && !confirm('¿Eliminar este mensaje?')) return;
       var padre = item.parentNode, sig = item.nextSibling;
@@ -249,11 +271,15 @@
         var otro = visibles()[0];
         if (otro) abrir(otro, false); else vaciarLector();
       }
-      //  ⇢ API: mover a papelera / archivo
+      var carpeta = destino || (verbo && verbo.indexOf('archiv') === 0 ? 'archivo' : 'papelera');
+      accionServidor('mover', item.dataset.id, carpeta);
+
       aviso('Mensaje ' + verbo, T.deshacer || 'Deshacer', function () {
         padre.insertBefore(item, sig);
         if (item.dataset.leido === '0') badge(1);
         contar(); filtrar();
+        // se devuelve a donde estaba
+        accionServidor('mover', item.dataset.id, item.dataset.carpeta || 'entrada');
       });
     }
 
@@ -289,6 +315,12 @@
       menu.style.top  = Math.max(8, ar) + 'px';
       menu.querySelectorAll('.mj-submenu').forEach(function (s) {
         s.classList.toggle('mj-izq', iz + r.width + 190 > innerWidth);
+
+        // Si el submenú no cabe hacia abajo, se ancla por su borde inferior
+        // en vez de quedar cortado por el borde de la ventana.
+        var fila = s.parentNode.getBoundingClientRect();
+        var alto = s.scrollHeight;
+        s.classList.toggle('mj-arriba', fila.top + alto + 16 > innerHeight);
       });
       menu.style.visibility = '';
       var no = menu.querySelector('[data-menu="no_leido"]');
@@ -306,15 +338,16 @@
         case 'abrir':      abrir(item, true); break;
         case 'no_leido':   marcarLeido(item, item.dataset.leido !== '1'); break;
         case 'destacar':   destacar(item, btn.dataset.color); break;
-        case 'eliminar':   quitar(item, 'eliminado'); break;
-        case 'archivar':   quitar(item, 'archivado'); break;
-        case 'spam':       quitar(item, 'movido a Spam'); break;
-        case 'silenciar':  aviso('Conversación silenciada'); break;
+        case 'eliminar':   quitar(item, 'eliminado', 'papelera'); break;
+        case 'archivar':   quitar(item, 'archivado', 'archivo'); break;
+        case 'spam':       quitar(item, 'movido a Spam', 'spam'); break;
+        case 'silenciar':  aviso('Silenciar todavía no está disponible'); break;
         case 'mover':
         case 'copiar':
-          var nom = nombreCarpeta(btn.dataset.destino);
-          if (id === 'mover') { quitar(item, 'movido a ' + nom); }
-          else { aviso('Copiado a ' + nom); }
+          var destino = btn.dataset.destino;
+          var nom = nombreCarpeta(destino);
+          if (id === 'mover') { quitar(item, 'movido a ' + nom, destino); }
+          else { aviso('Copiar a otra carpeta todavía no está disponible'); }
           break;
         case 'responder':      abrir(item, true); responder('uno'); break;
         case 'responder_todo': abrir(item, true); responder('todos'); break;
@@ -497,7 +530,7 @@
         case 'r': ev.preventDefault(); responder('uno');   break;
         case 'a': ev.preventDefault(); responder('todos'); break;
         case 'f': ev.preventDefault(); responder('reenviar'); break;
-        case 'e': quitar(act, 'archivado'); break;
+        case 'e': quitar(act, 'archivado', 'archivo'); break;
         case 's': destacar(act); break;
         case 'u': marcarLeido(act, act.dataset.leido !== '1'); break;
         case 'c': ev.preventDefault(); abrirModal('redactar'); break;

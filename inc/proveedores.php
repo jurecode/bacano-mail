@@ -540,6 +540,68 @@ class MjProveedorImapSocket implements MjProveedor
         return null;
     }
 
+    /**
+     * Ejecuta una acción sobre un mensaje contra el servidor.
+     * Devuelve ['ok' => bool, 'mensaje' => string]
+     */
+    public function accion(string $accion, string $id, string $valor = ''): array
+    {
+        if (!preg_match('/^imap-([a-z]+)-(\d+)$/', $id, $c)) {
+            return ['ok' => false, 'mensaje' => 'No reconozco ese mensaje.'];
+        }
+        $uid = (int) $c[2];
+
+        $imap = new MjImap($this->conf);
+        if (!$imap->conectar() || !$imap->entrar()) {
+            return ['ok' => false, 'mensaje' => $imap->error ?: 'No se pudo conectar.'];
+        }
+
+        // dónde está el mensaje, y cómo se llama cada carpeta en este servidor
+        $carpetas = [];
+        foreach ($imap->carpetas() as $x) {
+            if ($x['papel'] !== '') { $carpetas[$x['papel']] = $x['nombre']; }
+        }
+        $origen = $carpetas[$c[1]] ?? (string) ($this->conf['carpeta'] ?? 'INBOX');
+        $imap->abrir($origen);
+
+        $ok = false;
+        $texto = '';
+
+        switch ($accion) {
+            case 'leido':
+            case 'no_leido':
+                $ok = $imap->marcar($uid, '\\Seen', $accion === 'no_leido');
+                $texto = $ok ? '' : 'No se pudo marcar en el servidor.';
+                break;
+
+            case 'destacar':
+            case 'quitar_destacado':
+                $ok = $imap->marcar($uid, '\\Flagged', $accion === 'quitar_destacado');
+                $texto = $ok ? '' : 'No se pudo destacar en el servidor.';
+                break;
+
+            case 'mover':
+                $destino = $carpetas[$valor] ?? '';
+                if ($destino === '') {
+                    $texto = 'Tu servidor no tiene una carpeta para eso.';
+                    break;
+                }
+                $ok = $imap->mover($uid, $destino);
+                $texto = $ok ? '' : 'El servidor no dejó mover el mensaje.';
+                break;
+
+            default:
+                $texto = 'Esa acción todavía no está disponible.';
+        }
+
+        $imap->cerrar();
+
+        // se refresca la copia en memoria para que los contadores cuadren
+        if ($ok) { $this->cache = null; }
+
+        return ['ok' => $ok, 'mensaje' => $texto];
+    }
+
     /** Marca el mensaje como leído en el servidor, no sólo en pantalla. */
     public function marcar_leido(string $id): bool
     {

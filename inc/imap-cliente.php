@@ -123,6 +123,23 @@ class MjImap
         return $r['ok'];
     }
 
+    /** Mueve un mensaje a otra carpeta. Usa MOVE, o COPY + borrar si no está. */
+    public function mover(int $uid, string $destino): bool
+    {
+        $r = $this->orden('UID MOVE ' . $uid . ' ' . $this->citar($destino));
+        if ($r['ok']) {
+            return true;
+        }
+        // Servidores viejos no traen MOVE: se copia, se marca borrado y se purga
+        $c = $this->orden('UID COPY ' . $uid . ' ' . $this->citar($destino));
+        if (!$c['ok']) {
+            return false;
+        }
+        $this->marcar($uid, '\\Deleted');
+        $this->orden('EXPUNGE');
+        return true;
+    }
+
     /** Guarda una copia en una carpeta del servidor (los enviados, por ejemplo). */
     public function guardar(string $carpeta, string $mensaje, string $banderas = '\\Seen'): bool
     {

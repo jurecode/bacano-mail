@@ -659,6 +659,11 @@
 .mj-menu-sub:hover .mj-submenu, .mj-menu-sub:focus-within .mj-submenu{ opacity:1; visibility:visible; transform:none; }
 .mj-submenu.mj-izq{ left:auto; right:100%; }
 
+/* Cuando no cabe hacia abajo: se alinea por abajo y, si aun así es muy
+   alto, se desplaza dentro de sí mismo en vez de cortarse. */
+.mj-submenu.mj-arriba{ top:auto; bottom:-6px; }
+.mj-submenu{ max-height:min(60vh, 340px); overflow-y:auto; }
+
 /* ============================================================
    10. MODALES (redactar / atajos)
    ============================================================ */

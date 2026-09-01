@@ -10,6 +10,24 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.7.0] — 2026-09-01
+
+### Agregado
+- **Las acciones del menú ahora sí llegan al servidor**: marcar leído y no
+  leído, destacar, archivar, eliminar y mover a otra carpeta. Antes sólo
+  cambiaban la pantalla y al recargar volvía todo atrás.
+- Al abrir un correo se marca leído aunque no se recargue la página, que es
+  lo que pasa siempre: la bandeja abre los mensajes sin ir al servidor. Por
+  eso el contador de no leídos no bajaba nunca.
+
+### Cambiado
+- Copiar a otra carpeta y silenciar dicen que no están disponibles, en vez de
+  fingir que hicieron algo.
+
+### Corregido
+- El submenú de "Mover a" se cortaba cuando el menú se abría abajo: ahora se
+  ancla por su borde inferior y, si aun así no cabe, se desplaza por dentro.
+
 ## [1.6.3] — 2026-09-01
 
 ### Corregido
