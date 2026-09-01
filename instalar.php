@@ -97,7 +97,7 @@ $SECCIONES = [
     'origen.tipo' => ['t' => 'select', 'l' => 'Origen de los mensajes', 'o' => [
                         'demo' => 'Demostración (datos de ejemplo)',
                         'json' => 'Archivo JSON propio',
-                        'imap' => 'Cuenta real por IMAP'], 'a' => 'La conexión IMAP se activa en la etapa 2'],
+                        'imap' => 'Cuenta real por IMAP'], 'a' => 'Con IMAP se lee la casilla de verdad; con demostración, datos de ejemplo'],
     'origen.archivo'          => ['t' => 'texto', 'l' => 'Archivo JSON', 'a' => 'Solo si elegiste "Archivo JSON propio"'],
     'origen.imap.host'        => ['t' => 'texto', 'l' => 'Servidor IMAP', 'p' => 'imap.midominio.cl'],
     'origen.imap.puerto'      => ['t' => 'numero', 'l' => 'Puerto IMAP', 'p' => '993'],
@@ -629,7 +629,7 @@ $modo_login = $instalado && !$autenticado;
         <?php if ($titulo === 'Cuenta de correo'): ?>
           <div style="margin-top:16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             <button class="btn sec" type="submit" name="accion" value="probar">Probar la conexión</button>
-            <span class="ayuda">Comprueba que el servidor IMAP responda desde este hosting.</span>
+            <span class="ayuda">Entra a la casilla con estos datos y cuenta los mensajes que hay.</span>
           </div>
         <?php endif; ?>
       </div>
