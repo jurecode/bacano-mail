@@ -28,6 +28,26 @@
 
 require_once __DIR__ . '/imap-cliente.php';   // cliente por sockets
 
+/**
+ * A qué conversación pertenece un mensaje. Se usa la cadena de referencias
+ * que arrastran los correos; si no la hay, el asunto sin "Re:" ni "Fwd:".
+ */
+function mj_hilo_de(array $m): string
+{
+    $refs = trim((string) ($m['referencias'] ?? ''));
+    if ($refs !== '' && preg_match('/<([^>]+)>/', $refs, $c)) {
+        return $c[1];
+    }
+    if (($m['responde_a'] ?? '') !== '') {
+        return (string) $m['responde_a'];
+    }
+    if (($m['id_mensaje'] ?? '') !== '') {
+        return (string) $m['id_mensaje'];
+    }
+    $asunto = mb_strtolower(trim((string) ($m['asunto'] ?? '')));
+    return 'asunto:' . preg_replace('/^((re|rv|fwd|fw)\s*:\s*)+/iu', '', $asunto);
+}
+
 interface MjProveedor
 {
   /** Todos los mensajes visibles (la vista filtra por carpeta) */
@@ -461,6 +481,9 @@ class MjProveedorImapSocket implements MjProveedor
                 $this->cache[] = [
                     'id'         => 'imap-' . $c['papel'] . '-' . $m['uid'],
                     'carpeta'    => $c['papel'],
+                    // Raíz de la conversación: la primera referencia, o el
+                    // propio identificador si el mensaje la empieza.
+                    'hilo'       => mj_hilo_de($m),
                     'de'         => $m['de'],
                     'para'       => $m['para'],
                     'cc'         => $m['cc'],

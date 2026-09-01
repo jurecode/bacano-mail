@@ -112,7 +112,19 @@ function mj_correo(array $ov = []): void
 
       <?php mj_v_lista($cfg, $lista, $carpeta, $filtro, $busca, $sel); ?>
 
-      <?php if ($cfg['interfaz']['panel_lectura'] !== 'oculto') mj_v_lector($cfg, $sel); ?>
+      <?php
+        // El resto de la conversación: mismo hilo, más antiguos primero.
+        $conversacion = [];
+        if ($sel && ($sel['hilo'] ?? '') !== '') {
+          foreach ($msgs as $otro) {
+            if (($otro['hilo'] ?? '') === $sel['hilo'] && $otro['id'] !== $sel['id']) {
+              $conversacion[] = $otro;
+            }
+          }
+          usort($conversacion, fn($a, $b) => strcmp($a['fecha'], $b['fecha']));
+        }
+        if ($cfg['interfaz']['panel_lectura'] !== 'oculto') mj_v_lector($cfg, $sel, $conversacion);
+      ?>
 
     </div>
 
@@ -224,6 +236,52 @@ function mj_v_rail(array $cfg, string $base = '.'): void
     </ul>
   </nav>
 <?php }
+
+/**
+ * Esconde la parte citada de una respuesta detrás de un botón, como hace
+ * Gmail: lo que se escribió ahora queda arriba, y "El … escribió:" con sus
+ * ">" se pliega. El corte puede caer dentro de un párrafo, porque los
+ * correos de texto llegan como un solo bloque con <br>.
+ */
+function mj_plegar_citado(string $html): string
+{
+    $marcas = [
+        '/(?:<br\s*\/?>\s*)*(?:El |On |&gt;\s*El )[^<]{0,220}?escribi[oó]\s*:/iu',
+        '/(?:<br\s*\/?>\s*)+&gt;/u',      // la primera línea citada
+        '/(?:<br\s*\/?>\s*)*-{2,}\s*Mensaje reenviado\s*-{2,}/iu',
+    ];
+
+    $corte = null;
+    foreach ($marcas as $patron) {
+        if (preg_match($patron, $html, $m, PREG_OFFSET_CAPTURE)) {
+            $corte = $corte === null ? $m[0][1] : min($corte, $m[0][1]);
+        }
+    }
+    if ($corte === null || $corte === 0) {
+        return $html;
+    }
+
+    $nuevo  = substr($html, 0, $corte);
+    $citado = ltrim(substr($html, $corte));
+    $citado = preg_replace('/^(?:<br\s*\/?>\s*)+/i', '', $citado);
+
+    if (trim(strip_tags($nuevo)) === '' || trim(strip_tags($citado)) === '') {
+        return $html;
+    }
+
+    // El corte suele caer dentro de un <p>: se cierra el visible y se abre
+    // uno nuevo para la cita, así el HTML sigue siendo válido.
+    if (substr_count($nuevo, '<p') > substr_count($nuevo, '</p')) {
+        $nuevo .= '</p>';
+    }
+    if (substr_count($citado, '</p') > substr_count($citado, '<p')) {
+        $citado = '<p>' . $citado;
+    }
+
+    return $nuevo
+        . '<details class="mj-citado"><summary title="Mostrar lo anterior">···</summary>'
+        . '<div class="mj-citado-cuerpo">' . $citado . '</div></details>';
+}
 
 /** Columna de carpetas */
 function mj_v_carpetas(array $cfg, string $carpeta, array $conteo): void
@@ -507,7 +565,7 @@ function mj_v_item(array $cfg, array $m, bool $activo, string $carpeta, bool $oc
 <?php }
 
 /** Panel de lectura */
-function mj_v_lector(array $cfg, ?array $sel): void
+function mj_v_lector(array $cfg, ?array $sel, array $conversacion = []): void
 {
   $t = $cfg['textos'];
   ?>
@@ -531,7 +589,7 @@ function mj_v_lector(array $cfg, ?array $sel): void
     </header>
 
     <div class="mj-lector-scroll" data-rol="lector">
-      <?php if ($sel) { mj_v_lector_contenido($cfg, $sel); } else { ?>
+      <?php if ($sel) { mj_v_lector_contenido($cfg, $sel, $conversacion); } else { ?>
         <div class="mj-vacio mj-vacio-lector">
           <?= mj_icono('sobre_abrir', 34) ?>
           <p class="mj-vacio-t"><?= mj_e($t['sin_seleccion']) ?></p>
@@ -543,10 +601,10 @@ function mj_v_lector(array $cfg, ?array $sel): void
 <?php }
 
 /** Contenido de un mensaje dentro del lector */
-function mj_v_lector_contenido(array $cfg, array $m): void
+function mj_v_lector_contenido(array $cfg, array $m, array $conversacion = []): void
 {
   $t     = $cfg['textos'];
-  $html  = mj_html_seguro($m['cuerpo'], $cfg);
+  $html  = mj_plegar_citado(mj_html_seguro($m['cuerpo'], $cfg));
   $block = mj_tiene_imagenes_bloqueadas($html);
   ?>
   <article class="mj-msg"
@@ -589,6 +647,25 @@ function mj_v_lector_contenido(array $cfg, array $m): void
         <?= mj_icono('spam', 16) ?>
         <span><?= mj_e($t['imagenes_bloqueadas']) ?></span>
         <button type="button" class="mj-link" data-accion="mostrar-imagenes"><?= mj_e($t['mostrar_imagenes']) ?></button>
+      </div>
+    <?php endif; ?>
+
+    <?php if ($conversacion): ?>
+      <div class="mj-hilo">
+        <p class="mj-hilo-titulo"><?= count($conversacion) ?>
+          <?= count($conversacion) === 1 ? 'mensaje anterior' : 'mensajes anteriores' ?> en esta conversación</p>
+
+        <?php foreach ($conversacion as $previo):
+              $quien = $previo['de']['nombre'] ?: $previo['de']['email']; ?>
+          <details class="mj-hilo-item">
+            <summary>
+              <b><?= mj_e($quien) ?></b>
+              <span><?= mj_e(mb_substr(trim(strip_tags($previo['cuerpo'])), 0, 70)) ?></span>
+              <time><?= mj_e(mj_fecha_corta($previo['fecha'], $cfg)) ?></time>
+            </summary>
+            <div class="mj-hilo-cuerpo"><?= mj_plegar_citado(mj_html_seguro($previo['cuerpo'], $cfg)) ?></div>
+          </details>
+        <?php endforeach; ?>
       </div>
     <?php endif; ?>
 

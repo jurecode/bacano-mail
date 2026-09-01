@@ -145,7 +145,7 @@ class MjImap
         $desde = max(1, $total - $limite + 1);
 
         $r = $this->orden("FETCH $desde:$total (UID FLAGS INTERNALDATE "
-                        . "BODY.PEEK[HEADER.FIELDS (FROM TO CC SUBJECT DATE)])");
+                        . "BODY.PEEK[HEADER.FIELDS (FROM TO CC SUBJECT DATE MESSAGE-ID IN-REPLY-TO REFERENCES)])");
         if (!$r['ok']) { $this->error = 'No se pudieron leer las cabeceras.'; return []; }
 
         $mensajes = [];
@@ -164,6 +164,9 @@ class MjImap
                 'cc'         => array_map([$this, 'persona'], $this->separar($cab['cc'] ?? '')),
                 'asunto'     => $this->decodificar($cab['subject'] ?? '') ?: '(sin asunto)',
                 'fecha'      => $this->fecha($cab['date'] ?? ''),
+                'id_mensaje' => trim((string) ($cab['message-id'] ?? ''), " <>"),
+                'responde_a' => trim((string) ($cab['in-reply-to'] ?? ''), " <>"),
+                'referencias'=> trim((string) ($cab['references'] ?? '')),
                 'leido'      => stripos($banderas, '\\Seen') !== false,
                 'destacado'  => stripos($banderas, '\\Flagged') !== false ? '#F59E0B' : false,
                 'respondido' => stripos($banderas, '\\Answered') !== false,

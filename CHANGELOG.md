@@ -10,6 +10,17 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.5.0] — 2026-09-01
+
+### Agregado
+- **Conversaciones.** Los mensajes se agrupan por hilo usando las cabeceras
+  `Message-ID`, `In-Reply-To` y `References` (y el asunto sin "Re:" cuando el
+  correo no las trae). Al abrir una respuesta se ven arriba los mensajes
+  anteriores, plegados, como en Gmail.
+- **El texto citado se pliega** detrás de un "···": lo que se escribió ahora
+  queda a la vista y el "El … escribió:" con sus ">" se esconde. Reconoce
+  también los reenvíos.
+
 ## [1.4.1] — 2026-09-01
 
 ### Corregido

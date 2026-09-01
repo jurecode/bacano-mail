@@ -862,3 +862,42 @@
 /* Cerrar sesión, junto a la cuenta */
 .mj-salir{ display:grid; place-items:center; text-decoration:none; color:inherit }
 .mj-salir:hover{ color:#ef4444 }
+
+/* ============================================================
+   Conversaciones y texto citado
+   ============================================================ */
+.mj-hilo{ margin: 4px 0 18px; display: grid; gap: 6px }
+.mj-hilo-titulo{
+  margin: 0 0 4px; font-size: 12px; opacity: .6;
+}
+.mj-hilo-item{
+  border: 1px solid var(--mj-borde, rgba(255,255,255,.10));
+  border-radius: 10px;
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+.mj-hilo-item summary{
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 9px 12px; cursor: pointer; list-style: none;
+  font-size: 13px;
+}
+.mj-hilo-item summary::-webkit-details-marker{ display: none }
+.mj-hilo-item summary b{ flex: none }
+.mj-hilo-item summary span{
+  flex: 1; min-width: 0; opacity: .6;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mj-hilo-item summary time{ flex: none; font-size: 12px; opacity: .5 }
+.mj-hilo-item[open] summary{ border-bottom: 1px solid var(--mj-borde, rgba(255,255,255,.10)) }
+.mj-hilo-cuerpo{ padding: 12px 14px; font-size: 14px }
+
+/* El "···" que pliega la parte citada, como en Gmail */
+.mj-citado{ display: inline-block; margin-top: 10px }
+.mj-citado summary{
+  display: inline-block; padding: 1px 9px; cursor: pointer; list-style: none;
+  border-radius: 8px; letter-spacing: 1px; line-height: 1.1;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  opacity: .55;
+}
+.mj-citado summary::-webkit-details-marker{ display: none }
+.mj-citado summary:hover{ opacity: .9 }
+.mj-citado-cuerpo{ margin-top: 10px; opacity: .7; border-left: 2px solid currentColor; padding-left: 12px }
