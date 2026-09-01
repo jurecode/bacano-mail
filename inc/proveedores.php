@@ -26,6 +26,8 @@
    ]
    ============================================================ */
 
+require_once __DIR__ . '/imap-cliente.php';   // cliente por sockets
+
 interface MjProveedor
 {
   /** Todos los mensajes visibles (la vista filtra por carpeta) */

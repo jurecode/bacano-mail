@@ -10,6 +10,13 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.2.1] — 2026-09-01
+
+### Corregido
+- Página en blanco al entrar a la bandeja: al reorganizar los archivos, la
+  clase que lee por sockets quedó sin el `require` del cliente y PHP moría con
+  un error fatal antes de dibujar nada.
+
 ## [1.2.0] — 2026-09-01
 
 ### Agregado
