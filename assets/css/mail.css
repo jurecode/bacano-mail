@@ -901,3 +901,11 @@
 .mj-citado summary::-webkit-details-marker{ display: none }
 .mj-citado summary:hover{ opacity: .9 }
 .mj-citado-cuerpo{ margin-top: 10px; opacity: .7; border-left: 2px solid currentColor; padding-left: 12px }
+
+/* Cuántos mensajes lleva la conversación */
+.mj-item-hilo{
+  display: inline-block; margin-left: 6px; padding: 0 6px;
+  font-size: 11px; line-height: 17px; border-radius: 9px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  opacity: .75;
+}

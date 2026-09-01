@@ -10,6 +10,17 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.6.0] — 2026-09-01
+
+### Agregado
+- **La lista agrupa por conversación**: una fila por hilo, con el mensaje más
+  reciente y un contador de cuántos lleva. Si alguno está sin leer, la
+  conversación entera se ve sin leer. Se puede apagar con
+  `interfaz.agrupar_conversaciones`.
+- Dos mensajes con el mismo asunto se consideran la misma conversación aunque
+  sus cadenas de referencias no coincidan, cosa que pasa cuando alguien del
+  medio respondió desde otro programa.
+
 ## [1.5.1] — 2026-09-01
 
 ### Corregido

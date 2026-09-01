@@ -32,6 +32,14 @@ require_once __DIR__ . '/imap-cliente.php';   // cliente por sockets
  * A qué conversación pertenece un mensaje. Se usa la cadena de referencias
  * que arrastran los correos; si no la hay, el asunto sin "Re:" ni "Fwd:".
  */
+/** El asunto sin los "Re:" ni "Fwd:" que se van acumulando. */
+function mj_asunto_raiz(string $asunto): string
+{
+    $limpio = preg_replace('/^((re|rv|fwd|fw|res)\s*:\s*)+/iu', '', trim($asunto));
+    $limpio = mb_strtolower(trim((string) $limpio));
+    return $limpio === '(sin asunto)' ? '' : $limpio;
+}
+
 function mj_hilo_de(array $m): string
 {
     $refs = trim((string) ($m['referencias'] ?? ''));
@@ -500,6 +508,22 @@ class MjProveedorImapSocket implements MjProveedor
                     'etiquetas'  => [],
                     'adjuntos'   => [],
                 ];
+            }
+        }
+
+        // Segunda pasada: dos mensajes con el mismo asunto son la misma
+        // conversación aunque sus cadenas de referencias no se toquen (pasa
+        // cuando alguien del medio respondió con otro programa).
+        $porAsunto = [];
+        foreach ($this->cache as $m) {
+            $clave = mj_asunto_raiz($m['asunto']);
+            if ($clave === '') continue;
+            $porAsunto[$clave] = $porAsunto[$clave] ?? $m['hilo'];
+        }
+        foreach ($this->cache as $i => $m) {
+            $clave = mj_asunto_raiz($m['asunto']);
+            if ($clave !== '' && isset($porAsunto[$clave])) {
+                $this->cache[$i]['hilo'] = $porAsunto[$clave];
             }
         }
 

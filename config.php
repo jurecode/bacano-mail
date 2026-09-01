@@ -100,6 +100,7 @@ return [
     'atajos_teclado'        => true,
     'mostrar_ayuda_atajos'  => true,
     'notificaciones'        => true,
+    'agrupar_conversaciones' => true,   // una fila por conversación, como Gmail
     'agrupar_por_fecha'     => true,
     'mensajes_por_pagina'   => 50,
     'auto_marcar_leido'     => true,

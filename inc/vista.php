@@ -49,6 +49,26 @@ function mj_correo(array $ov = []): void
   if ($carpeta === 'destacado') {
     $lista = array_values(array_filter($msgs, fn($m) => $m['destacado'] || $m['importante']));
   }
+  // Una fila por conversación: se muestra el mensaje más reciente de cada
+  // hilo y se cuenta cuántos lleva, como hace Gmail.
+  if (!empty($cfg['interfaz']['agrupar_conversaciones'])) {
+    $porHilo = [];
+    foreach ($lista as $m) {
+      $h = ($m['hilo'] ?? '') !== '' ? $m['hilo'] : $m['id'];
+      if (!isset($porHilo[$h]) || strcmp($m['fecha'], $porHilo[$h]['fecha']) > 0) {
+        $cuantos = isset($porHilo[$h]) ? $porHilo[$h]['en_hilo'] : 0;
+        $porHilo[$h] = $m;
+        $porHilo[$h]['en_hilo'] = $cuantos + 1;
+      } else {
+        $porHilo[$h]['en_hilo']++;
+        // si alguno del hilo está sin leer, la conversación se ve sin leer
+        if (!$m['leido']) { $porHilo[$h]['leido'] = false; }
+      }
+    }
+    $lista = array_values($porHilo);
+    usort($lista, fn($a, $b) => strcmp($b['fecha'], $a['fecha']));
+  }
+
   $lista = array_slice($lista, 0, (int) ($cfg['interfaz']['mensajes_por_pagina'] ?? 50));
 
   // Mensaje abierto: el de la URL, o el primero de la lista
@@ -535,7 +555,12 @@ function mj_v_item(array $cfg, array $m, bool $activo, string $carpeta, bool $oc
         <span class="mj-de"><?= mj_e($persona['nombre'] ?: $persona['email']) ?></span>
         <time class="mj-hora" datetime="<?= mj_e($m['fecha']) ?>"><?= mj_e(mj_fecha_corta($m['fecha'], $cfg)) ?></time>
       </div>
-      <div class="mj-item-asunto"><?= mj_e($m['asunto']) ?></div>
+      <div class="mj-item-asunto">
+        <?= mj_e($m['asunto']) ?>
+        <?php if (($m['en_hilo'] ?? 1) > 1): ?>
+          <span class="mj-item-hilo" title="Mensajes en esta conversación"><?= (int) $m['en_hilo'] ?></span>
+        <?php endif; ?>
+      </div>
       <?php if ($cfg['interfaz']['mostrar_extracto']): ?>
         <p class="mj-item-extracto" style="--mj-lineas:<?= (int) $cfg['interfaz']['lineas_extracto'] ?>">
           <?= mj_e($m['extracto']) ?>
