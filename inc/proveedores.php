@@ -572,6 +572,15 @@ class MjProveedorImapSocket implements MjProveedor
             case 'no_leido':
                 $ok = $imap->marcar($uid, '\\Seen', $accion === 'no_leido');
                 $texto = $ok ? '' : ($imap->error ?: 'No se pudo marcar en el servidor.');
+
+                // Abrir una conversación la marca entera: los demás mensajes
+                // del hilo quedaban sin leer y el contador no bajaba nunca.
+                if ($ok && $accion === 'leido') {
+                    $imap->cerrar();
+                    $otros = array_diff($this->hermanos($id), [$id]);
+                    if ($otros) { $this->marcar_varios(array_values($otros)); }
+                    return ['ok' => true, 'mensaje' => ''];
+                }
                 break;
 
             case 'destacar':
@@ -600,6 +609,69 @@ class MjProveedorImapSocket implements MjProveedor
         if ($ok) { $this->cache = null; }
 
         return ['ok' => $ok, 'mensaje' => $texto];
+    }
+
+    /**
+     * Los ids de los demás mensajes de la misma conversación.
+     * Abrir un hilo debe marcarlo entero, como en cualquier cliente serio.
+     */
+    public function hermanos(string $id): array
+    {
+        $hilo = null;
+        foreach ($this->mensajes() as $m) {
+            if ($m['id'] === $id) { $hilo = $m['hilo'] ?? ''; break; }
+        }
+        if ($hilo === null || $hilo === '') return [];
+
+        $ids = [];
+        foreach ($this->mensajes() as $m) {
+            if (($m['hilo'] ?? '') === $hilo && !$m['leido']) { $ids[] = $m['id']; }
+        }
+        return $ids;
+    }
+
+    /** Marca varios mensajes de una vez, reutilizando la conexión. */
+    public function marcar_varios(array $ids, string $bandera = '\\Seen', bool $quitar = false): int
+    {
+        if (!$ids) return 0;
+
+        $imap = new MjImap($this->conf);
+        if (!$imap->conectar() || !$imap->entrar()) {
+            $this->ultimo_error = $imap->error;
+            return 0;
+        }
+
+        $carpetas = [];
+        foreach ($imap->carpetas() as $x) {
+            if ($x['papel'] !== '') { $carpetas[$x['papel']] = $x['nombre']; }
+        }
+
+        // se agrupan por carpeta: cada SELECT cuesta, y hay que abrir la
+        // carpeta correcta antes de tocar sus mensajes
+        $porCarpeta = [];
+        foreach ($ids as $id) {
+            if (preg_match('/^imap-([a-z]+)-(\d+)$/', $id, $c)) {
+                $porCarpeta[$c[1]][] = (int) $c[2];
+            }
+        }
+
+        $hechos = 0;
+        foreach ($porCarpeta as $papel => $uids) {
+            $carpeta = $carpetas[$papel] ?? (string) ($this->conf['carpeta'] ?? 'INBOX');
+            $imap->abrir($carpeta);
+            foreach ($uids as $uid) {
+                if ($imap->marcar($uid, $bandera, $quitar)) { $hechos++; }
+                elseif ($imap->error !== '') { $this->ultimo_error = $imap->error; }
+            }
+        }
+        $imap->cerrar();
+
+        if ($hechos > 0) {
+            foreach ($this->cache ?? [] as $i => $m) {
+                if (in_array($m['id'], $ids, true)) { $this->cache[$i]['leido'] = !$quitar; }
+            }
+        }
+        return $hechos;
     }
 
     /** Marca el mensaje como leído en el servidor, no sólo en pantalla. */

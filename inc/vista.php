@@ -42,10 +42,20 @@ function mj_correo(array $ov = []): void
       && method_exists($prov, 'marcar_leido')) {
     foreach ($msgs as $i => $m) {
       if ($m['id'] === $activo && !$m['leido']) {
-        if ($prov->marcar_leido($activo)) {
-          $msgs[$i]['leido'] = true;
+        // Se marca la conversación entera: si sólo se marca el mensaje
+        // abierto, sus hermanos siguen sin leer y el contador no baja.
+        $porMarcar = method_exists($prov, 'hermanos') ? $prov->hermanos($activo) : [$activo];
+        if (!in_array($activo, $porMarcar, true)) { $porMarcar[] = $activo; }
+
+        $hechos = method_exists($prov, 'marcar_varios')
+          ? $prov->marcar_varios($porMarcar)
+          : ($prov->marcar_leido($activo) ? 1 : 0);
+
+        if ($hechos > 0) {
+          foreach ($msgs as $j => $otro) {
+            if (in_array($otro['id'], $porMarcar, true)) { $msgs[$j]['leido'] = true; }
+          }
         } elseif (!empty($prov->ultimo_error)) {
-          // Se registra: si el servidor no acepta la marca, hay que saberlo
           error_log('BACANO.MAIL: no se pudo marcar leído ' . $activo . ' — ' . $prov->ultimo_error);
         }
         break;
@@ -70,17 +80,22 @@ function mj_correo(array $ov = []): void
   // hilo y se cuenta cuántos lleva, como hace Gmail.
   if (!empty($cfg['interfaz']['agrupar_conversaciones'])) {
     $porHilo = [];
+    $cuenta  = [];
+    $alguno_sin_leer = [];
+
     foreach ($lista as $m) {
       $h = ($m['hilo'] ?? '') !== '' ? $m['hilo'] : $m['id'];
+      $cuenta[$h] = ($cuenta[$h] ?? 0) + 1;
+      if (!$m['leido']) { $alguno_sin_leer[$h] = true; }
+
+      // se queda el más reciente como cara visible de la conversación
       if (!isset($porHilo[$h]) || strcmp($m['fecha'], $porHilo[$h]['fecha']) > 0) {
-        $cuantos = isset($porHilo[$h]) ? $porHilo[$h]['en_hilo'] : 0;
         $porHilo[$h] = $m;
-        $porHilo[$h]['en_hilo'] = $cuantos + 1;
-      } else {
-        $porHilo[$h]['en_hilo']++;
-        // si alguno del hilo está sin leer, la conversación se ve sin leer
-        if (!$m['leido']) { $porHilo[$h]['leido'] = false; }
       }
+    }
+    foreach ($porHilo as $h => $m) {
+      $porHilo[$h]['en_hilo'] = $cuenta[$h];
+      $porHilo[$h]['leido']   = empty($alguno_sin_leer[$h]);
     }
     $lista = array_values($porHilo);
     usort($lista, fn($a, $b) => strcmp($b['fecha'], $a['fecha']));

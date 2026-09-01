@@ -10,6 +10,18 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.7.2] — 2026-09-01
+
+### Corregido
+- **Abrir una conversación marca ahora todos sus mensajes.** La lista agrupa
+  por hilo y muestra el más reciente, pero al abrirlo sólo se marcaba ése:
+  sus hermanos seguían sin leer en el servidor y el contador —que cuenta
+  mensajes, no conversaciones— no bajaba nunca. Se marcan todos, en una sola
+  conexión y agrupados por carpeta.
+- Al agrupar se perdía el estado de lectura de los hermanos si el más
+  reciente reemplazaba al representante: una conversación con mensajes sin
+  leer podía verse leída.
+
 ## [1.7.1] — 2026-09-01
 
 ### Corregido
