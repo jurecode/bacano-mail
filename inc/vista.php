@@ -167,6 +167,16 @@ function mj_v_rail(array $cfg, string $base = '.'): void
 {
   // Menú del perfil + lo que aporten los módulos activos
   $items = array_merge($cfg['rail'], mj_modulos_rail($cfg, $base));
+
+  // Las secciones sin dirección real no se muestran: un menú donde la mitad
+  // de los botones no lleva a ninguna parte confunde más de lo que ayuda.
+  // Se pueden mostrar igual, apagadas, con interfaz.rail_mostrar_pendientes.
+  $pendiente = static fn(array $it): bool => trim((string) ($it['url'] ?? '')) === ''
+                                          || trim((string) ($it['url'] ?? '')) === '#';
+  $mostrarPendientes = !empty($cfg['interfaz']['rail_mostrar_pendientes']);
+  if (!$mostrarPendientes) {
+    $items = array_values(array_filter($items, fn($it) => !$pendiente($it)));
+  }
   ?>
   <nav class="mj-rail" aria-label="Secciones del sistema">
     <a class="mj-rail-marca" href="<?= mj_e($cfg['marca']['url']) ?>">
@@ -187,16 +197,23 @@ function mj_v_rail(array $cfg, string $base = '.'): void
     <ul class="mj-rail-lista">
       <?php foreach ($items as $it): ?>
         <li>
-          <a class="mj-rail-item<?= !empty($it['activo']) ? ' is-activo' : '' ?>"
-             href="<?= mj_e($it['url']) ?>" <?= !empty($it['activo']) ? 'aria-current="page"' : '' ?>>
-            <?= mj_icono($it['icono'], 20) ?><span><?= mj_e($it['texto']) ?></span>
-          </a>
+          <?php if ($pendiente($it)): ?>
+            <span class="mj-rail-item is-pendiente" title="Todavía no está disponible" aria-disabled="true">
+              <?= mj_icono($it['icono'], 20) ?><span><?= mj_e($it['texto']) ?></span>
+            </span>
+          <?php else: ?>
+            <a class="mj-rail-item<?= !empty($it['activo']) ? ' is-activo' : '' ?>"
+               href="<?= mj_e($it['url']) ?>" <?= !empty($it['activo']) ? 'aria-current="page"' : '' ?>>
+              <?= mj_icono($it['icono'], 20) ?><span><?= mj_e($it['texto']) ?></span>
+            </a>
+          <?php endif; ?>
         </li>
       <?php endforeach; ?>
     </ul>
 
     <ul class="mj-rail-lista mj-rail-pie">
-      <?php foreach ($cfg['rail_pie'] as $it): ?>
+      <?php foreach ($cfg['rail_pie'] as $it):
+            if ($pendiente($it) && !$mostrarPendientes) continue; ?>
         <li>
           <a class="mj-rail-item" href="<?= mj_e($it['url']) ?>">
             <?= mj_icono($it['icono'], 20) ?><span><?= mj_e($it['texto']) ?></span>

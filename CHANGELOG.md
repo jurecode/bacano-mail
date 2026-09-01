@@ -31,6 +31,10 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 ### Corregido
 - Al usar "Probar la conexión" ya no se pierde lo escrito en el formulario:
   antes se repintaba con lo guardado y había que teclearlo todo de nuevo.
+- La bandeja avisa cuando está mostrando mensajes de ejemplo, con el motivo.
+- El menú lateral ya no muestra secciones que no llevan a ninguna parte:
+  las que no tienen dirección quedan ocultas hasta que se configuren o se
+  instale el módulo correspondiente.
 
 ## [1.1.0] — 2026-08-19
 

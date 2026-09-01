@@ -851,3 +851,10 @@
 }
 .mj-aviso-demo strong{ display:block; margin-bottom:2px }
 .mj-aviso-demo code{ font-size:.92em; opacity:.85 }
+
+/* Secciones del menú que todavía no están disponibles */
+.mj-rail-item.is-pendiente{
+  opacity: .38;
+  cursor: default;
+  pointer-events: none;
+}

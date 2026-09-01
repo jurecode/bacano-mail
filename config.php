@@ -83,6 +83,7 @@ return [
      --------------------------------------------------------- */
   'interfaz' => [
     'mostrar_rail'          => true,
+    'rail_mostrar_pendientes' => false,  // secciones sin URL: ocultas (true = visibles, apagadas)
     'rail_colapsable'       => true,
     'mostrar_carpetas'      => true,
     'mostrar_buscador'      => true,
