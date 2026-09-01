@@ -21,6 +21,12 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ### Cambiado
 - La extensión `imap` pasa a ser opcional en la lista de requisitos.
+- El buscador de actualizaciones dice qué pasó de verdad: si el servidor no
+  llegó a GitHub, si el repositorio es privado, si el token no sirve o si
+  simplemente no hay ningún release publicado.
+
+### Agregado (actualizador)
+- Campo de token en el instalador, para repositorios privados.
 
 ## [1.1.0] — 2026-08-19
 

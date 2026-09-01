@@ -48,11 +48,19 @@ function mj_buscar_version(array $cfg, bool $forzar = false): array
     if (is_array($c)) return $c + $vacio;
   }
 
-  $api  = 'https://api.github.com/repos/' . $repo . '/releases/latest';
-  $json = mj_pedir($api, null, 6);   // consulta corta: no debe trabar el panel
+  $token = (string) ($cfg['actualizaciones']['token'] ?? '');
+  $api   = 'https://api.github.com/repos/' . $repo . '/releases/latest';
+  $json  = mj_pedir($api, null, 6, $estado, $token);   // consulta corta: no traba el panel
 
   if ($json === null) {
-    return mj_cachear($cache, $vacio, 'No se pudo consultar GitHub desde este servidor.');
+    $motivo = match (true) {
+      $estado === 0 => 'Este servidor no pudo conectarse con GitHub.',
+      $estado === 401 || $estado === 403 =>
+        'GitHub rechazó el token: revísalo o quítalo si el repositorio es público.',
+      $estado === 404 => mj_motivo_404($repo, $token),
+      default => 'GitHub respondió con el código ' . $estado . '.',
+    };
+    return mj_cachear($cache, $vacio, $motivo);
   }
 
   $d = json_decode($json, true);
@@ -86,10 +94,39 @@ function mj_hay_actualizacion(array $info): bool
   return $info['version'] !== '' && version_compare($info['version'], mj_version(), '>');
 }
 
-/** Petición HTTPS con curl o file_get_contents, lo que exista */
-function mj_pedir(string $url, ?string $destino = null, int $espera = 30): ?string
+/**
+ * GitHub responde 404 tanto si el repositorio no se ve como si no tiene
+ * releases. Se pregunta por el repositorio para saber cuál de las dos es.
+ */
+function mj_motivo_404(string $repo, string $token): string
+{
+  mj_pedir('https://api.github.com/repos/' . $repo, null, 6, $verRepo, $token);
+
+  if ($verRepo === 200) {
+    return 'El repositorio se ve bien, pero todavía no tiene ningún release publicado. '
+         . 'Si instalaste con git, actualiza con git pull.';
+  }
+  return $token === ''
+    ? 'El repositorio es privado o no existe. Si es privado, agrega abajo un token de GitHub; '
+      . 'si instalaste con git, actualiza con git pull.'
+    : 'No se encontró el repositorio: revisa el nombre (usuario/proyecto) y que el token tenga acceso.';
+}
+
+/**
+ * Petición HTTPS con curl o file_get_contents, lo que exista.
+ * $estado recoge el código HTTP (0 si no se pudo ni conectar), para poder
+ * distinguir "no hay internet" de "el repositorio es privado".
+ */
+function mj_pedir(string $url, ?string $destino = null, int $espera = 30,
+                  ?int &$estado = null, string $token = ''): ?string
 {
   $ua = 'bacano-mail-updater/' . mj_version();
+  $estado = 0;
+
+  $cabeceras = ['Accept: application/vnd.github+json'];
+  if (trim($token) !== '') {
+    $cabeceras[] = 'Authorization: Bearer ' . trim($token);
+  }
 
   if (function_exists('curl_init')) {
     $ch = curl_init($url);
@@ -98,19 +135,26 @@ function mj_pedir(string $url, ?string $destino = null, int $espera = 30): ?stri
       CURLOPT_FOLLOWLOCATION => true,
       CURLOPT_TIMEOUT        => $espera,
       CURLOPT_USERAGENT      => $ua,
-      CURLOPT_HTTPHEADER     => ['Accept: application/vnd.github+json'],
+      CURLOPT_HTTPHEADER     => $cabeceras,
     ]);
     $r      = curl_exec($ch);
-    $codigo = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-    if ($r === false || $codigo >= 400) return null;
+    $estado = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    if ($r === false || $estado >= 400) return null;
   } else {
     if (!ini_get('allow_url_fopen')) return null;
     $ctx = stream_context_create(['http' => [
-      'timeout' => $espera,
-      'header'  => "User-Agent: {$ua}\r\nAccept: application/vnd.github+json\r\n",
+      'timeout'       => $espera,
+      'ignore_errors' => true,
+      'header'        => "User-Agent: {$ua}\r\n" . implode("\r\n", $cabeceras) . "\r\n",
     ]]);
     $r = @file_get_contents($url, false, $ctx);
-    if ($r === false) return null;
+    $cab = function_exists('http_get_last_response_headers')
+      ? (http_get_last_response_headers() ?? [])
+      : ($http_response_header ?? []);
+    if (isset($cab[0]) && preg_match('#\s(\d{3})\s#', (string) $cab[0], $m)) {
+      $estado = (int) $m[1];
+    }
+    if ($r === false || $estado >= 400) return null;
   }
 
   if ($destino !== null) {
@@ -158,7 +202,8 @@ function mj_aplicar_actualizacion(array $info): array
   @mkdir($tmp, 0755, true);
   $zip = $tmp . '/paquete.zip';
 
-  if (mj_pedir($info['zip'], $zip) === null) {
+  $token = (string) ($cfg['actualizaciones']['token'] ?? '');
+  if (mj_pedir($info['zip'], $zip, 30, $estado, $token) === null) {
     mj_borrar_dir($tmp);
     return ['ok' => false, 'mensaje' => 'No se pudo descargar el paquete.', 'respaldo' => ''];
   }
