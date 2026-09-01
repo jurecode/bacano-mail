@@ -255,6 +255,7 @@ return [
     'repositorio' => 'jurecode/bacano-mail',
     'revisar'     => true,       // avisa en el panel cuando hay versión nueva
     'token'       => '',         // sólo si el repositorio es privado
+    'rama'        => 'main',     // si no hay releases, se actualiza desde esta rama
   ],
 
   /* ---------------------------------------------------------

@@ -169,9 +169,11 @@
 
         case 'nueva-carpeta':
         case 'config-carpetas':
+          aviso('Por ahora las carpetas se definen en instalar.php');
+          break;
+
         case 'agendar':
-          //  ⇢ API: estas pantallas llegan con el backend
-          aviso('Disponible al conectar la cuenta de correo');
+          aviso('Programar el envío todavía no está disponible');
           break;
 
         case 'marcar-todos':

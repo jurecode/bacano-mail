@@ -255,7 +255,7 @@ if ($accion === 'actualizar' && $autenticado) {
   if (!mj_hay_actualizacion($info_ver)) {
     $errores[] = 'No hay ninguna versión nueva que instalar.';
   } else {
-    $r = mj_aplicar_actualizacion($info_ver);
+    $r = mj_aplicar_actualizacion($info_ver, $cfg);
     if ($r['ok']) { $avisos[] = $r['mensaje'] . ' Respaldo guardado en ' . mj_e($r['respaldo']) . '.'; }
     else          { $errores[] = $r['mensaje']; }
   }

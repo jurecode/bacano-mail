@@ -52,6 +52,29 @@ function mj_buscar_version(array $cfg, bool $forzar = false): array
   $api   = 'https://api.github.com/repos/' . $repo . '/releases/latest';
   $json  = mj_pedir($api, null, 6, $estado, $token);   // consulta corta: no traba el panel
 
+  if ($json === null && $estado === 404) {
+    // Sin releases publicados se puede trabajar igual con la rama:
+    // se compara el archivo VERSION y se baja el zip de esa rama.
+    $rama = trim((string) ($cfg['actualizaciones']['rama'] ?? 'main')) ?: 'main';
+    $crudo = mj_pedir('https://api.github.com/repos/' . $repo . '/contents/VERSION?ref=' . rawurlencode($rama),
+                      null, 6, $estadoVer, $token);
+
+    if ($crudo !== null) {
+      $d = json_decode($crudo, true);
+      $version = trim((string) base64_decode((string) ($d['content'] ?? ''), true));
+
+      if ($version !== '') {
+        return mj_cachear($cache, [
+          'version' => $version,
+          'notas'   => 'Actualización directa desde la rama ' . $rama . '.',
+          'zip'     => 'https://api.github.com/repos/' . $repo . '/zipball/' . rawurlencode($rama),
+          'url'     => 'https://github.com/' . $repo . '/tree/' . $rama,
+          'origen'  => 'rama',
+        ] + $vacio, '');
+      }
+    }
+  }
+
   if ($json === null) {
     $motivo = match (true) {
       $estado === 0 => 'Este servidor no pudo conectarse con GitHub.',
@@ -188,7 +211,7 @@ function mj_puede_actualizar(): array
  * Descarga el release y reemplaza los archivos.
  * Devuelve ['ok'=>bool, 'mensaje'=>string, 'respaldo'=>string]
  */
-function mj_aplicar_actualizacion(array $info): array
+function mj_aplicar_actualizacion(array $info, array $cfg = []): array
 {
   $raiz = realpath(__DIR__ . '/..');
   if ($motivos = mj_puede_actualizar()) {

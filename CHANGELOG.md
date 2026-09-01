@@ -10,6 +10,21 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.3.0] — 2026-09-01
+
+### Agregado
+- **Actualizar desde GitHub sin publicar releases.** Si el repositorio no
+  tiene ninguno, se compara el archivo `VERSION` de la rama y se descarga el
+  zip de esa rama. Con un token, funciona igual en repositorios privados.
+
+### Corregido
+- El token no llegaba a la descarga del paquete: `mj_aplicar_actualizacion`
+  usaba una variable que nunca recibía, así que en repositorios privados la
+  descarga fallaba en silencio.
+- Tres botones sin implementar (crear carpeta, ajustes de carpetas y agendar)
+  decían "Disponible al conectar la cuenta de correo", como si el problema
+  fuera la conexión. Ahora dicen lo que realmente pasa.
+
 ## [1.2.1] — 2026-09-01
 
 ### Corregido
