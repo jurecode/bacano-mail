@@ -169,26 +169,20 @@ function mj_correo(array $ov = []): void
 
       <?php mj_v_lista($cfg, $lista, $carpeta, $filtro, $busca, $sel); ?>
 
-      <?php
-        // El resto de la conversación: mismo hilo, más antiguos primero.
-        $conversacion = [];
-        if ($sel && ($sel['hilo'] ?? '') !== '') {
-          foreach ($msgs as $otro) {
-            if (($otro['hilo'] ?? '') === $sel['hilo'] && $otro['id'] !== $sel['id']) {
-              $conversacion[] = $otro;
-            }
-          }
-          usort($conversacion, fn($a, $b) => strcmp($a['fecha'], $b['fecha']));
-        }
-        if ($cfg['interfaz']['panel_lectura'] !== 'oculto') mj_v_lector($cfg, $sel, $conversacion);
-      ?>
+      <?php if ($cfg['interfaz']['panel_lectura'] !== 'oculto') {
+              mj_v_lector($cfg, $sel, mj_conversacion($msgs, $sel));
+            } ?>
 
     </div>
 
     <?php /* Contenido de cada mensaje: el JS los intercambia sin recargar */ ?>
     <div class="mj-plantillas" hidden>
       <?php foreach ($lista as $m): ?>
-        <template data-mensaje="<?= mj_e($m['id']) ?>"><?php mj_v_lector_contenido($cfg, $m); ?></template>
+        <template data-mensaje="<?= mj_e($m['id']) ?>"><?php
+          // La misma conversación que vería al recargar: si no, al abrir con
+          // un clic el mensaje salía suelto y sólo aparecía al refrescar.
+          mj_v_lector_contenido($cfg, $m, mj_conversacion($msgs, $m));
+        ?></template>
       <?php endforeach; ?>
     </div>
 
@@ -293,6 +287,23 @@ function mj_v_rail(array $cfg, string $base = '.'): void
     </ul>
   </nav>
 <?php }
+
+/** Los demás mensajes del hilo de $m, del más antiguo al más nuevo. */
+function mj_conversacion(array $msgs, ?array $m): array
+{
+    if (!$m || ($m['hilo'] ?? '') === '') {
+        return [];
+    }
+
+    $otros = [];
+    foreach ($msgs as $x) {
+        if (($x['hilo'] ?? '') === $m['hilo'] && $x['id'] !== $m['id']) {
+            $otros[] = $x;
+        }
+    }
+    usort($otros, fn($a, $b) => strcmp($a['fecha'], $b['fecha']));
+    return $otros;
+}
 
 /**
  * Esconde la parte citada de una respuesta detrás de un botón, como hace

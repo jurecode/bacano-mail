@@ -10,6 +10,14 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.7.3] — 2026-09-01
+
+### Corregido
+- **Al abrir un correo con un clic no aparecían los mensajes anteriores de la
+  conversación; sólo al recargar.** El lector que dibuja el servidor recibía
+  la conversación, pero las plantillas que intercambia el JavaScript —que son
+  las que se usan al pinchar en la lista— se generaban sin ella.
+
 ## [1.7.2] — 2026-09-01
 
 ### Corregido
