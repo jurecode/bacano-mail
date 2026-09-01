@@ -324,7 +324,14 @@ if ($accion === 'guardar' && (!$instalado || $autenticado) && !$bloqueado) {
   }
 }
 
-$valor = fn(string $ruta) => mj_leer($cfg, $ruta);
+/* Al repintar tras "Probar la conexión" se conserva lo que la persona
+   escribió; si no, se muestra lo guardado. Las claves nunca se repintan. */
+$valor = function (string $ruta) use ($cfg) {
+  if (isset($_POST['c']) && is_array($_POST['c'])) {
+    return $_POST['c'][$ruta] ?? '';
+  }
+  return mj_leer($cfg, $ruta);
+};
 $modo_login = $instalado && !$autenticado;
 ?>
 <!doctype html>

@@ -28,6 +28,10 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 ### Agregado (actualizador)
 - Campo de token en el instalador, para repositorios privados.
 
+### Corregido
+- Al usar "Probar la conexión" ya no se pierde lo escrito en el formulario:
+  antes se repintaba con lo guardado y había que teclearlo todo de nuevo.
+
 ## [1.1.0] — 2026-08-19
 
 ### Agregado
