@@ -166,7 +166,8 @@ $req = [
   ['Extensión mbstring', extension_loaded('mbstring'), '', true],
   ['Extensión json',     extension_loaded('json'), '', true],
   ['Carpeta con permiso de escritura', is_writable(__DIR__), __DIR__, true],
-  ['Extensión imap (para conectar la cuenta real)', extension_loaded('imap'), '', false],
+  ['OpenSSL (para leer la casilla)', extension_loaded('openssl'), 'Sin OpenSSL no se puede conectar con el servidor de correo.', true],
+  ['Extensión imap (opcional: si falta, se lee por sockets)', extension_loaded('imap'), '', false],
   ['Conexión segura HTTPS', !empty($_SERVER['HTTPS']) || ($_SERVER['SERVER_NAME'] ?? '') === 'localhost', '', false],
 ];
 $bloqueado = false;
@@ -203,21 +204,37 @@ if ($accion === 'salir') {
   exit;
 }
 
-// --- Probar la conexión ---
+// --- Probar la conexión (entra de verdad a la casilla) ---
 if ($accion === 'probar' && (!$instalado || $autenticado)) {
-  $h = trim($_POST['c']['origen.imap.host'] ?? '');
-  $p = (int) ($_POST['c']['origen.imap.puerto'] ?? 993);
-  if ($h === '') {
+  require_once __DIR__ . '/inc/proveedores.php';
+
+  $conf = [
+    'host'     => trim($_POST['c']['origen.imap.host'] ?? ''),
+    'puerto'   => (int) ($_POST['c']['origen.imap.puerto'] ?? 993),
+    'cifrado'  => $_POST['c']['origen.imap.cifrado'] ?? 'ssl',
+    'usuario'  => trim($_POST['c']['origen.imap.usuario'] ?? ''),
+    'clave'    => (string) ($_POST['c']['origen.imap.clave'] ?? ''),
+    'carpeta'  => trim($_POST['c']['origen.imap.carpeta'] ?? '') ?: 'INBOX',
+    'validar_certificado' => !empty($_POST['c']['origen.imap.validar_certificado']),
+  ];
+  // si no escribió la clave ahora, se usa la que ya está guardada
+  if ($conf['clave'] === '') {
+    $conf['clave'] = (string) ($cfg['origen']['imap']['clave'] ?? '');
+  }
+
+  if ($conf['host'] === '') {
     $errores[] = 'Escribe primero el servidor IMAP.';
+  } elseif ($conf['usuario'] === '' || $conf['clave'] === '') {
+    $errores[] = 'Faltan el usuario o la clave de la casilla.';
   } else {
     $ini = microtime(true);
-    $sock = @fsockopen(($p === 993 ? 'ssl://' : '') . $h, $p, $en, $es, 6);
-    if ($sock) {
-      fclose($sock);
-      $avisos[] = 'El servidor ' . mj_e($h) . ':' . $p . ' responde (' . round((microtime(true) - $ini) * 1000) . ' ms). '
-                . (extension_loaded('imap') ? 'La extensión imap está disponible.' : 'Falta la extensión imap en este hosting.');
+    $prueba = mj_probar_imap($conf);
+    $ms = round((microtime(true) - $ini) * 1000);
+
+    if ($prueba['ok']) {
+      $avisos[] = $prueba['mensaje'] . ' (' . $ms . ' ms)';
     } else {
-      $errores[] = 'No se pudo conectar a ' . mj_e($h) . ':' . $p . ' — ' . mj_e($es ?: 'sin respuesta');
+      $errores[] = $prueba['mensaje'] . ' — ' . implode(' · ', array_slice($prueba['registro'], -2));
     }
   }
 }

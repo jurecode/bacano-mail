@@ -401,6 +401,8 @@ class MjProveedorImap implements MjProveedor
   }
 }
 
+require_once __DIR__ . '/imap-cliente.php';
+
 /* ------------------------------------------------------------
    Fábrica: entrega el proveedor según config.php
    ------------------------------------------------------------ */
@@ -413,7 +415,11 @@ function mj_proveedor(array $cfg): MjProveedor
   $archivo = $cfg['origen']['archivo'] ?? __DIR__ . '/../data/demo.json';
 
   if ($tipo === 'imap') {
-    $imap = new MjProveedorImap($cfg['origen']['imap'] ?? [], $cfg);
+    // Con la extensión imap se usa el proveedor nativo; si el hosting no la
+    // tiene (desde PHP 8.4 ya no viene de serie), se lee por sockets.
+    $imap = MjProveedorImap::disponible()
+      ? new MjProveedorImap($cfg['origen']['imap'] ?? [], $cfg)
+      : new MjProveedorImapSocket($cfg['origen']['imap'] ?? [], $cfg);
 
     // Se intenta de verdad antes de decidir: una casilla vacía es una
     // respuesta válida y no debe confundirse con un fallo de conexión.

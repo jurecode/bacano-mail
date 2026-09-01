@@ -10,6 +10,18 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.1.1] — 2026-09-01
+
+### Agregado
+- Lectura por sockets como respaldo: si el hosting no tiene la extensión
+  `imap` (desde PHP 8.4 ya no viene de serie), la casilla se lee igual.
+  La fábrica elige sola según lo que haya en el servidor.
+- El instalador prueba la conexión entrando de verdad a la casilla: informa
+  cuántos mensajes hay, o en qué punto del diálogo falló.
+
+### Cambiado
+- La extensión `imap` pasa a ser opcional en la lista de requisitos.
+
 ## [1.1.0] — 2026-08-19
 
 ### Agregado
