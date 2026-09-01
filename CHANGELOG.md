@@ -10,6 +10,16 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.2.0] — 2026-09-01
+
+### Agregado
+- **La bandeja pide clave.** Antes cualquiera con la dirección veía la
+  casilla; ahora se entra con la misma clave del panel. Se puede desactivar
+  con `acceso.proteger` sólo si se incrusta en una página que ya pide acceso.
+- **Envío por SMTP** desde la ventana de redacción, con la cuenta configurada
+  en el instalador. El endpoint exige sesión y token, para no quedar como un
+  relay abierto.
+
 ## [1.1.1] — 2026-09-01
 
 ### Agregado

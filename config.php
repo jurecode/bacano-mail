@@ -258,6 +258,15 @@ return [
   ],
 
   /* ---------------------------------------------------------
+     16b. ACCESO A LA BANDEJA
+     Se entra con la misma clave del panel. Ponlo en false sólo
+     si incrustas el módulo en una página que ya pide acceso.
+     --------------------------------------------------------- */
+  'acceso' => [
+    'proteger' => true,
+  ],
+
+  /* ---------------------------------------------------------
      17. PANEL DE ADMINISTRACIÓN
      La clave se guarda cifrada (hash) en config.local.php
      cuando completas instalar.php.

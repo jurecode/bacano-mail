@@ -430,10 +430,29 @@
     var form = raiz.querySelector('[data-rol="form-redactar"]');
     if (form) form.addEventListener('submit', function (ev) {
       ev.preventDefault();
-      //  ⇢ API: enviar por SMTP
-      cerrarModal();
-      form.reset();
-      aviso('El envío se activa al conectar la cuenta de correo');
+
+      var boton = form.querySelector('[type="submit"]');
+      var textoBoton = boton ? boton.textContent : '';
+      if (boton) { boton.disabled = true; boton.textContent = 'Enviando…'; }
+
+      var datos = new FormData(form);
+      datos.append('token', form.dataset.token || '');
+
+      fetch('enviar.php', { method: 'POST', body: datos, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          if (r.ok) {
+            cerrarModal();
+            form.reset();
+          }
+          aviso(r.mensaje);
+        })
+        .catch(function () {
+          aviso('No se pudo enviar: revisa la conexión.');
+        })
+        .finally(function () {
+          if (boton) { boton.disabled = false; boton.textContent = textoBoton; }
+        });
     });
 
     /* ---------------------------------------------------

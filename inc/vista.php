@@ -660,7 +660,7 @@ function mj_v_compositor(array $cfg): void
         <h2 class="mj-h2"><?= mj_e($t['redactar']) ?></h2>
         <button class="mj-icono-btn" type="button" data-accion="cerrar-modal" aria-label="Cerrar"><?= mj_icono('cerrar', 18) ?></button>
       </header>
-      <form class="mj-form" data-rol="form-redactar">
+      <form class="mj-form" data-rol="form-redactar" data-token="<?= mj_e(function_exists('mj_token_sesion') ? mj_token_sesion() : '') ?>">
         <label class="mj-campo">
           <span><?= mj_e($t['para']) ?></span>
           <input type="email" name="para" multiple placeholder="destinatario@correo.cl" autocomplete="off">
