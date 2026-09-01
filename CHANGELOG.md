@@ -10,6 +10,21 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.7.1] — 2026-09-01
+
+### Corregido
+- **El marcado como leído podía fallar sin que nadie se enterara.** Un
+  `UID STORE` sobre un mensaje que no está en la carpeta abierta —o con el
+  buzón en sólo lectura— también responde `OK` y no hace nada. Ahora se
+  releen las banderas después de marcar y, si no quedaron guardadas, se dice.
+- Se detecta cuando el servidor abre la carpeta en **sólo lectura**, donde
+  ninguna marca se guardaría.
+
+### Agregado
+- `diagnostico.php`: recorre la cadena completa contra tu propio servidor
+  —carpetas, UID y banderas de cada mensaje, prueba de marcado y verificación
+  en otra sesión— y muestra el diálogo IMAP en crudo.
+
 ## [1.7.0] — 2026-09-01
 
 ### Agregado

@@ -571,13 +571,13 @@ class MjProveedorImapSocket implements MjProveedor
             case 'leido':
             case 'no_leido':
                 $ok = $imap->marcar($uid, '\\Seen', $accion === 'no_leido');
-                $texto = $ok ? '' : 'No se pudo marcar en el servidor.';
+                $texto = $ok ? '' : ($imap->error ?: 'No se pudo marcar en el servidor.');
                 break;
 
             case 'destacar':
             case 'quitar_destacado':
                 $ok = $imap->marcar($uid, '\\Flagged', $accion === 'quitar_destacado');
-                $texto = $ok ? '' : 'No se pudo destacar en el servidor.';
+                $texto = $ok ? '' : ($imap->error ?: 'No se pudo destacar en el servidor.');
                 break;
 
             case 'mover':
@@ -603,6 +603,8 @@ class MjProveedorImapSocket implements MjProveedor
     }
 
     /** Marca el mensaje como leído en el servidor, no sólo en pantalla. */
+    public string $ultimo_error = '';
+
     public function marcar_leido(string $id): bool
     {
         if (!preg_match('/^imap-([a-z]+)-(\d+)$/', $id, $c)) {
@@ -622,6 +624,7 @@ class MjProveedorImapSocket implements MjProveedor
         $imap->abrir($carpeta);
 
         $ok = $imap->marcar((int) $c[2]);
+        if (!$ok) { $this->ultimo_error = $imap->error; }
         $imap->cerrar();
 
         // la copia en memoria, para que el contador baje ya

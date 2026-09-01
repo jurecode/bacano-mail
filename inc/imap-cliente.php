@@ -68,12 +68,26 @@ class MjImap
         return true;
     }
 
+    public bool $solo_lectura = false;
+
     /** Abre una carpeta y devuelve cuántos mensajes tiene. */
     public function abrir(string $carpeta = 'INBOX'): int
     {
         $r = $this->orden('SELECT ' . $this->citar($carpeta));
         if (!$r['ok']) { $this->error = "No se pudo abrir la carpeta $carpeta."; return 0; }
+
+        // Si el servidor la abre en sólo lectura, ningún STORE se guardará
+        $this->solo_lectura = stripos($r['texto'], '[READ-ONLY]') !== false;
+
         return preg_match('/\* (\d+) EXISTS/i', $r['texto'], $m) ? (int) $m[1] : 0;
+    }
+
+    /** Las banderas que tiene ahora mismo un mensaje, según el servidor. */
+    public function banderas(int $uid): ?string
+    {
+        $r = $this->orden("UID FETCH $uid (FLAGS)");
+        if (!$r['ok']) return null;
+        return preg_match('/FLAGS \(([^)]*)\)/i', $r['texto'], $m) ? trim($m[1]) : null;
     }
 
     public function cerrar(): void
@@ -118,9 +132,32 @@ class MjImap
     /** Marca banderas en un mensaje: leído, destacado… */
     public function marcar(int $uid, string $banderas = '\\Seen', bool $quitar = false): bool
     {
+        if ($this->solo_lectura) {
+            $this->error = 'El servidor abrió la carpeta en sólo lectura.';
+            return false;
+        }
+
         $signo = $quitar ? '-' : '+';
         $r = $this->orden("UID STORE $uid {$signo}FLAGS ($banderas)");
-        return $r['ok'];
+        if (!$r['ok']) {
+            $this->error = 'El servidor rechazó la marca.';
+            return false;
+        }
+
+        // Un STORE sobre un UID que no existe en esta carpeta también responde
+        // OK y no hace nada: hay que releer para saber si quedó de verdad.
+        $ahora = $this->banderas($uid);
+        if ($ahora === null) {
+            $this->error = 'El mensaje no está en esta carpeta (UID ' . $uid . ').';
+            return false;
+        }
+
+        $puesta = stripos($ahora, trim($banderas, '\\')) !== false;
+        if ($quitar ? $puesta : !$puesta) {
+            $this->error = 'La marca no se guardó en el servidor.';
+            return false;
+        }
+        return true;
     }
 
     /** Mueve un mensaje a otra carpeta. Usa MOVE, o COPY + borrar si no está. */

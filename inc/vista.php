@@ -42,7 +42,12 @@ function mj_correo(array $ov = []): void
       && method_exists($prov, 'marcar_leido')) {
     foreach ($msgs as $i => $m) {
       if ($m['id'] === $activo && !$m['leido']) {
-        if ($prov->marcar_leido($activo)) { $msgs[$i]['leido'] = true; }
+        if ($prov->marcar_leido($activo)) {
+          $msgs[$i]['leido'] = true;
+        } elseif (!empty($prov->ultimo_error)) {
+          // Se registra: si el servidor no acepta la marca, hay que saberlo
+          error_log('BACANO.MAIL: no se pudo marcar leído ' . $activo . ' — ' . $prov->ultimo_error);
+        }
         break;
       }
     }
