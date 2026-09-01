@@ -245,8 +245,15 @@ $info_ver = null;
 if ($accion === 'buscar_version' && (!$instalado || $autenticado)) {
   $info_ver = mj_buscar_version($cfg, true);
   if ($info_ver['error'])                 $errores[] = $info_ver['error'];
-  elseif (mj_hay_actualizacion($info_ver)) $avisos[]  = 'Hay una versión nueva: ' . mj_e($info_ver['version']) . '. La instalada es la ' . mj_e(mj_version()) . '.';
-  else                                     $avisos[]  = 'Ya tienes la última versión (' . mj_e(mj_version()) . ').';
+  elseif (mj_hay_actualizacion($info_ver)) $avisos[]  = 'Hay una versión nueva: ' . mj_e($info_ver['version'])
+                                             . ($info_ver['origen'] === 'rama' ? ' (de la rama)' : ' (release)')
+                                             . '. La instalada es la ' . mj_e(mj_version()) . '.';
+  else {
+    $remota = $info_ver['version'] !== '' ? $info_ver['version'] : '¿?';
+    $avisos[] = 'Ya tienes la última versión: instalada ' . mj_e(mj_version())
+              . ', en GitHub ' . mj_e($remota)
+              . ($info_ver['origen'] === 'rama' ? ' (de la rama)' : ' (del último release)') . '.';
+  }
 }
 
 // --- Aplicar actualización ---

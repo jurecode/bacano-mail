@@ -91,18 +91,40 @@ function mj_buscar_version(array $cfg, bool $forzar = false): array
     return mj_cachear($cache, $vacio, 'El repositorio aún no tiene ningún release publicado.');
   }
 
-  $r = [
-    'version' => ltrim((string) $d['tag_name'], 'vV'),
-    'notas'   => mb_substr((string) ($d['body'] ?? ''), 0, 1200),
+  $version = mj_normalizar_version((string) $d['tag_name']);
+  $info = [
+    'version' => $version,
+    'notas'   => (string) ($d['body'] ?? ''),
     'zip'     => (string) ($d['zipball_url'] ?? ''),
     'url'     => (string) ($d['html_url'] ?? ''),
-    'error'   => '',
-  ];
-  @file_put_contents($cache, json_encode($r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-  return $r;
+    'origen'  => 'release',
+  ] + $vacio;
+
+  // El release puede ir por detrás de la rama: si la rama tiene una versión
+  // más nueva, se ofrece esa. Así no hay que publicar un release por cada
+  // corrección.
+  $rama  = trim((string) ($cfg['actualizaciones']['rama'] ?? 'main')) ?: 'main';
+  $crudo = mj_pedir('https://api.github.com/repos/' . $repo . '/contents/VERSION?ref=' . rawurlencode($rama),
+                    null, 6, $estadoRama, $token);
+
+  if ($crudo !== null) {
+    $dr = json_decode($crudo, true);
+    $vRama = mj_normalizar_version(trim((string) base64_decode((string) ($dr['content'] ?? ''), true)));
+
+    if ($vRama !== '' && version_compare($vRama, $version, '>')) {
+      $info = [
+        'version' => $vRama,
+        'notas'   => 'Cambios publicados en la rama ' . $rama . ', todavía sin release.',
+        'zip'     => 'https://api.github.com/repos/' . $repo . '/zipball/' . rawurlencode($rama),
+        'url'     => 'https://github.com/' . $repo . '/tree/' . $rama,
+        'origen'  => 'rama',
+      ] + $vacio;
+    }
+  }
+
+  return mj_cachear($cache, $info, '');
 }
 
-/** Guarda el resultado (incluso si falló) para no reintentar en cada carga */
 function mj_cachear(string $cache, array $vacio, string $error): array
 {
   $r = $vacio;
@@ -112,9 +134,16 @@ function mj_cachear(string $cache, array $vacio, string $error): array
 }
 
 /** ¿Hay una versión más nueva que la instalada? */
+/** "v1.4.0" y "1.4.0" son la misma versión: la etiqueta suele llevar v. */
+function mj_normalizar_version(string $v): string
+{
+  return ltrim(trim($v), 'vV');
+}
+
 function mj_hay_actualizacion(array $info): bool
 {
-  return $info['version'] !== '' && version_compare($info['version'], mj_version(), '>');
+  return $info['version'] !== ''
+      && version_compare(mj_normalizar_version($info['version']), mj_normalizar_version(mj_version()), '>');
 }
 
 /**

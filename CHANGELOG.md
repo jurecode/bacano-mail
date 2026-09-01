@@ -10,6 +10,17 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.4.1] — 2026-09-01
+
+### Corregido
+- **La "v" de las etiquetas rompía la comparación de versiones.** Con un
+  release llamado `v1.4.0`, `version_compare` lo daba por más antiguo que la
+  1.3.2 instalada y el panel decía "ya tienes la última". Ahora se normaliza.
+- El buscador mira el último release **y** la rama, y ofrece el más nuevo de
+  los dos: no hace falta publicar un release por cada corrección.
+- El aviso decía "Ya tienes la última versión (1.3.2)" mostrando la instalada,
+  sin decir qué encontró en GitHub. Ahora muestra ambas y de dónde salió.
+
 ## [1.4.0] — 2026-09-01
 
 ### Agregado
