@@ -12,6 +12,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/inc/acceso.php';   // antes del config: la sesión manda
 require __DIR__ . '/correo.php';
 require_once __DIR__ . '/inc/smtp.php';
+require_once __DIR__ . '/inc/cuenta.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -54,14 +55,46 @@ $conf = [
     'usuario'   => (string) ($smtp['usuario'] ?? ''),
     'clave'     => (string) ($smtp['clave'] ?? ''),
     'remitente' => (string) ($smtp['desde'] ?? $smtp['usuario'] ?? ''),
-    'remitente_nombre' => (string) ($cfg['marca']['nombre'] ?? 'Correo'),
+    // el nombre que la persona configuró para su casilla, no el del producto
+    'remitente_nombre' => (string) ($cfg['usuario']['nombre'] ?? $cfg['marca']['nombre'] ?? ''),
 ];
 
 if ($conf['servidor'] === '' || $conf['usuario'] === '' || $conf['clave'] === '') {
     $responder(false, 'Falta configurar la cuenta de envío en instalar.php (servidor, usuario y clave SMTP).');
 }
 
+$firma = trim((string) ($cfg['cuenta_firma'] ?? ''));
+if ($firma !== '') {
+    $cuerpo .= "\n\n--\n" . $firma;
+}
+
 $r = mj_smtp_enviar($conf, $para, $asunto, $cuerpo);
+
+// Copia en la carpeta de enviados del servidor, para que quede en la casilla
+if ($r['ok']) {
+    $imapConf = $cfg['origen']['imap'] ?? [];
+    if (trim((string) ($imapConf['host'] ?? '')) !== '') {
+        require_once __DIR__ . '/inc/imap-cliente.php';
+        $imap = new MjImap($imapConf);
+        if ($imap->conectar() && $imap->entrar()) {
+            $carpeta = 'INBOX.Sent';
+            foreach ($imap->carpetas() as $c) {
+                if ($c['papel'] === 'enviados') { $carpeta = $c['nombre']; break; }
+            }
+            $nombreDe = (string) ($conf['remitente_nombre'] ?? '');
+            $sobre = "From: " . ($nombreDe !== '' ? '=?UTF-8?B?' . base64_encode($nombreDe) . '?= ' : '')
+                   . '<' . $conf['remitente'] . ">\r\n"
+                   . "To: <$para>\r\n"
+                   . 'Subject: =?UTF-8?B?' . base64_encode($asunto) . "?=\r\n"
+                   . 'Date: ' . date('r') . "\r\n"
+                   . "MIME-Version: 1.0\r\n"
+                   . "Content-Type: text/plain; charset=UTF-8\r\n\r\n"
+                   . $cuerpo;
+            $imap->guardar($carpeta, $sobre);
+            $imap->cerrar();
+        }
+    }
+}
 
 if ($r['ok'] && $cc !== '') {
     mj_smtp_enviar($conf, $cc, $asunto, $cuerpo);

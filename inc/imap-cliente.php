@@ -81,6 +81,61 @@ class MjImap
         if ($this->sock) { @$this->orden('LOGOUT'); @fclose($this->sock); $this->sock = null; }
     }
 
+    /** Carpetas del servidor, con su papel reconocido cuando se puede. */
+    public function carpetas(): array
+    {
+        $r = $this->orden('LIST "" "*"');
+        if (!$r['ok']) return [];
+
+        $salida = [];
+        foreach (preg_split('/\r?\n/', $r['texto']) as $linea) {
+            if (!preg_match('/^\* LIST \(([^)]*)\)\s+\S+\s+(.+)$/i', trim($linea), $m)) continue;
+
+            $banderas = strtolower($m[1]);
+            $nombre   = trim($m[2], " \"");
+            if (str_contains($banderas, '\noselect')) continue;
+
+            $corto = strtolower(preg_replace('#^INBOX[./]#i', '', $nombre));
+            $papel = match (true) {
+                strcasecmp($nombre, 'INBOX') === 0        => 'entrada',
+                str_contains($banderas, '\sent')          => 'enviados',
+                str_contains($banderas, '\drafts')        => 'borrador',
+                str_contains($banderas, '\trash')         => 'papelera',
+                str_contains($banderas, '\junk')          => 'spam',
+                str_contains($banderas, '\archive')       => 'archivo',
+                in_array($corto, ['sent', 'sent items', 'enviados'], true) => 'enviados',
+                in_array($corto, ['drafts', 'borradores'], true)           => 'borrador',
+                in_array($corto, ['trash', 'papelera'], true)              => 'papelera',
+                in_array($corto, ['junk', 'spam'], true)                   => 'spam',
+                in_array($corto, ['archive', 'archivados'], true)          => 'archivo',
+                default => '',
+            };
+            $salida[] = ['nombre' => $nombre, 'papel' => $papel];
+        }
+        return $salida;
+    }
+
+    /** Guarda una copia en una carpeta del servidor (los enviados, por ejemplo). */
+    public function guardar(string $carpeta, string $mensaje, string $banderas = '\\Seen'): bool
+    {
+        $largo = strlen($mensaje);
+        $etq   = 'a' . str_pad((string) (++$this->etiqueta), 3, '0', STR_PAD_LEFT);
+        fwrite($this->sock, "$etq APPEND " . $this->citar($carpeta) . " ($banderas) {" . $largo . "}\r\n");
+
+        $respuesta = (string) fgets($this->sock, 1024);
+        if (!str_starts_with($respuesta, '+')) {
+            return false;
+        }
+        fwrite($this->sock, $mensaje . "\r\n");
+
+        while (($linea = fgets($this->sock, 1024)) !== false) {
+            if (preg_match('/^' . $etq . ' (OK|NO|BAD)/i', $linea, $m)) {
+                return strtoupper($m[1]) === 'OK';
+            }
+        }
+        return false;
+    }
+
     /* ---------- lectura ---------- */
 
     /** Cabeceras de los últimos $limite mensajes, del más nuevo al más antiguo. */
@@ -125,10 +180,17 @@ class MjImap
         if (!$r['ok']) return '';
 
         $crudo = $r['texto'];
-        $corte = strpos($crudo, "\r\n");
-        if ($corte !== false) { $crudo = substr($crudo, $corte + 2); }
 
-        return $this->extraerCuerpo($crudo);
+        // La respuesta trae el mensaje como "literal": {N} y a continuación
+        // exactamente N bytes. Hay que cortar por N, o se cuela el ")" y la
+        // línea de cierre del servidor.
+        if (preg_match('/\{(\d+)\}\r?\n/', $crudo, $m, PREG_OFFSET_CAPTURE)) {
+            $inicio = $m[0][1] + strlen($m[0][0]);
+            return $this->extraerCuerpo(substr($crudo, $inicio, (int) $m[1][0]));
+        }
+
+        $corte = strpos($crudo, "\r\n");
+        return $corte === false ? '' : $this->extraerCuerpo(substr($crudo, $corte + 2));
     }
 
     /* ---------- MIME ---------- */

@@ -36,6 +36,8 @@ function mj_config(array $ov = []): array
     if (function_exists('mj_aplicar_credenciales')) {
       $cfg = mj_aplicar_credenciales($cfg);
     }
+    require_once __DIR__ . '/cuenta.php';
+    $cfg = mj_cuenta_aplicar($cfg);
     $cache = $cfg;
   }
 

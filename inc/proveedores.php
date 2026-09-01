@@ -440,28 +440,46 @@ class MjProveedorImapSocket implements MjProveedor
             return $this->cache;
         }
 
-        $total  = $imap->abrir((string) ($this->conf['carpeta'] ?? 'INBOX'));
-        $limite = max(1, min(200, (int) ($this->conf['limite'] ?? 50)));
+        $limite = max(1, min(100, (int) ($this->conf['limite'] ?? 25)));
 
-        foreach ($imap->cabeceras($total, $limite) as $m) {
-            $this->cache[] = [
-                'id'         => 'imap-' . $m['uid'],
-                'carpeta'    => 'entrada',
-                'de'         => $m['de'],
-                'para'       => $m['para'],
-                'cc'         => $m['cc'],
-                'asunto'     => $m['asunto'],
-                'extracto'   => '',
-                'cuerpo'     => '',
-                'fecha'      => $m['fecha'],
-                'leido'      => $m['leido'],
-                'destacado'  => $m['destacado'],
-                'importante' => false,
-                'silenciado' => false,
-                'etiquetas'  => [],
-                'adjuntos'   => [],
-            ];
+        // Se recorren las carpetas que el servidor reconoce: así "Enviados",
+        // "Papelera" y las demás dejan de verse vacías.
+        $carpetas = $imap->carpetas();
+        if (!$carpetas) {
+            $carpetas = [['nombre' => (string) ($this->conf['carpeta'] ?? 'INBOX'), 'papel' => 'entrada']];
         }
+
+        foreach ($carpetas as $c) {
+            if ($c['papel'] === '') continue;
+
+            $total = $imap->abrir($c['nombre']);
+            if ($total < 1) continue;
+
+            $cuantos = $c['papel'] === 'entrada' ? $limite : max(5, (int) round($limite / 2));
+
+            foreach ($imap->cabeceras($total, $cuantos) as $m) {
+                $this->cache[] = [
+                    'id'         => 'imap-' . $c['papel'] . '-' . $m['uid'],
+                    'carpeta'    => $c['papel'],
+                    'de'         => $m['de'],
+                    'para'       => $m['para'],
+                    'cc'         => $m['cc'],
+                    'asunto'     => $m['asunto'],
+                    'extracto'   => '',
+                    // el cuerpo se pide aquí: el lector lo necesita al dibujar
+                    'cuerpo'     => $imap->cuerpo($m['uid']),
+                    'fecha'      => $m['fecha'],
+                    'leido'      => $m['leido'],
+                    'destacado'  => $m['destacado'],
+                    'importante' => false,
+                    'silenciado' => false,
+                    'etiquetas'  => [],
+                    'adjuntos'   => [],
+                ];
+            }
+        }
+
+        usort($this->cache, fn($a, $b) => strcmp($b['fecha'], $a['fecha']));
         $imap->cerrar();
         return $this->cache;
     }
@@ -469,17 +487,7 @@ class MjProveedorImapSocket implements MjProveedor
     public function mensaje(string $id): ?array
     {
         foreach ($this->mensajes() as $m) {
-            if ($m['id'] !== $id) continue;
-
-            if ($m['cuerpo'] === '' && preg_match('/^imap-(\d+)$/', $id, $c)) {
-                $imap = new MjImap($this->conf);
-                if ($imap->conectar() && $imap->entrar()) {
-                    $imap->abrir((string) ($this->conf['carpeta'] ?? 'INBOX'));
-                    $m['cuerpo'] = $imap->cuerpo((int) $c[1]);
-                    $imap->cerrar();
-                }
-            }
-            return $m;
+            if ($m['id'] === $id) return $m;
         }
         return null;
     }

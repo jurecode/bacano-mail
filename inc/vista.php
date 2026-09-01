@@ -295,6 +295,9 @@ function mj_v_carpetas(array $cfg, string $carpeta, array $conteo): void
         </div>
       </div>
       <?php if (function_exists('mj_dentro') && mj_dentro()): ?>
+        <a class="mj-icono-btn" href="cuenta.php" title="Ajustes de tu cuenta" aria-label="Ajustes de tu cuenta">
+          <?= mj_icono('ajustes', 18) ?>
+        </a>
         <a class="mj-icono-btn mj-salir" href="?salir=1" title="Cerrar sesión" aria-label="Cerrar sesión">
           <?= mj_icono('salir', 18) ?>
         </a>

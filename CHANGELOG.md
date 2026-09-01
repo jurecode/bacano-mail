@@ -10,6 +10,24 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.4.0] — 2026-09-01
+
+### Agregado
+- **Ajustes de la cuenta** (`cuenta.php`): el nombre con el que sales en los
+  correos y una firma, guardados por casilla. Se llega desde la rueda que hay
+  junto a tu cuenta en la barra lateral.
+- Los correos enviados se **guardan en la carpeta Enviados del servidor**, así
+  quedan también en el celular y en cualquier otro cliente.
+
+### Corregido
+- **No se veía el cuerpo de los mensajes.** La lista traía sólo las cabeceras
+  y el cuerpo se pedía aparte, pero el lector dibuja desde la lista.
+- **Sólo se leía INBOX**, así que Enviados, Papelera y las demás carpetas se
+  veían vacías. Ahora se recorren las que el servidor reconoce.
+- Al leer el cuerpo se colaba el cierre de la respuesta IMAP: no se respetaba
+  el tamaño del literal.
+- El remitente salía como "BACANO.MAIL" en vez del nombre de la persona.
+
 ## [1.3.2] — 2026-09-01
 
 ### Corregido
