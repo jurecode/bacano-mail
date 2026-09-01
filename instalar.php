@@ -634,7 +634,24 @@ $modo_login = $instalado && !$autenticado;
           </div>
         <?php endif; ?>
 
-        <?php if ($titulo === 'Cuenta de correo'): ?>
+        <?php if ($titulo === 'Cuenta de correo'):
+              $tipoGuardado = mj_leer($cfg, 'origen.tipo') ?: 'demo';
+              $claveImap = (string) mj_leer($cfg, 'origen.imap.clave');
+              $claveSmtp = (string) mj_leer($cfg, 'origen.smtp.clave'); ?>
+
+          <div class="estado-cuenta" style="margin-top:16px; padding:12px 14px; border:1px solid rgba(255,255,255,.12); border-radius:10px;">
+            <strong style="display:block; margin-bottom:6px;">Lo que hay guardado ahora</strong>
+            <span class="ayuda">
+              Origen: <b><?= $tipoGuardado === 'imap' ? 'cuenta real por IMAP' : 'demostración' ?></b> ·
+              clave IMAP: <b><?= $claveImap !== '' ? 'guardada' : 'NO guardada' ?></b> ·
+              clave SMTP: <b><?= $claveSmtp !== '' ? 'guardada' : 'NO guardada' ?></b>
+              <?php if ($tipoGuardado === 'imap' && $claveImap === ''): ?>
+                <br>Sin la clave IMAP la bandeja seguirá mostrando mensajes de ejemplo:
+                escríbela y usa <em>Guardar cambios</em>.
+              <?php endif; ?>
+            </span>
+          </div>
+
           <div style="margin-top:16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             <button class="btn sec" type="submit" name="accion" value="probar">Probar la conexión</button>
             <span class="ayuda">Entra a la casilla con estos datos y cuenta los mensajes que hay.</span>

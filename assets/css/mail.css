@@ -837,3 +837,17 @@
   .mj-ventana{ display:block; height:auto; border:0; box-shadow:none; background:#fff; }
   .mj-lector-scroll{ overflow:visible; padding:0; }
 }
+
+/* Aviso cuando la bandeja está mostrando datos de ejemplo */
+.mj-aviso-demo{
+  margin: 10px 14px 4px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--mj-acento, #f59e0b) 45%, transparent);
+  border-left-width: 3px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--mj-acento, #f59e0b) 12%, transparent);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.mj-aviso-demo strong{ display:block; margin-bottom:2px }
+.mj-aviso-demo code{ font-size:.92em; opacity:.85 }

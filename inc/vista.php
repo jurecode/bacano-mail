@@ -355,6 +355,19 @@ function mj_v_lista(array $cfg, array $lista, string $carpeta, string $filtro, s
       </div>
     <?php endif; ?>
 
+    <?php if (($mj_fallo = mj_fallo_imap()) !== null): ?>
+      <p class="mj-aviso-demo">
+        <strong>Estás viendo mensajes de ejemplo.</strong>
+        No se pudo leer la casilla real: <?= mj_e($mj_fallo) ?>
+        Revisa los datos en <code>instalar.php</code>.
+      </p>
+    <?php elseif (($cfg['origen']['tipo'] ?? 'demo') !== 'imap'): ?>
+      <p class="mj-aviso-demo">
+        <strong>Estás viendo mensajes de ejemplo.</strong>
+        Para leer tu casilla real, elige <em>Cuenta real por IMAP</em> en <code>instalar.php</code>.
+      </p>
+    <?php endif; ?>
+
     <ol class="mj-lista" id="mj-lista">
       <?php
       $pasa = static fn(array $m): bool => $filtro === 'todos'
