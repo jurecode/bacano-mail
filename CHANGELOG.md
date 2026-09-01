@@ -10,6 +10,14 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.6.2] — 2026-09-01
+
+### Corregido
+- **Los correos abiertos seguían contando como no leídos.** Nunca se marcaba
+  `\Seen` en el servidor: el punto verde y el número del menú no bajaban
+  nunca, y en el celular seguían apareciendo sin leer. Ahora se marca al
+  abrirlos, y el contador baja en el acto.
+
 ## [1.6.1] — 2026-09-01
 
 ### Cambiado

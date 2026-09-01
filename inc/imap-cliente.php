@@ -115,6 +115,14 @@ class MjImap
         return $salida;
     }
 
+    /** Marca banderas en un mensaje: leído, destacado… */
+    public function marcar(int $uid, string $banderas = '\\Seen', bool $quitar = false): bool
+    {
+        $signo = $quitar ? '-' : '+';
+        $r = $this->orden("UID STORE $uid {$signo}FLAGS ($banderas)");
+        return $r['ok'];
+    }
+
     /** Guarda una copia en una carpeta del servidor (los enviados, por ejemplo). */
     public function guardar(string $carpeta, string $mensaje, string $banderas = '\\Seen'): bool
     {

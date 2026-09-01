@@ -36,6 +36,18 @@ function mj_correo(array $ov = []): void
   $busca   = trim((string) ($_GET['q'] ?? ''));
   $activo  = (string) ($_GET['m'] ?? '');
 
+  // ---- Al abrir un mensaje, se marca leído en el servidor ----
+  // Va antes de contar, para que el número del menú baje en el acto.
+  if ($activo !== '' && !empty($cfg['interfaz']['auto_marcar_leido'])
+      && method_exists($prov, 'marcar_leido')) {
+    foreach ($msgs as $i => $m) {
+      if ($m['id'] === $activo && !$m['leido']) {
+        if ($prov->marcar_leido($activo)) { $msgs[$i]['leido'] = true; }
+        break;
+      }
+    }
+  }
+
   // ---- Conteos por carpeta (para los badges) ----
   $conteo = [];
   foreach ($msgs as $m) {

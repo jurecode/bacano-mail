@@ -539,6 +539,37 @@ class MjProveedorImapSocket implements MjProveedor
         }
         return null;
     }
+
+    /** Marca el mensaje como leído en el servidor, no sólo en pantalla. */
+    public function marcar_leido(string $id): bool
+    {
+        if (!preg_match('/^imap-([a-z]+)-(\d+)$/', $id, $c)) {
+            return false;
+        }
+
+        $imap = new MjImap($this->conf);
+        if (!$imap->conectar() || !$imap->entrar()) {
+            return false;
+        }
+
+        // hay que abrir la carpeta donde vive el mensaje
+        $carpeta = (string) ($this->conf['carpeta'] ?? 'INBOX');
+        foreach ($imap->carpetas() as $x) {
+            if ($x['papel'] === $c[1]) { $carpeta = $x['nombre']; break; }
+        }
+        $imap->abrir($carpeta);
+
+        $ok = $imap->marcar((int) $c[2]);
+        $imap->cerrar();
+
+        // la copia en memoria, para que el contador baje ya
+        if ($ok && $this->cache !== null) {
+            foreach ($this->cache as $i => $m) {
+                if ($m['id'] === $id) { $this->cache[$i]['leido'] = true; break; }
+            }
+        }
+        return $ok;
+    }
 }
 
 /* ------------------------------------------------------------
