@@ -268,11 +268,12 @@
     function borrarSiempre(item) {
       if (!item) return;
 
-      var quien = (item.dataset.nombre || 'este mensaje');
+      var quien = (item.dataset.nombre || '').trim();
+      var de = quien ? ' de ' + quien : '';
       var cuantos = parseInt(item.dataset.hilo || '1', 10);
       var texto = cuantos > 1
-        ? 'Se borrarán definitivamente los ' + cuantos + ' mensajes de esta conversación de ' + quien + '.'
-        : 'Se borrará definitivamente el mensaje de ' + quien + '.';
+        ? 'Se borrarán los ' + cuantos + ' mensajes de esta conversación' + de + '.'
+        : 'Se borrará este mensaje' + de + '.';
 
       confirmar(texto, function () { borrarYa(item, cuantos); });
     }

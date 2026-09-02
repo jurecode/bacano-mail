@@ -10,6 +10,22 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.8.3] — 2026-09-01
+
+### Corregido
+- **La ventana de confirmación decía "el mensaje de este mensaje"** y siempre
+  hablaba en singular: las filas de la lista no llevaban el nombre de quien
+  escribe ni cuántos mensajes tiene la conversación, así que no había con qué
+  redactar la frase. Ahora sí, y si no hay nombre la frase se acorta en vez de
+  quedar coja.
+- **La ventana no era responsive.** Reutilizaba la caja de los formularios,
+  cuyo pie no tiene margen lateral, y en el móvil los botones se salían por el
+  borde derecho. Ahora es una pieza propia: tarjeta centrada en el escritorio,
+  hoja que sube desde abajo en el móvil —con sitio para la barra del sistema— y
+  botones a lo ancho, el de eliminar arriba.
+- La confirmación se veía sosa: ahora lleva el icono de la papelera en un
+  círculo rojo, el texto centrado y "Cancelar" en gris en lugar de blanco.
+
 ## [1.8.2] — 2026-09-01
 
 ### Corregido

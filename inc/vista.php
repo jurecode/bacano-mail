@@ -583,6 +583,9 @@ function mj_v_item(array $cfg, array $m, bool $activo, string $carpeta, bool $oc
         'destacado' => $m['destacado'] ?: '',
         'buscar'    => $busq,
         'grupo'     => mj_grupo_fecha($m['fecha'], $cfg),
+        // los usa la ventana de confirmación para decir de quién y cuántos
+        'nombre'    => $persona['nombre'] ?: $persona['email'],
+        'hilo'      => (string) max(1, (int) ($m['en_hilo'] ?? 1)),
       ]) ?>>
     <a class="mj-item-liga" href="<?= mj_e($url) ?>">
       <span class="mj-sr">Abrir mensaje: <?= mj_e($m['asunto']) ?></span>
@@ -859,20 +862,19 @@ function mj_v_compositor(array $cfg): void
 /** Ventana de confirmación para las acciones sin vuelta atrás */
 function mj_v_confirmar(): void
 { ?>
-  <div class="mj-modal" data-modal="confirmar" hidden>
+  <div class="mj-modal mj-modal-conf" data-modal="confirmar" hidden>
     <div class="mj-modal-fondo" data-accion="cerrar-modal"></div>
-    <div class="mj-modal-caja mj-modal-chica" role="alertdialog" aria-modal="true" aria-labelledby="mj-conf-t">
-      <header class="mj-modal-cab">
-        <h2 class="mj-h2" id="mj-conf-t" data-rol="confirmar-titulo">Eliminar definitivamente</h2>
-        <button class="mj-icono-btn" type="button" data-accion="cerrar-modal" aria-label="Cerrar"><?= mj_icono('cerrar', 18) ?></button>
-      </header>
-      <p class="mj-confirmar-texto" data-rol="confirmar-texto"></p>
-      <p class="mj-confirmar-nota">Esta acción no se puede deshacer.</p>
-      <div class="mj-modal-pie">
-        <div class="mj-modal-pie-btns">
-          <button class="mj-btn" type="button" data-accion="cerrar-modal">Cancelar</button>
-          <button class="mj-btn mj-btn-peligro" type="button" data-rol="confirmar-si">Eliminar</button>
-        </div>
+    <div class="mj-conf" role="alertdialog" aria-modal="true" aria-labelledby="mj-conf-t">
+      <button class="mj-conf-x" type="button" data-accion="cerrar-modal" aria-label="Cerrar"><?= mj_icono('cerrar', 17) ?></button>
+      <div class="mj-conf-cuerpo">
+        <span class="mj-conf-icono" aria-hidden="true"><?= mj_icono('papelera', 22) ?></span>
+        <h2 class="mj-conf-titulo" id="mj-conf-t" data-rol="confirmar-titulo">Eliminar definitivamente</h2>
+        <p class="mj-conf-texto" data-rol="confirmar-texto"></p>
+        <p class="mj-conf-nota">Esta acción no se puede deshacer.</p>
+      </div>
+      <div class="mj-conf-pie">
+        <button class="mj-btn mj-btn-2" type="button" data-accion="cerrar-modal">Cancelar</button>
+        <button class="mj-btn mj-btn-peligro" type="button" data-rol="confirmar-si">Eliminar</button>
       </div>
     </div>
   </div>
