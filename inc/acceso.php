@@ -74,6 +74,19 @@ function mj_credenciales(): ?array
 }
 
 /**
+ * La casilla de quien está dentro. Si la sesión no la tiene (instalación
+ * sin clave), se cae a la configurada en instalar.php.
+ */
+function mj_buzon_actual(array $cfg): string
+{
+    $c = mj_credenciales();
+    if ($c !== null && ($c['usuario'] ?? '') !== '') {
+        return (string) $c['usuario'];
+    }
+    return (string) ($cfg['origen']['imap']['usuario'] ?? '');
+}
+
+/**
  * Aplica al config la casilla con la que se entró: se lee y se envía con
  * esa cuenta, sin necesidad de dejar la clave guardada en el servidor.
  */

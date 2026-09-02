@@ -201,15 +201,3 @@ function mj_direcciones(string $campo): array
     }
     return $salida;
 }
-
-/**
- * La casilla de quien está dentro. Si la sesión no la tiene (instalación
- * sin clave), se cae a la configurada en instalar.php.
- */
-function mj_buzon_actual(array $cfg): string
-{
-    if (function_exists('mj_credenciales') && ($c = mj_credenciales()) !== null) {
-        return (string) ($c['usuario'] ?? '');
-    }
-    return (string) ($cfg['origen']['imap']['usuario'] ?? '');
-}

@@ -36,6 +36,7 @@ function mj_correo(array $ov = []): void
     array_column($cfg['carpetas'], 'id'),
     array_column($cfg['carpetas_propias'], 'id')
   );
+  $carpetas_ids[] = 'cuenta';   // vista de ajustes: no es carpeta ni sale en el menú
   $carpeta = mj_param('carpeta', $carpetas_ids, $carpetas_ids[0] ?? 'entrada');
   $filtro  = mj_param('f', ['todos', 'leidos', 'no_leidos'], 'todos');
   $busca   = trim((string) ($_GET['q'] ?? ''));
@@ -168,6 +169,10 @@ function mj_correo(array $ov = []): void
       <?php if ($carpeta === 'contactos'): ?>
 
         <?php mj_v_contactos($cfg, $contactos); ?>
+
+      <?php elseif ($carpeta === 'cuenta'): ?>
+
+        <?php mj_v_ajustes($cfg); ?>
 
       <?php else: ?>
 
@@ -364,6 +369,141 @@ function mj_plegar_citado(string $html): string
         . '<details class="mj-citado"><summary title="Mostrar lo anterior">···</summary>'
         . '<div class="mj-citado-cuerpo">' . $citado . '</div></details>';
 }
+
+/** Ajustes de la cuenta, dentro de la propia ventana */
+function mj_v_ajustes(array $cfg): void
+{
+  require_once __DIR__ . '/cuenta.php';
+  require_once __DIR__ . '/cpanel.php';
+  require_once __DIR__ . '/cuentas.php';
+
+  $correo = function_exists('mj_buzon_actual') ? mj_buzon_actual($cfg) : '';
+  $datos  = $correo !== '' ? mj_cuenta($correo) : ['nombre' => '', 'firma' => ''];
+  $tok    = function_exists('mj_token_sesion') ? mj_token_sesion() : '';
+  $otras  = function_exists('mj_cuentas_lista') ? mj_cuentas_lista() : [];
+  ?>
+  <section class="mj-ajustes" aria-label="Ajustes de tu cuenta">
+    <div class="mj-ajustes-col">
+
+      <header class="mj-ajustes-cab">
+        <div class="mj-agenda-titulo">
+          <?php if ($cfg['interfaz']['mostrar_carpetas']): ?>
+            <button class="mj-icono-btn mj-solo-movil" type="button" data-accion="abrir-carpetas"
+                    aria-label="Abrir el menú de carpetas"><?= mj_icono('menu', 20) ?></button>
+          <?php endif; ?>
+          <h1 class="mj-h1">Tu cuenta</h1>
+        </div>
+        <p class="mj-agenda-nota"><?= mj_e($correo) ?></p>
+      </header>
+
+      <div class="mj-ajustes-cuerpo">
+
+        <form class="mj-bloque" data-rol="form-perfil" data-token="<?= mj_e($tok) ?>">
+          <div class="mj-bloque-cab">
+            <h2 class="mj-bloque-t">Cómo te ven</h2>
+            <p class="mj-bloque-d">El nombre y la firma con los que salen tus correos.</p>
+          </div>
+
+          <label class="mj-set">
+            <span class="mj-set-l">Nombre</span>
+            <input class="mj-set-c" type="text" name="nombre" maxlength="80" autocomplete="off"
+                   value="<?= mj_e($datos['nombre']) ?>" placeholder="Nombre y apellido">
+          </label>
+
+          <label class="mj-set">
+            <span class="mj-set-l">Firma</span>
+            <textarea class="mj-set-c" name="firma" rows="3" maxlength="500"
+                      placeholder="Se agrega al final de los correos que envíes"><?= mj_e($datos['firma']) ?></textarea>
+          </label>
+
+          <p class="mj-set-previo">
+            <?= mj_v_avatar(['nombre' => $datos['nombre'], 'email' => $correo], 30) ?>
+            <span>
+              <strong data-rol="previo-nombre"><?= mj_e($datos['nombre'] ?: strtok($correo, '@')) ?></strong>
+              <em><?= mj_e($correo) ?></em>
+            </span>
+          </p>
+
+          <div class="mj-bloque-pie">
+            <button class="mj-btn" type="submit">Guardar</button>
+          </div>
+        </form>
+
+        <form class="mj-bloque" data-rol="form-clave" data-token="<?= mj_e($tok) ?>">
+          <div class="mj-bloque-cab">
+            <h2 class="mj-bloque-t">Contraseña</h2>
+            <p class="mj-bloque-d">La de esta casilla, la misma que usas en el celular.</p>
+          </div>
+
+          <?php if (!mj_cpanel_listo($cfg)): ?>
+            <p class="mj-set-nota">
+              Para cambiarla hace falta conectar el panel del hosting: por IMAP no se
+              puede, sólo el panel manda sobre las casillas. Se configura una vez en
+              <a href="instalar.php">instalar.php</a>, en «Panel del hosting».
+            </p>
+          <?php else: ?>
+            <label class="mj-set">
+              <span class="mj-set-l">Ahora</span>
+              <input class="mj-set-c" type="password" name="clave_actual" autocomplete="current-password">
+            </label>
+            <label class="mj-set">
+              <span class="mj-set-l">Nueva</span>
+              <input class="mj-set-c" type="password" name="clave_nueva" autocomplete="new-password" minlength="10">
+            </label>
+            <label class="mj-set">
+              <span class="mj-set-l">Repite la nueva</span>
+              <input class="mj-set-c" type="password" name="clave_repite" autocomplete="new-password" minlength="10">
+            </label>
+            <p class="mj-set-ayuda">Al menos 10 caracteres. Mejor larga que complicada.</p>
+            <p class="mj-set-nota mj-set-nota-ojo">
+              Se cambia en el servidor: después hay que actualizarla en el celular y en
+              cualquier otro programa que abra esta casilla.
+            </p>
+            <div class="mj-bloque-pie">
+              <button class="mj-btn mj-btn-peligro" type="submit">Cambiar la contraseña</button>
+            </div>
+          <?php endif; ?>
+        </form>
+
+        <section class="mj-bloque">
+          <div class="mj-bloque-cab">
+            <h2 class="mj-bloque-t">Casillas en este equipo</h2>
+            <p class="mj-bloque-d">Para cambiar de una a otra sin escribir la contraseña.</p>
+          </div>
+
+          <ul class="mj-set-casillas">
+            <?php
+              $actual = strtolower($correo);
+              $vistas = array_map(fn($g) => strtolower($g['usuario']), $otras);
+              if (!in_array($actual, $vistas, true) && $actual !== '') {
+                array_unshift($otras, ['usuario' => $actual]);
+              }
+              foreach ($otras as $g): $es = strtolower($g['usuario']) === $actual; ?>
+              <li class="mj-set-casilla<?= $es ? ' is-activa' : '' ?>">
+                <?= mj_v_avatar(['nombre' => '', 'email' => $g['usuario']], 28) ?>
+                <span class="mj-set-casilla-txt"><?= mj_e($g['usuario']) ?></span>
+                <?php if ($es): ?>
+                  <span class="mj-set-marca"><?= mj_icono('check', 15) ?> En uso</span>
+                <?php else: ?>
+                  <a class="mj-btn mj-btn-2 mj-btn-chico" href="?cuenta=<?= rawurlencode($g['usuario']) ?>&amp;t=<?= mj_e($tok) ?>">Usar</a>
+                  <a class="mj-icono-btn" title="Quitar de este equipo"
+                     aria-label="Quitar <?= mj_e($g['usuario']) ?> de este equipo"
+                     href="?olvidar=<?= rawurlencode($g['usuario']) ?>&amp;t=<?= mj_e($tok) ?>"><?= mj_icono('cerrar', 15) ?></a>
+                <?php endif; ?>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+
+          <div class="mj-bloque-pie mj-bloque-pie-izq">
+            <a class="mj-btn mj-btn-2" href="?agregar=1"><?= mj_icono('mas', 16) ?><span>Agregar otra casilla</span></a>
+            <a class="mj-btn mj-btn-2" href="?salir=1"><?= mj_icono('salir', 16) ?><span>Cerrar sesión</span></a>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </section>
+<?php }
 
 /** Las variables de tema que van en el atributo style de la raíz */
 function mj_estilo_tema(array $cfg): string
@@ -638,7 +778,8 @@ function mj_v_carpetas(array $cfg, string $carpeta, array $conteo): void
         </div>
       <?php endif; ?>
       <?php if ($dentro): ?>
-        <a class="mj-icono-btn" href="cuenta.php" title="Ajustes de tu cuenta" aria-label="Ajustes de tu cuenta">
+        <a class="mj-icono-btn<?= $carpeta === 'cuenta' ? ' is-activo' : '' ?>" href="?carpeta=cuenta"
+           title="Ajustes de tu cuenta" aria-label="Ajustes de tu cuenta">
           <?= mj_icono('ajustes', 18) ?>
         </a>
         <a class="mj-icono-btn mj-salir" href="?salir=1" title="Cerrar sesión" aria-label="Cerrar sesión">

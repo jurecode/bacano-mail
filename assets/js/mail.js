@@ -564,6 +564,58 @@
     }
 
     /* ---------------------------------------------------------
+       Ajustes de la cuenta
+       --------------------------------------------------------- */
+    function enviarAjuste(form, que, alTerminar) {
+      var boton = form.querySelector('[type="submit"]');
+      var antes = boton ? boton.textContent : '';
+      if (boton) { boton.disabled = true; boton.textContent = 'Guardando…'; }
+
+      var datos = new FormData(form);
+      datos.append('que', que);
+      datos.append('token', form.dataset.token || '');
+
+      fetch('ajustes.php', { method: 'POST', body: datos, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          if (boton) { boton.disabled = false; boton.textContent = antes; }
+          aviso((r && r.mensaje) || 'No se pudo guardar.');
+          if (r && r.ok && alTerminar) alTerminar(r);
+        })
+        .catch(function () {
+          if (boton) { boton.disabled = false; boton.textContent = antes; }
+          aviso('No se pudo guardar. Revisa la conexión.');
+        });
+    }
+
+    var formPerfil = raiz.querySelector('[data-rol="form-perfil"]');
+    if (formPerfil) {
+      formPerfil.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        enviarAjuste(formPerfil, 'perfil', function (r) {
+          // El nombre sale en la vista previa y en el pie del menú
+          var previo = raiz.querySelector('[data-rol="previo-nombre"]');
+          if (previo && r.nombre) previo.textContent = r.nombre;
+          var pie = raiz.querySelector('.mj-usuario-txt strong');
+          if (pie && r.nombre) pie.textContent = r.nombre;
+        });
+      });
+
+      // La vista previa sigue lo que se escribe, sin esperar a guardar
+      var campoNombre = formPerfil.elements.nombre;
+      if (campoNombre) campoNombre.addEventListener('input', function () {
+        var previo = raiz.querySelector('[data-rol="previo-nombre"]');
+        if (previo) previo.textContent = campoNombre.value.trim() || '—';
+      });
+    }
+
+    var formClave = raiz.querySelector('[data-rol="form-clave"]');
+    if (formClave) formClave.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      enviarAjuste(formClave, 'clave', function () { formClave.reset(); });
+    });
+
+    /* ---------------------------------------------------------
        Sugerencias al escribir un destinatario
        --------------------------------------------------------- */
     function sugerencias(campo) {

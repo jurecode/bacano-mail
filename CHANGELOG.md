@@ -10,6 +10,27 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.12.0] — 2026-09-01
+
+### Cambiado
+- **"Tu cuenta" vive dentro de la ventana**, donde va la bandeja, igual que
+  Contactos: el menú y las carpetas se quedan donde están y sólo cambia el
+  panel de la derecha. Ya no es una página aparte.
+- **Diseño nuevo de los ajustes.** Tres bloques —cómo te ven, contraseña y
+  casillas en este equipo—, con la etiqueta encima de cada campo en vez de al
+  lado, que con palabras largas dejaba los valores bailando. Responsive: en el
+  móvil ocupa el ancho, los botones van a lo largo y el menú se abre con el
+  botón de siempre.
+- Guardar el nombre, la firma y la contraseña ya no recarga la página, y el
+  nombre se ve al momento tanto en la vista previa como al pie del menú.
+- Las casillas guardadas también se administran desde aquí, no sólo desde el
+  desplegable del pie.
+
+### Corregido
+- `mj_buzon_actual()` estaba en `inc/contactos.php`, que no todo el mundo
+  cargaba: mirar los ajustes desde el endpoint nuevo daba un error fatal. Pasa
+  a `inc/acceso.php`, junto a las credenciales, que es de donde sale el dato.
+
 ## [1.11.1] — 2026-09-01
 
 ### Cambiado
