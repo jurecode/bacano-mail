@@ -267,6 +267,9 @@ return [
      --------------------------------------------------------- */
   'acceso' => [
     'proteger' => true,
+    // Texto y contacto que se ven en la pantalla de acceso
+    'lema'     => 'Tu casilla, con la bandeja de siempre: buscador, carpetas y conversaciones agrupadas.',
+    'soporte'  => '',
     // 'casilla' = se entra con el correo y su contraseña (se comprueban
     // contra el servidor IMAP). 'clave' = una sola clave para todos.
     'modo'     => 'casilla',

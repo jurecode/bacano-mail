@@ -10,6 +10,19 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.8.0] — 2026-09-01
+
+### Cambiado
+- **Pantalla de acceso nueva**, en blanco y negro y a dos columnas: la marca y
+  su descripción a un lado, el formulario al otro. Se adapta a móvil apilando
+  las dos partes. El texto y el contacto de soporte se configuran en
+  `acceso.lema` y `acceso.soporte`.
+
+### Agregado
+- Botón para ver la contraseña mientras se escribe.
+- **Mantener la sesión abierta**: si se activa, la sesión dura 30 días; si no,
+  se cierra al cerrar el navegador.
+
 ## [1.7.3] — 2026-09-01
 
 ### Corregido

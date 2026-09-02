@@ -14,6 +14,17 @@ function mj_sesion(): void
 {
     if (session_status() === PHP_SESSION_NONE) {
         session_name('bacano_mail');
+
+        // Si se pidió mantener la sesión, la cookie dura 30 días; si no,
+        // se cierra al cerrar el navegador.
+        $dias = !empty($_COOKIE['bacano_recordar']) ? 30 * 24 * 3600 : 0;
+        session_set_cookie_params([
+            'lifetime' => $dias,
+            'path'     => '/',
+            'httponly' => true,
+            'samesite' => 'Lax',
+            'secure'   => !empty($_SERVER['HTTPS']),
+        ]);
         session_start();
     }
 }
@@ -29,6 +40,7 @@ function mj_salir(): void
     mj_sesion();
     $_SESSION = [];
     session_destroy();
+    setcookie('bacano_recordar', '', ['expires' => time() - 3600, 'path' => '/']);
 }
 
 /** Token para los formularios que hacen algo (enviar, por ejemplo). */
@@ -155,6 +167,17 @@ function mj_exigir_acceso(array $cfg): bool
 
                 if ($imap->conectar() && $imap->entrar()) {
                     $imap->cerrar();
+
+                    // la cookie de "recordarme" se decide antes de crear la sesión
+                    $recordar = isset($_POST['mj_recordar']);
+                    setcookie('bacano_recordar', $recordar ? '1' : '', [
+                        'expires'  => $recordar ? time() + 30 * 24 * 3600 : time() - 3600,
+                        'path'     => '/',
+                        'httponly' => true,
+                        'samesite' => 'Lax',
+                        'secure'   => !empty($_SERVER['HTTPS']),
+                    ]);
+
                     session_regenerate_id(true);
                     $_SESSION['mj_acceso']  = true;
                     $_SESSION['mj_usuario'] = $correo;
@@ -173,7 +196,13 @@ function mj_exigir_acceso(array $cfg): bool
 
 function mj_pantalla_acceso(array $cfg, string $error = '', bool $soloAviso = false, string $modo = 'casilla'): void
 {
-    $marca = $cfg['marca']['nombre'] ?? 'Correo';
+    $marca  = $cfg['marca']['nombre'] ?? 'Correo';
+    $corto  = $cfg['marca']['nombre_corto'] ?? mb_substr($marca, 0, 1);
+    $logo   = (string) ($cfg['marca']['logo'] ?? '');
+    $sitio  = (string) ($cfg['marca']['url'] ?? '../');
+    $lema   = (string) ($cfg['acceso']['lema'] ?? '');
+    $soporte = (string) ($cfg['acceso']['soporte'] ?? '');
+
     http_response_code($soloAviso ? 503 : 401);
     ?>
 <!doctype html>
@@ -184,63 +213,280 @@ function mj_pantalla_acceso(array $cfg, string $error = '', bool $soloAviso = fa
 <title><?= mj_e($marca) ?> · Acceso</title>
 <meta name="robots" content="noindex, nofollow">
 <style>
-  :root{ color-scheme: dark }
-  *{ box-sizing:border-box }
+  *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0 }
+
+  :root{
+    --tinta:#0a0a0a;
+    --tinta-2:#525252;
+    --tinta-3:#8a8a8a;
+    --linea:#e4e4e4;
+    --papel:#ffffff;
+    --fondo:#ececec;
+    --marca-agua:#f4f4f4;
+  }
+
+  html{ -webkit-text-size-adjust:100% }
   body{
-    margin:0; min-height:100vh; display:grid; place-items:center;
-    background:#0b1220; color:#e8eaf0; padding:24px;
-    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    min-height:100svh;
+    display:grid; place-items:center;
+    padding:clamp(16px,4vw,48px);
+    background:var(--fondo);
+    color:var(--tinta);
+    font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:15px; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
   }
-  .caja{
-    width:100%; max-width:340px; padding:28px;
-    background:#111a2b; border:1px solid rgba(255,255,255,.10); border-radius:16px;
+
+  /* ---------- La tarjeta, en dos columnas ---------- */
+  .tarjeta{
+    width:100%; max-width:980px;
+    display:grid; grid-template-columns:1fr 1fr;
+    background:var(--papel);
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 1px 2px rgba(0,0,0,.04), 0 24px 60px -30px rgba(0,0,0,.25);
   }
-  h1{ margin:0 0 4px; font-size:19px }
-  p.sub{ margin:0 0 20px; font-size:13px; color:#93a0b8 }
-  label{ display:block; font-size:12px; color:#93a0b8; margin-bottom:6px }
-  input{
-    width:100%; padding:11px 12px; border-radius:9px;
-    background:#0b1220; border:1px solid rgba(255,255,255,.14); color:#e8eaf0;
-    font-size:15px;
+
+  /* ---------- Columna izquierda ---------- */
+  .presenta{
+    position:relative;
+    display:flex; flex-direction:column; justify-content:space-between;
+    padding:clamp(20px,3vw,32px);
+    min-height:420px;
+    overflow:hidden;
   }
-  input:focus{ outline:none; border-color:#3b82f6 }
-  button{
-    width:100%; margin-top:14px; padding:11px; border:0; border-radius:9px;
-    background:#3b82f6; color:#fff; font-size:14px; font-weight:600; cursor:pointer;
+  .marca-agua{
+    position:absolute; top:-6%; left:-4%;
+    font-size:230px; font-weight:800; line-height:.8; letter-spacing:-.06em;
+    color:var(--marca-agua);
+    user-select:none; pointer-events:none;
   }
-  button:hover{ background:#2f6fd8 }
-  .error{
-    margin:0 0 14px; padding:9px 11px; border-radius:9px; font-size:13px;
-    background:rgba(239,68,68,.14); border:1px solid rgba(239,68,68,.35); color:#fca5a5;
+  .volver{
+    position:relative; z-index:1;
+    display:grid; place-items:center;
+    width:34px; height:34px;
+    border:1px solid var(--linea); border-radius:9px;
+    color:var(--tinta); text-decoration:none; font-size:15px;
+    transition:border-color .2s, background-color .2s;
+  }
+  .volver:hover{ border-color:var(--tinta); background:#fafafa }
+
+  .presenta__pie{ position:relative; z-index:1 }
+  .marca{ display:flex; align-items:center; gap:10px; margin-bottom:14px }
+  .marca__icono{
+    display:grid; place-items:center;
+    width:30px; height:30px; border-radius:8px;
+    background:var(--tinta); color:var(--papel);
+    font-size:13px; font-weight:700; letter-spacing:-.02em;
+  }
+  .marca__icono img{ width:100%; height:100%; object-fit:contain; border-radius:8px }
+  .marca__nombre{ font-size:15px; font-weight:600; letter-spacing:-.01em }
+
+  .presenta p{ font-size:13px; color:var(--tinta-2); max-width:38ch; margin-bottom:26px }
+
+  .enlaces{ display:flex; gap:22px; font-size:13px }
+  .enlaces a{ color:var(--tinta-2); text-decoration:none }
+  .enlaces a:hover{ color:var(--tinta) }
+
+  /* ---------- Columna derecha ---------- */
+  .acceso{
+    display:flex; flex-direction:column; justify-content:center;
+    padding:clamp(24px,3.4vw,40px);
+    border-left:1px solid var(--linea);
+  }
+  .acceso h1{ font-size:clamp(21px,2.4vw,26px); font-weight:600; letter-spacing:-.02em; margin-bottom:6px }
+  .acceso__sub{ font-size:13px; color:var(--tinta-2); margin-bottom:22px; max-width:34ch }
+
+  label{ display:block; font-size:12.5px; font-weight:500; margin-bottom:6px }
+
+  .campo{ margin-bottom:14px }
+  .campo__caja{ position:relative }
+  input[type=email],input[type=password],input[type=text]{
+    width:100%; height:42px;
+    padding:0 40px 0 13px;
+    border:1px solid var(--linea); border-radius:9px;
+    background:var(--papel); color:var(--tinta);
+    font-family:inherit; font-size:14px;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  input::placeholder{ color:#b8b8b8 }
+  input:focus{
+    outline:none; border-color:var(--tinta);
+    box-shadow:0 0 0 3px rgba(10,10,10,.06);
+  }
+  .ojo{
+    position:absolute; top:50%; right:6px; transform:translateY(-50%);
+    display:grid; place-items:center;
+    width:32px; height:32px;
+    background:none; border:0; cursor:pointer; color:var(--tinta-3);
+    border-radius:7px;
+  }
+  .ojo:hover{ color:var(--tinta); background:#f5f5f5 }
+
+  .olvido{ display:block; text-align:right; font-size:12px; color:var(--tinta-2); text-decoration:none; margin-top:-4px }
+  .olvido:hover{ color:var(--tinta); text-decoration:underline }
+
+  /* ---------- Interruptor ---------- */
+  .opcion{
+    display:flex; align-items:flex-start; gap:12px;
+    margin:20px 0 18px;
+  }
+  .opcion__txt strong{ display:block; font-size:13px; font-weight:500 }
+  .opcion__txt span{ font-size:12px; color:var(--tinta-2) }
+  .palanca{ position:relative; flex:none; width:38px; height:22px; margin-top:2px }
+  .palanca input{ position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; z-index:1 }
+  .palanca i{
+    position:absolute; inset:0; border-radius:999px;
+    background:#e0e0e0; transition:background-color .2s;
+  }
+  .palanca i::after{
+    content:""; position:absolute; top:3px; left:3px;
+    width:16px; height:16px; border-radius:50%;
+    background:var(--papel); box-shadow:0 1px 2px rgba(0,0,0,.25);
+    transition:transform .2s;
+  }
+  .palanca input:checked + i{ background:var(--tinta) }
+  .palanca input:checked + i::after{ transform:translateX(16px) }
+  .palanca input:focus-visible + i{ box-shadow:0 0 0 3px rgba(10,10,10,.12) }
+
+  /* ---------- Botón ---------- */
+  .entrar{
+    width:100%; height:44px;
+    border:0; border-radius:9px;
+    background:var(--tinta); color:var(--papel);
+    font-family:inherit; font-size:14px; font-weight:600;
+    cursor:pointer; transition:opacity .2s, transform .1s;
+  }
+  .entrar:hover{ opacity:.86 }
+  .entrar:active{ transform:translateY(1px) }
+
+  .aviso{
+    margin-bottom:16px; padding:10px 12px;
+    border:1px solid var(--linea); border-left:2px solid var(--tinta);
+    border-radius:8px; background:#fafafa;
+    font-size:13px;
+  }
+
+  .creditos{
+    margin-top:26px; padding-top:16px;
+    border-top:1px solid var(--linea);
+    font-size:11.5px; color:var(--tinta-3);
+  }
+
+  /* ---------- Pantallas pequeñas ---------- */
+  @media (max-width:760px){
+    body{ padding:0; place-items:stretch }
+    /* la presentación ocupa lo suyo y el formulario se queda el resto */
+    .tarjeta{
+      grid-template-columns:1fr; grid-template-rows:auto 1fr;
+      max-width:none; border-radius:0; min-height:100svh; box-shadow:none;
+    }
+    .presenta{ min-height:auto; padding:18px 20px 22px }
+    .marca-agua{ font-size:150px; top:-14%; }
+    .presenta p{ display:none }
+    .presenta__pie{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:52px }
+    .marca{ margin-bottom:0 }
+    .acceso{ border-left:0; border-top:1px solid var(--linea); justify-content:flex-start; padding:26px 20px 40px }
+  }
+  @media (max-width:420px){
+    .enlaces{ gap:14px; font-size:12px }
   }
 </style>
 </head>
 <body>
-  <div class="caja">
-    <h1><?= mj_e($marca) ?></h1>
-    <p class="sub"><?= $modo === 'casilla'
-        ? 'Entra con tu cuenta de correo.'
-        : 'Esta casilla es privada.' ?></p>
+  <main class="tarjeta">
 
-    <?php if ($error !== ''): ?><p class="error"><?= mj_e($error) ?></p><?php endif; ?>
+    <section class="presenta">
+      <span class="marca-agua" aria-hidden="true"><?= mj_e(mb_substr($corto, 0, 1)) ?></span>
 
-    <?php if (!$soloAviso): ?>
-    <form method="post">
-      <?php if ($modo === 'casilla'): ?>
-        <label for="u">Correo</label>
-        <input type="email" id="u" name="mj_correo" required autofocus
-               autocomplete="username" placeholder="tucorreo@tudominio.cl"
-               value="<?= mj_e((string) ($_POST['mj_correo'] ?? '')) ?>">
-        <label for="c" style="margin-top:12px">Contraseña</label>
-      <?php else: ?>
-        <label for="c">Clave de acceso</label>
+      <a class="volver" href="<?= mj_e($sitio) ?>" aria-label="Volver al sitio">&larr;</a>
+
+      <div class="presenta__pie">
+        <div class="marca">
+          <span class="marca__icono">
+            <?php if ($logo !== ''): ?><img src="<?= mj_e($logo) ?>" alt=""><?php else: ?><?= mj_e($corto) ?><?php endif; ?>
+          </span>
+          <span class="marca__nombre"><?= mj_e($marca) ?></span>
+        </div>
+
+        <?php if ($lema !== ''): ?><p><?= mj_e($lema) ?></p><?php endif; ?>
+
+        <nav class="enlaces">
+          <a href="<?= mj_e($sitio) ?>">Sitio</a>
+          <?php if ($soporte !== ''): ?><a href="mailto:<?= mj_e($soporte) ?>">Soporte</a><?php endif; ?>
+        </nav>
+      </div>
+    </section>
+
+    <section class="acceso">
+      <h1>Entrar al correo</h1>
+      <p class="acceso__sub">
+        <?= $modo === 'casilla'
+            ? 'Usa tu dirección y la contraseña de tu casilla.'
+            : 'Esta casilla es privada.' ?>
+      </p>
+
+      <?php if ($error !== ''): ?><p class="aviso"><?= mj_e($error) ?></p><?php endif; ?>
+
+      <?php if (!$soloAviso): ?>
+      <form method="post">
+        <?php if ($modo === 'casilla'): ?>
+          <div class="campo">
+            <label for="u">Correo</label>
+            <div class="campo__caja">
+              <input type="email" id="u" name="mj_correo" required autofocus
+                     autocomplete="username" placeholder="tucorreo@tudominio.cl"
+                     value="<?= mj_e((string) ($_POST['mj_correo'] ?? '')) ?>">
+            </div>
+          </div>
+        <?php endif; ?>
+
+        <div class="campo">
+          <label for="c"><?= $modo === 'casilla' ? 'Contraseña' : 'Clave de acceso' ?></label>
+          <div class="campo__caja">
+            <input type="password" id="c" name="mj_clave" required
+                   <?= $modo === 'clave' ? 'autofocus' : '' ?> autocomplete="current-password">
+            <button class="ojo" type="button" id="ver" aria-label="Mostrar la contraseña">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z"/>
+                <circle cx="12" cy="12" r="2.6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="opcion">
+          <span class="palanca">
+            <input type="checkbox" id="rec" name="mj_recordar" <?= isset($_POST['mj_recordar']) ? 'checked' : '' ?>>
+            <i></i>
+          </span>
+          <span class="opcion__txt">
+            <strong>Mantener la sesión abierta</strong>
+            <span>No la actives en un computador compartido.</span>
+          </span>
+        </div>
+
+        <button class="entrar" type="submit">Entrar</button>
+      </form>
       <?php endif; ?>
-      <input type="password" id="c" name="mj_clave" required
-             <?= $modo === 'clave' ? 'autofocus' : '' ?> autocomplete="current-password">
-      <button type="submit">Entrar</button>
-    </form>
-    <?php endif; ?>
-  </div>
+
+      <p class="creditos"><?= mj_e($marca) ?> — acceso privado a la casilla.</p>
+    </section>
+
+  </main>
+
+<script>
+  (function () {
+    var ojo = document.getElementById('ver'), campo = document.getElementById('c');
+    if (!ojo || !campo) return;
+    ojo.addEventListener('click', function () {
+      var oculto = campo.type === 'password';
+      campo.type = oculto ? 'text' : 'password';
+      ojo.setAttribute('aria-label', oculto ? 'Ocultar la contraseña' : 'Mostrar la contraseña');
+      campo.focus();
+    });
+  })();
+</script>
 </body>
 </html>
     <?php
