@@ -132,6 +132,8 @@ return [
     ['id' => 'entrada',   'nombre' => 'Recibidos',  'icono' => 'bandeja',  'contador' => 'no_leidos'],
     ['id' => 'destacado', 'nombre' => 'Destacados', 'icono' => 'estrella', 'contador' => 'no'],
     ['id' => 'enviados',  'nombre' => 'Enviados',   'icono' => 'enviar',   'contador' => 'no'],
+    // No es una carpeta del servidor: es la agenda que se llena sola al enviar
+    ['id' => 'contactos', 'nombre' => 'Contactos',  'icono' => 'personas', 'contador' => 'total', 'agenda' => true],
     ['id' => 'borrador',  'nombre' => 'Borradores', 'icono' => 'borrador', 'contador' => 'total'],
     ['id' => 'archivo',   'nombre' => 'Archivados', 'icono' => 'archivar', 'contador' => 'no'],
     ['id' => 'spam',      'nombre' => 'Spam',       'icono' => 'spam',     'contador' => 'total'],

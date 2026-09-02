@@ -13,6 +13,7 @@ require_once __DIR__ . '/inc/acceso.php';   // antes del config: la sesión mand
 require __DIR__ . '/correo.php';
 require_once __DIR__ . '/inc/smtp.php';
 require_once __DIR__ . '/inc/cuenta.php';
+require_once __DIR__ . '/inc/contactos.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -103,6 +104,16 @@ if ($r['ok']) {
 
 if ($r['ok'] && $cc !== '') {
     mj_smtp_enviar($conf, $cc, $asunto, $cuerpo);
+}
+
+// A quien se le escribe, queda en la agenda. Es lo último que se hace:
+// si fallara el guardado, el mensaje ya salió y eso es lo que importa.
+if ($r['ok']) {
+    // La misma casilla que lee la agenda en la vista; si se calculara de
+    // otra forma, se guardaría bajo una clave y se leería bajo otra.
+    $buzon = mj_buzon_actual($cfg) ?: $conf['remitente'];
+    mj_contactos_anotar_lista($buzon, $para);
+    if ($cc !== '') { mj_contactos_anotar_lista($buzon, $cc); }
 }
 
 $responder($r['ok'], $r['ok'] ? 'Mensaje enviado a ' . $para : $r['mensaje']);

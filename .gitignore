@@ -7,6 +7,12 @@ respaldos/
 # Caché interna
 data/.cache-*.json
 
+# Datos de cada casilla: agenda, preferencias y vales de sesión.
+# Son personales y llevan claves cifradas: no se suben nunca.
+data/contactos/
+data/cuentas/
+data/sesiones/
+
 # Sistema operativo / editores
 .DS_Store
 Thumbs.db

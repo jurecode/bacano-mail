@@ -26,6 +26,11 @@ function mj_correo(array $ov = []): void
   $prov = mj_proveedor($cfg);
   $msgs = $prov->mensajes();
 
+  // La agenda es de quien entró, no del servidor de correo
+  require_once __DIR__ . '/contactos.php';
+  $buzon     = mj_buzon_actual($cfg);
+  $contactos = $buzon !== '' ? mj_contactos($buzon) : [];
+
   // ---- Estado desde la URL (funciona incluso sin JavaScript) ----
   $carpetas_ids = array_merge(
     array_column($cfg['carpetas'], 'id'),
@@ -70,6 +75,8 @@ function mj_correo(array $ov = []): void
     $conteo[$c]['total'] = ($conteo[$c]['total'] ?? 0) + 1;
     $conteo[$c]['no_leidos'] = ($conteo[$c]['no_leidos'] ?? 0) + ($m['leido'] ? 0 : 1);
   }
+
+  $conteo['contactos']['total'] = count($contactos);
 
   // ---- Mensajes de la carpeta activa ----
   $lista = array_values(array_filter($msgs, fn($m) => $m['carpeta'] === $carpeta));
@@ -167,11 +174,19 @@ function mj_correo(array $ov = []): void
 
       <?php if ($cfg['interfaz']['mostrar_carpetas']) mj_v_carpetas($cfg, $carpeta, $conteo); ?>
 
-      <?php mj_v_lista($cfg, $lista, $carpeta, $filtro, $busca, $sel); ?>
+      <?php if ($carpeta === 'contactos'): ?>
 
-      <?php if ($cfg['interfaz']['panel_lectura'] !== 'oculto') {
-              mj_v_lector($cfg, $sel, mj_conversacion($msgs, $sel));
-            } ?>
+        <?php mj_v_contactos($cfg, $contactos); ?>
+
+      <?php else: ?>
+
+        <?php mj_v_lista($cfg, $lista, $carpeta, $filtro, $busca, $sel); ?>
+
+        <?php if ($cfg['interfaz']['panel_lectura'] !== 'oculto') {
+                mj_v_lector($cfg, $sel, mj_conversacion($msgs, $sel));
+              } ?>
+
+      <?php endif; ?>
 
     </div>
 
@@ -352,6 +367,72 @@ function mj_plegar_citado(string $html): string
         . '<details class="mj-citado"><summary title="Mostrar lo anterior">···</summary>'
         . '<div class="mj-citado-cuerpo">' . $citado . '</div></details>';
 }
+
+/** La agenda: se llena sola con cada envío */
+function mj_v_contactos(array $cfg, array $contactos): void
+{
+  ?>
+  <section class="mj-agenda" aria-label="Contactos">
+    <header class="mj-agenda-cab">
+      <div class="mj-agenda-titulo">
+        <?php if ($cfg['interfaz']['mostrar_carpetas']): ?>
+          <button class="mj-icono-btn mj-solo-movil" type="button" data-accion="abrir-carpetas"
+                  aria-label="Abrir el menú de carpetas"><?= mj_icono('menu', 20) ?></button>
+        <?php endif; ?>
+        <h1 class="mj-h1">Contactos</h1>
+      </div>
+      <p class="mj-agenda-nota">
+        <span data-rol="cuantos-contactos"><?= count($contactos) === 1
+            ? '1 persona' : mj_e((string) count($contactos)) . ' personas' ?></span>
+        · se agregan solas cada vez que envías un mensaje
+      </p>
+      <div class="mj-buscador mj-agenda-buscar">
+        <?= mj_icono('buscar', 18) ?>
+        <input type="search" placeholder="Buscar contacto…" aria-label="Buscar entre los contactos"
+               data-rol="buscar-contacto" autocomplete="off" spellcheck="false">
+      </div>
+    </header>
+
+    <?php if (!$contactos): ?>
+      <div class="mj-vacio mj-agenda-vacio">
+        <?= mj_icono('personas', 34) ?>
+        <p class="mj-vacio-t">Todavía no hay contactos</p>
+        <p class="mj-vacio-d">En cuanto envíes un mensaje, quien lo reciba aparecerá aquí.</p>
+      </div>
+    <?php else: ?>
+      <ul class="mj-agenda-lista">
+        <?php foreach ($contactos as $c):
+          $persona = ['nombre' => $c['nombre'], 'email' => $c['email']];
+          $busq = mb_strtolower($c['nombre'] . ' ' . $c['email'], 'UTF-8'); ?>
+          <li class="mj-contacto" data-email="<?= mj_e($c['email']) ?>"
+              data-nombre="<?= mj_e($c['nombre']) ?>" data-buscar="<?= mj_e($busq) ?>">
+            <?= mj_v_avatar($persona, 40) ?>
+            <div class="mj-contacto-txt">
+              <strong class="mj-contacto-nombre"><?= mj_e($c['nombre'] ?: $c['email']) ?></strong>
+              <span class="mj-contacto-email"><?= mj_e($c['email']) ?></span>
+            </div>
+            <span class="mj-contacto-veces" title="Mensajes que le has enviado">
+              <?= (int) $c['envios'] ?>
+            </span>
+            <div class="mj-contacto-btns">
+              <button class="mj-icono-btn" type="button" data-accion="escribir-a"
+                      aria-label="Escribir a <?= mj_e($c['nombre'] ?: $c['email']) ?>"
+                      title="Escribir"><?= mj_icono('enviar', 17) ?></button>
+              <button class="mj-icono-btn" type="button" data-accion="borrar-contacto"
+                      aria-label="Quitar a <?= mj_e($c['nombre'] ?: $c['email']) ?> de la agenda"
+                      title="Quitar de la agenda"><?= mj_icono('papelera', 17) ?></button>
+            </div>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+      <div class="mj-vacio" hidden data-rol="sin-contactos">
+        <?= mj_icono('buscar', 34) ?>
+        <p class="mj-vacio-t">Ningún contacto coincide</p>
+        <p class="mj-vacio-d">Prueba con otro nombre o con parte de la dirección.</p>
+      </div>
+    <?php endif; ?>
+  </section>
+<?php }
 
 /** Columna de carpetas */
 function mj_v_carpetas(array $cfg, string $carpeta, array $conteo): void

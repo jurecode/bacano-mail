@@ -10,6 +10,24 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.9.0] — 2026-09-01
+
+### Añadido
+- **Contactos.** Nueva sección en el menú, entre Enviados y Borradores. La
+  agenda se llena sola: cada vez que se envía un mensaje, el destinatario y
+  quien vaya en copia quedan guardados, con el nombre y cuántas veces se les
+  ha escrito. Se ordena por lo más reciente.
+- Buscador en vivo dentro de la agenda, botón para escribir a un contacto (abre
+  el compositor con la dirección puesta) y botón para quitarlo, con
+  confirmación.
+- La agenda es de cada casilla, no del servidor: se guarda en
+  `data/contactos/`, con su `.htaccess` para que no se pueda pedir por la web.
+
+### Seguridad
+- `data/contactos/`, `data/cuentas/` y `data/sesiones/` pasan al `.gitignore`.
+  Guardan datos personales y claves cifradas, y hasta ahora sólo dependía de
+  que nadie hiciera `git add` de más.
+
 ## [1.8.3] — 2026-09-01
 
 ### Corregido

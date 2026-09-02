@@ -170,6 +170,15 @@
           var av = btn.closest('.mj-aviso-img'); if (av) av.remove();
           break;
 
+        case 'escribir-a': {
+          var ct = btn.closest('.mj-contacto');
+          if (ct) abrirModal('redactar', { para: ct.dataset.email, cc: '', asunto: '', cuerpo: '' });
+          break;
+        }
+        case 'borrar-contacto':
+          quitarContacto(btn.closest('.mj-contacto'));
+          break;
+
         case 'nueva-carpeta':
         case 'config-carpetas':
           aviso('Por ahora las carpetas se definen en instalar.php');
@@ -503,6 +512,71 @@
       });
     }
 
+    /* ---------------------------------------------------------
+       Agenda
+       --------------------------------------------------------- */
+    function quitarContacto(fila) {
+      if (!fila) return;
+      var quien = fila.dataset.nombre || fila.dataset.email;
+
+      confirmar('Se quitará a ' + quien + ' de tus contactos.', function () {
+        var token = raiz.querySelector('[data-rol="form-redactar"]');
+        token = token ? (token.dataset.token || '') : '';
+
+        var datos = new FormData();
+        datos.append('accion', 'borrar');
+        datos.append('email', fila.dataset.email);
+        datos.append('token', token);
+
+        var padre = fila.parentNode, sig = fila.nextSibling;
+        fila.remove();
+        contarContactos();
+
+        fetch('contactos.php', { method: 'POST', body: datos, credentials: 'same-origin' })
+          .then(function (r) { return r.json(); })
+          .then(function (r) {
+            if (r && r.ok) { aviso('Contacto quitado'); }
+            else {
+              padre.insertBefore(fila, sig);   // no se pudo: vuelve a su sitio
+              contarContactos();
+              aviso((r && r.mensaje) || 'No se pudo quitar el contacto.');
+            }
+          })
+          .catch(function () {
+            padre.insertBefore(fila, sig);
+            contarContactos();
+            aviso('No se pudo quitar el contacto.');
+          });
+      }, 'Quitar de la agenda', 'Quitar');
+    }
+
+    /* Deja el recuento de la cabecera y el del menú al día */
+    function contarContactos() {
+      var n = raiz.querySelectorAll('.mj-contacto').length;
+      var nota = raiz.querySelector('[data-rol="cuantos-contactos"]');
+      if (nota) nota.textContent = (n === 1 ? '1 persona' : n + ' personas');
+
+      var enlace = raiz.querySelector('.mj-nav-item[data-carpeta="contactos"]');
+      var badge  = enlace ? enlace.querySelector('.mj-badge') : null;
+      if (badge && n > 0) { badge.textContent = n; }
+      else if (badge) { badge.remove(); }
+    }
+
+    var buscaCt = raiz.querySelector('[data-rol="buscar-contacto"]');
+    if (buscaCt) buscaCt.addEventListener('input', function () {
+      var q = buscaCt.value.trim().toLowerCase();
+      var visibles = 0;
+
+      raiz.querySelectorAll('.mj-contacto').forEach(function (c) {
+        var pasa = !q || (c.dataset.buscar || '').indexOf(q) !== -1;
+        c.hidden = !pasa;
+        if (pasa) visibles++;
+      });
+
+      var nada = raiz.querySelector('[data-rol="sin-contactos"]');
+      if (nada) nada.hidden = visibles > 0;
+    });
+
     function abrirModal(nombre, datos) {
       var m = raiz.querySelector('[data-modal="' + nombre + '"]');
       if (!m) return;
@@ -522,13 +596,15 @@
 
     /* Ventana de confirmación propia: el confirm() del navegador desentona
        y en el móvil algunos lo bloquean. */
-    function confirmar(texto, alAceptar) {
+    function confirmar(texto, alAceptar, titulo, etiqueta) {
       var m = raiz.querySelector('[data-modal="confirmar"]');
       if (!m) { if (window.confirm(texto)) alAceptar(); return; }
 
+      m.querySelector('[data-rol="confirmar-titulo"]').textContent = titulo || 'Eliminar definitivamente';
       m.querySelector('[data-rol="confirmar-texto"]').textContent = texto;
       var si = m.querySelector('[data-rol="confirmar-si"]');
       var nuevo = si.cloneNode(true);        // se limpia el oyente anterior
+      nuevo.textContent = etiqueta || 'Eliminar';
       si.parentNode.replaceChild(nuevo, si);
       nuevo.addEventListener('click', function () { cerrarModal(); alAceptar(); });
 
