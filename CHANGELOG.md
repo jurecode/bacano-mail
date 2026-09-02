@@ -10,6 +10,25 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.10.0] — 2026-09-01
+
+### Añadido
+- **Contactos a mano.** Botón "Agregar" en la agenda y lápiz en cada ficha:
+  se pueden anotar, corregir y borrar contactos, no sólo esperar a que los
+  deje un envío. Cada ficha admite nombre, correo, teléfono y una nota
+  (causa, empresa, lo que sirva), y el teléfono y la nota se ven bajo la
+  dirección.
+- Al corregir a alguien no se pierde lo que ya llevaba: si cambia el correo,
+  los envíos contados viajan con él. Dos fichas con la misma dirección no se
+  admiten.
+
+### Corregido
+- **La agenda vacía se veía descolocada:** la cabecera iba pegada al borde
+  izquierdo y el cartel de "todavía no hay contactos" se centraba en todo el
+  panel, así que no parecían la misma sección. Ahora comparten una sola
+  columna centrada, y el cartel trae su propio botón para agregar.
+- Con la agenda vacía se escondía el buscador, que no tenía nada que buscar.
+
 ## [1.9.0] — 2026-09-01
 
 ### Añadido

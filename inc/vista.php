@@ -205,6 +205,7 @@ function mj_correo(array $ov = []): void
     <?php if ($cfg['interfaz']['boton_redactar'])  mj_v_compositor($cfg); ?>
     <?php if ($cfg['interfaz']['mostrar_ayuda_atajos'] && $cfg['interfaz']['atajos_teclado']) mj_v_atajos($cfg); ?>
     <?php mj_v_confirmar(); ?>
+    <?php if ($carpeta === 'contactos') mj_v_ficha_contacto(); ?>
 
     <div class="mj-avisos" role="status" aria-live="polite"></div>
 
@@ -368,70 +369,135 @@ function mj_plegar_citado(string $html): string
         . '<div class="mj-citado-cuerpo">' . $citado . '</div></details>';
 }
 
-/** La agenda: se llena sola con cada envío */
+/** La agenda: se llena sola con cada envío, y se puede editar a mano */
 function mj_v_contactos(array $cfg, array $contactos): void
 {
   ?>
   <section class="mj-agenda" aria-label="Contactos">
-    <header class="mj-agenda-cab">
-      <div class="mj-agenda-titulo">
-        <?php if ($cfg['interfaz']['mostrar_carpetas']): ?>
-          <button class="mj-icono-btn mj-solo-movil" type="button" data-accion="abrir-carpetas"
-                  aria-label="Abrir el menú de carpetas"><?= mj_icono('menu', 20) ?></button>
-        <?php endif; ?>
-        <h1 class="mj-h1">Contactos</h1>
-      </div>
-      <p class="mj-agenda-nota">
-        <span data-rol="cuantos-contactos"><?= count($contactos) === 1
-            ? '1 persona' : mj_e((string) count($contactos)) . ' personas' ?></span>
-        · se agregan solas cada vez que envías un mensaje
-      </p>
-      <div class="mj-buscador mj-agenda-buscar">
-        <?= mj_icono('buscar', 18) ?>
-        <input type="search" placeholder="Buscar contacto…" aria-label="Buscar entre los contactos"
-               data-rol="buscar-contacto" autocomplete="off" spellcheck="false">
-      </div>
-    </header>
+    <div class="mj-agenda-col">
 
-    <?php if (!$contactos): ?>
-      <div class="mj-vacio mj-agenda-vacio">
+      <header class="mj-agenda-cab">
+        <div class="mj-agenda-titulo">
+          <?php if ($cfg['interfaz']['mostrar_carpetas']): ?>
+            <button class="mj-icono-btn mj-solo-movil" type="button" data-accion="abrir-carpetas"
+                    aria-label="Abrir el menú de carpetas"><?= mj_icono('menu', 20) ?></button>
+          <?php endif; ?>
+          <h1 class="mj-h1">Contactos</h1>
+          <button class="mj-btn mj-agenda-nuevo" type="button" data-accion="nuevo-contacto">
+            <?= mj_icono('persona_mas', 17) ?><span>Agregar</span>
+          </button>
+        </div>
+        <p class="mj-agenda-nota">
+          <span data-rol="cuantos-contactos"><?= count($contactos) === 1
+              ? '1 persona' : mj_e((string) count($contactos)) . ' personas' ?></span>
+          · se agregan solas cada vez que envías un mensaje
+        </p>
+        <div class="mj-buscador mj-agenda-buscar" <?= $contactos ? '' : 'hidden' ?>>
+          <?= mj_icono('buscar', 18) ?>
+          <input type="search" placeholder="Buscar contacto…" aria-label="Buscar entre los contactos"
+                 data-rol="buscar-contacto" autocomplete="off" spellcheck="false">
+        </div>
+      </header>
+
+      <ul class="mj-agenda-lista" data-rol="lista-contactos">
+        <?php foreach ($contactos as $c) { mj_v_contacto($c); } ?>
+      </ul>
+
+      <div class="mj-vacio" data-rol="sin-contactos" <?= $contactos ? 'hidden' : '' ?>>
         <?= mj_icono('personas', 34) ?>
         <p class="mj-vacio-t">Todavía no hay contactos</p>
-        <p class="mj-vacio-d">En cuanto envíes un mensaje, quien lo reciba aparecerá aquí.</p>
+        <p class="mj-vacio-d">Se agregan solos al enviar un mensaje, o puedes anotar uno tú.</p>
+        <button class="mj-btn mj-btn-2" type="button" data-accion="nuevo-contacto">
+          <?= mj_icono('persona_mas', 17) ?><span>Agregar contacto</span>
+        </button>
       </div>
-    <?php else: ?>
-      <ul class="mj-agenda-lista">
-        <?php foreach ($contactos as $c):
-          $persona = ['nombre' => $c['nombre'], 'email' => $c['email']];
-          $busq = mb_strtolower($c['nombre'] . ' ' . $c['email'], 'UTF-8'); ?>
-          <li class="mj-contacto" data-email="<?= mj_e($c['email']) ?>"
-              data-nombre="<?= mj_e($c['nombre']) ?>" data-buscar="<?= mj_e($busq) ?>">
-            <?= mj_v_avatar($persona, 40) ?>
-            <div class="mj-contacto-txt">
-              <strong class="mj-contacto-nombre"><?= mj_e($c['nombre'] ?: $c['email']) ?></strong>
-              <span class="mj-contacto-email"><?= mj_e($c['email']) ?></span>
-            </div>
-            <span class="mj-contacto-veces" title="Mensajes que le has enviado">
-              <?= (int) $c['envios'] ?>
-            </span>
-            <div class="mj-contacto-btns">
-              <button class="mj-icono-btn" type="button" data-accion="escribir-a"
-                      aria-label="Escribir a <?= mj_e($c['nombre'] ?: $c['email']) ?>"
-                      title="Escribir"><?= mj_icono('enviar', 17) ?></button>
-              <button class="mj-icono-btn" type="button" data-accion="borrar-contacto"
-                      aria-label="Quitar a <?= mj_e($c['nombre'] ?: $c['email']) ?> de la agenda"
-                      title="Quitar de la agenda"><?= mj_icono('papelera', 17) ?></button>
-            </div>
-          </li>
-        <?php endforeach; ?>
-      </ul>
-      <div class="mj-vacio" hidden data-rol="sin-contactos">
+
+      <div class="mj-vacio" data-rol="sin-coincidencias" hidden>
         <?= mj_icono('buscar', 34) ?>
         <p class="mj-vacio-t">Ningún contacto coincide</p>
         <p class="mj-vacio-d">Prueba con otro nombre o con parte de la dirección.</p>
       </div>
-    <?php endif; ?>
+
+    </div>
   </section>
+<?php }
+
+/** Una ficha de la agenda. La usan la lista y el guardado por JS. */
+function mj_v_contacto(array $c): void
+{
+  $persona = ['nombre' => $c['nombre'] ?? '', 'email' => $c['email']];
+  $busq    = mb_strtolower(($c['nombre'] ?? '') . ' ' . $c['email'] . ' ' . ($c['telefono'] ?? ''), 'UTF-8');
+  $quien   = ($c['nombre'] ?? '') !== '' ? $c['nombre'] : $c['email'];
+  ?>
+  <li class="mj-contacto" <?= mj_datos([
+        'email'    => $c['email'],
+        'nombre'   => $c['nombre'] ?? '',
+        'telefono' => $c['telefono'] ?? '',
+        'nota'     => $c['nota'] ?? '',
+        'buscar'   => $busq,
+      ]) ?>>
+    <?= mj_v_avatar($persona, 40) ?>
+    <div class="mj-contacto-txt">
+      <strong class="mj-contacto-nombre"><?= mj_e($quien) ?></strong>
+      <span class="mj-contacto-email"><?= mj_e($c['email']) ?></span>
+      <?php if (!empty($c['telefono']) || !empty($c['nota'])): ?>
+        <span class="mj-contacto-extra">
+          <?= mj_e(trim(($c['telefono'] ?? '') . (!empty($c['telefono']) && !empty($c['nota']) ? '  ·  ' : '') . ($c['nota'] ?? ''))) ?>
+        </span>
+      <?php endif; ?>
+    </div>
+    <?php if ((int) ($c['envios'] ?? 0) > 0): ?>
+      <span class="mj-contacto-veces" title="Mensajes que le has enviado"><?= (int) $c['envios'] ?></span>
+    <?php endif; ?>
+    <div class="mj-contacto-btns">
+      <button class="mj-icono-btn" type="button" data-accion="escribir-a"
+              aria-label="Escribir a <?= mj_e($quien) ?>" title="Escribir"><?= mj_icono('enviar', 17) ?></button>
+      <button class="mj-icono-btn" type="button" data-accion="editar-contacto"
+              aria-label="Editar a <?= mj_e($quien) ?>" title="Editar"><?= mj_icono('lapiz', 17) ?></button>
+      <button class="mj-icono-btn" type="button" data-accion="borrar-contacto"
+              aria-label="Quitar a <?= mj_e($quien) ?> de la agenda"
+              title="Quitar de la agenda"><?= mj_icono('papelera', 17) ?></button>
+    </div>
+  </li>
+<?php }
+
+/** Formulario para dar de alta o corregir un contacto */
+function mj_v_ficha_contacto(): void
+{ ?>
+  <div class="mj-modal" data-modal="contacto" hidden>
+    <div class="mj-modal-fondo" data-accion="cerrar-modal"></div>
+    <div class="mj-modal-caja mj-modal-chica" role="dialog" aria-modal="true" aria-labelledby="mj-ficha-t">
+      <header class="mj-modal-cab">
+        <h2 class="mj-h2" id="mj-ficha-t" data-rol="ficha-titulo">Nuevo contacto</h2>
+        <button class="mj-icono-btn" type="button" data-accion="cerrar-modal" aria-label="Cerrar"><?= mj_icono('cerrar', 18) ?></button>
+      </header>
+      <form class="mj-form" data-rol="form-contacto">
+        <input type="hidden" name="original" value="">
+        <label class="mj-campo">
+          <span>Nombre</span>
+          <input type="text" name="nombre" placeholder="Nombre y apellido" autocomplete="off">
+        </label>
+        <label class="mj-campo">
+          <span>Correo</span>
+          <input type="email" name="email" placeholder="persona@dominio.cl" autocomplete="off" required>
+        </label>
+        <label class="mj-campo">
+          <span>Teléfono</span>
+          <input type="tel" name="telefono" placeholder="opcional" autocomplete="off">
+        </label>
+        <label class="mj-campo">
+          <span>Nota</span>
+          <input type="text" name="nota" placeholder="opcional — causa, empresa, lo que sirva" autocomplete="off">
+        </label>
+        <div class="mj-modal-pie">
+          <div class="mj-modal-pie-btns">
+            <button class="mj-btn mj-btn-2" type="button" data-accion="cerrar-modal">Cancelar</button>
+            <button class="mj-btn" type="submit">Guardar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 <?php }
 
 /** Columna de carpetas */

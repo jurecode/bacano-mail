@@ -977,23 +977,30 @@
    14. AGENDA DE CONTACTOS
    ============================================================ */
 .mj-agenda{
-  display:flex; flex-direction:column; min-height:0; min-width:0;
+  display:flex; min-height:0; min-width:0; overflow:hidden;
   background:var(--mj-lector);
 }
+/* Todo en una sola columna: si la cabecera va al borde y el cartel de
+   vacío se centra en el panel, la sección parece rota. */
+.mj-agenda-col{
+  flex:1 1 auto; display:flex; flex-direction:column; min-height:0;
+  width:100%; max-width:720px; margin-inline:auto;
+}
+
 .mj-agenda-cab{ padding:22px var(--mj-pad) 4px; }
-/* Una columna de lectura cómoda: estirada a todo lo ancho, el nombre y el
-   contador quedan en extremos opuestos de la pantalla. */
-.mj-agenda-cab, .mj-agenda-lista{ width:100%; max-width:720px; }
 .mj-agenda-titulo{ display:flex; align-items:center; gap:8px; margin-bottom:3px; }
 .mj-agenda-cab .mj-h1{ margin:0; font-size:19px; font-weight:700; letter-spacing:-.015em; }
+.mj-agenda-nuevo{ margin-left:auto; height:34px; padding:0 13px; font-size:13px; }
 .mj-agenda-nota{ margin:0 0 14px; font-size:12.5px; color:var(--mj-txt3); }
-.mj-agenda-buscar{ margin-inline:0; max-width:420px; }
+.mj-agenda-buscar{ margin-inline:0; }
 
 .mj-agenda-lista{
   flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain;
   list-style:none; margin:0; padding:4px var(--mj-pad) 20px;
   scrollbar-width:thin;
 }
+.mj-agenda-lista:empty{ flex:0 0 auto; padding:0; }
+
 .mj-contacto{
   display:flex; align-items:center; gap:12px;
   padding:9px 10px; border-radius:var(--mj-r-md);
@@ -1005,10 +1012,11 @@
   font-size:13.5px; font-weight:600; color:var(--mj-txt);
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
-.mj-contacto-email{
+.mj-contacto-email, .mj-contacto-extra{
   font-size:12.5px; color:var(--mj-txt3);
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
+.mj-contacto-extra{ font-size:12px; opacity:.85; }
 .mj-contacto-veces{
   flex:none; min-width:24px; height:20px; padding:0 7px;
   display:grid; place-items:center; border-radius:999px;
@@ -1021,7 +1029,12 @@
 .mj-contacto:focus-within .mj-contacto-btns{ opacity:1; }
 @media (hover:none){ .mj-contacto-btns{ opacity:1; } }
 
+.mj-agenda .mj-vacio{ padding-bottom:90px; }
+.mj-agenda .mj-vacio .mj-btn{ margin-top:14px; }
+
 @media (max-width:900px){
   .mj-agenda-cab{ padding-top:16px; }
   .mj-contacto-veces{ display:none; }
+  .mj-agenda-nuevo span{ display:none; }
+  .mj-agenda-nuevo{ padding:0 10px; }
 }

@@ -40,12 +40,37 @@ if ($buzon === '') {
 $accion = (string) ($_POST['accion'] ?? '');
 $email  = (string) ($_POST['email'] ?? '');
 
-if ($accion !== 'borrar') {
-    $responder(false, 'Acción desconocida.');
-}
-if ($email === '') {
-    $responder(false, 'Falta indicar el contacto.');
+if ($accion === 'borrar') {
+    if ($email === '') { $responder(false, 'Falta indicar el contacto.'); }
+    $hecho = mj_contacto_borrar($buzon, $email);
+    $responder($hecho, $hecho ? 'Contacto quitado' : 'Ese contacto ya no estaba en la agenda.');
 }
 
-$hecho = mj_contacto_borrar($buzon, $email);
-$responder($hecho, $hecho ? 'Contacto quitado' : 'Ese contacto ya no estaba en la agenda.');
+if ($accion === 'guardar') {
+    $r = mj_contacto_guardar($buzon, [
+        'email'    => $email,
+        'nombre'   => (string) ($_POST['nombre'] ?? ''),
+        'telefono' => (string) ($_POST['telefono'] ?? ''),
+        'nota'     => (string) ($_POST['nota'] ?? ''),
+    ], (string) ($_POST['original'] ?? ''));
+
+    // La fila la dibuja el mismo PHP que pinta la lista: así no hay dos
+    // versiones del mismo trozo de html que se vayan separando.
+    $fila = '';
+    if ($r['ok']) {
+        ob_start();
+        mj_v_contacto($r['contacto']);
+        $fila = ob_get_clean();
+    }
+
+    http_response_code(200);
+    echo json_encode([
+        'ok'       => $r['ok'],
+        'mensaje'  => $r['mensaje'],
+        'email'    => $r['contacto']['email'] ?? '',
+        'fila'     => $fila,
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+$responder(false, 'Acción desconocida.');

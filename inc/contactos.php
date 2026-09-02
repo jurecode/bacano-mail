@@ -16,7 +16,7 @@ function mj_contactos_archivo(string $buzon): string
 
 /**
  * La agenda de una casilla, de lo más reciente a lo más antiguo.
- * Cada contacto: email, nombre, envios, visto (fecha del último).
+ * Cada contacto: email, nombre, telefono, nota, envios y visto.
  */
 function mj_contactos(string $buzon): array
 {
@@ -31,10 +31,13 @@ function mj_contactos(string $buzon): array
         $email = strtolower(trim((string) ($c['email'] ?? '')));
         if ($email === '') { continue; }
         $lista[] = [
-            'email'  => $email,
-            'nombre' => trim((string) ($c['nombre'] ?? '')),
-            'envios' => max(1, (int) ($c['envios'] ?? 1)),
-            'visto'  => (string) ($c['visto'] ?? ''),
+            'email'    => $email,
+            'nombre'   => trim((string) ($c['nombre'] ?? '')),
+            'telefono' => trim((string) ($c['telefono'] ?? '')),
+            'nota'     => trim((string) ($c['nota'] ?? '')),
+            // Los agregados a mano no vienen de ningún envío
+            'envios'   => max(0, (int) ($c['envios'] ?? 0)),
+            'visto'    => (string) ($c['visto'] ?? ''),
         ];
     }
 
@@ -86,7 +89,10 @@ function mj_contacto_anotar(string $buzon, string $email, string $nombre = '', b
         }
     }
 
-    $lista[] = ['email' => $email, 'nombre' => $nombre, 'envios' => 1, 'visto' => date('c')];
+    $lista[] = [
+        'email' => $email, 'nombre' => $nombre, 'telefono' => '', 'nota' => '',
+        'envios' => 1, 'visto' => date('c'),
+    ];
     return mj_contactos_guardar($buzon, $lista);
 }
 
@@ -98,6 +104,63 @@ function mj_contactos_anotar_lista(string $buzon, string $campo): int
         if (mj_contacto_anotar($buzon, $d['email'], $d['nombre'], $d['deducido'])) { $hechos++; }
     }
     return $hechos;
+}
+
+/**
+ * Da de alta o edita un contacto a mano.
+ * $original es la dirección que tenía antes, si se está editando; si cambia,
+ * se conserva lo que ya llevaba (envíos y fecha) bajo la nueva.
+ *
+ * Devuelve ['ok' => bool, 'mensaje' => string, 'contacto' => array].
+ */
+function mj_contacto_guardar(string $buzon, array $datos, string $original = ''): array
+{
+    $email = strtolower(trim((string) ($datos['email'] ?? '')));
+    $malo  = fn(string $m) => ['ok' => false, 'mensaje' => $m, 'contacto' => []];
+
+    if ($email === '')                                   return $malo('Falta el correo del contacto.');
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL))      return $malo('La dirección "' . $email . '" no es válida.');
+
+    $original = strtolower(trim($original));
+    $lista    = mj_contactos($buzon);
+
+    // No se admiten dos fichas con el mismo correo
+    foreach ($lista as $c) {
+        if ($c['email'] === $email && $c['email'] !== $original) {
+            return $malo('Ya tienes un contacto con esa dirección.');
+        }
+    }
+
+    $ficha = [
+        'email'    => $email,
+        'nombre'   => trim(mb_substr((string) ($datos['nombre'] ?? ''), 0, 80)),
+        'telefono' => trim(mb_substr((string) ($datos['telefono'] ?? ''), 0, 40)),
+        'nota'     => trim(mb_substr((string) ($datos['nota'] ?? ''), 0, 300)),
+        'envios'   => 0,
+        'visto'    => date('c'),
+    ];
+
+    $encontrado = false;
+    foreach ($lista as $i => $c) {
+        if ($c['email'] === ($original !== '' ? $original : $email)) {
+            // Lo que se le ha escrito no se pierde al corregir el nombre
+            $ficha['envios'] = $c['envios'];
+            $ficha['visto']  = $c['visto'] ?: $ficha['visto'];
+            $lista[$i] = $ficha;
+            $encontrado = true;
+            break;
+        }
+    }
+    if (!$encontrado) { $lista[] = $ficha; }
+
+    if (!mj_contactos_guardar($buzon, $lista)) {
+        return $malo('No se pudo guardar la agenda.');
+    }
+    return [
+        'ok'       => true,
+        'mensaje'  => $encontrado ? 'Contacto actualizado' : 'Contacto agregado',
+        'contacto' => $ficha,
+    ];
 }
 
 /** Borra un contacto de la agenda. */

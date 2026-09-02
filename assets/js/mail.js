@@ -178,6 +178,12 @@
         case 'borrar-contacto':
           quitarContacto(btn.closest('.mj-contacto'));
           break;
+        case 'nuevo-contacto':
+          fichaContacto(null);
+          break;
+        case 'editar-contacto':
+          fichaContacto(btn.closest('.mj-contacto'));
+          break;
 
         case 'nueva-carpeta':
         case 'config-carpetas':
@@ -520,13 +526,10 @@
       var quien = fila.dataset.nombre || fila.dataset.email;
 
       confirmar('Se quitará a ' + quien + ' de tus contactos.', function () {
-        var token = raiz.querySelector('[data-rol="form-redactar"]');
-        token = token ? (token.dataset.token || '') : '';
-
         var datos = new FormData();
         datos.append('accion', 'borrar');
         datos.append('email', fila.dataset.email);
-        datos.append('token', token);
+        datos.append('token', tokenSesion());
 
         var padre = fila.parentNode, sig = fila.nextSibling;
         fila.remove();
@@ -550,16 +553,102 @@
       }, 'Quitar de la agenda', 'Quitar');
     }
 
+    /* Abre la ficha vacía (alta) o con lo que ya tenga la fila (edición) */
+    function fichaContacto(fila) {
+      var m = raiz.querySelector('[data-modal="contacto"]');
+      if (!m) return;
+
+      var f = m.querySelector('[data-rol="form-contacto"]');
+      m.querySelector('[data-rol="ficha-titulo"]').textContent =
+        fila ? 'Editar contacto' : 'Nuevo contacto';
+
+      f.elements.original.value = fila ? fila.dataset.email : '';
+      f.elements.nombre.value   = fila ? (fila.dataset.nombre   || '') : '';
+      f.elements.email.value    = fila ? (fila.dataset.email    || '') : '';
+      f.elements.telefono.value = fila ? (fila.dataset.telefono || '') : '';
+      f.elements.nota.value     = fila ? (fila.dataset.nota     || '') : '';
+
+      m.hidden = false;
+      f.elements.nombre.focus();
+    }
+
+    var formCt = raiz.querySelector('[data-rol="form-contacto"]');
+    if (formCt) formCt.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+
+      var boton = formCt.querySelector('[type="submit"]');
+      var antes = boton.textContent;
+      boton.disabled = true; boton.textContent = 'Guardando…';
+
+      var datos = new FormData(formCt);
+      datos.append('accion', 'guardar');
+      datos.append('token', tokenSesion());
+
+      fetch('contactos.php', { method: 'POST', body: datos, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          boton.disabled = false; boton.textContent = antes;
+          if (!r || !r.ok) { aviso((r && r.mensaje) || 'No se pudo guardar el contacto.'); return; }
+
+          ponerFila(r.fila, formCt.elements.original.value || r.email);
+          cerrarModal();
+          aviso(r.mensaje);
+        })
+        .catch(function () {
+          boton.disabled = false; boton.textContent = antes;
+          aviso('No se pudo guardar el contacto.');
+        });
+    });
+
+    /* Mete la fila que dibujó el servidor: reemplaza la que se editó, o la
+       pone arriba del todo si es nueva. */
+    function ponerFila(html, emailAnterior) {
+      var lista = raiz.querySelector('[data-rol="lista-contactos"]');
+      if (!lista || !html) return;
+
+      // <template> es lo único que parsea un <li> suelto sin descartarlo
+      var caja = document.createElement('template');
+      caja.innerHTML = html.trim();
+      var nueva = caja.content.querySelector('.mj-contacto');
+      if (!nueva) return;
+
+      var vieja = emailAnterior
+        ? lista.querySelector('.mj-contacto[data-email="' + emailAnterior.replace(/"/g, '\\"') + '"]')
+        : null;
+
+      if (vieja) { vieja.replaceWith(nueva); }
+      else { lista.insertBefore(nueva, lista.firstChild); }
+
+      contarContactos();
+    }
+
+    function tokenSesion() {
+      var f = raiz.querySelector('[data-rol="form-redactar"]');
+      return f ? (f.dataset.token || '') : '';
+    }
+
     /* Deja el recuento de la cabecera y el del menú al día */
     function contarContactos() {
       var n = raiz.querySelectorAll('.mj-contacto').length;
       var nota = raiz.querySelector('[data-rol="cuantos-contactos"]');
       if (nota) nota.textContent = (n === 1 ? '1 persona' : n + ' personas');
 
+      // Con la agenda vacía sobra el buscador y toca enseñar el cartel
+      var vacio = raiz.querySelector('[data-rol="sin-contactos"]');
+      if (vacio) vacio.hidden = n > 0;
+      var buscador = raiz.querySelector('.mj-agenda-buscar');
+      if (buscador) buscador.hidden = n === 0;
+
       var enlace = raiz.querySelector('.mj-nav-item[data-carpeta="contactos"]');
-      var badge  = enlace ? enlace.querySelector('.mj-badge') : null;
-      if (badge && n > 0) { badge.textContent = n; }
-      else if (badge) { badge.remove(); }
+      if (!enlace) return;
+      var badge = enlace.querySelector('.mj-badge');
+      if (n === 0) { if (badge) badge.remove(); return; }
+      if (!badge) {
+        badge = document.createElement('em');
+        badge.className = 'mj-badge';
+        enlace.appendChild(badge);
+      }
+      badge.textContent = n;
     }
 
     var buscaCt = raiz.querySelector('[data-rol="buscar-contacto"]');
@@ -573,8 +662,8 @@
         if (pasa) visibles++;
       });
 
-      var nada = raiz.querySelector('[data-rol="sin-contactos"]');
-      if (nada) nada.hidden = visibles > 0;
+      var nada = raiz.querySelector('[data-rol="sin-coincidencias"]');
+      if (nada) nada.hidden = visibles > 0 || q === '';
     });
 
     function abrirModal(nombre, datos) {
