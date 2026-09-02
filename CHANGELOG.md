@@ -10,6 +10,17 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.11.1] — 2026-09-01
+
+### Cambiado
+- **"Tu cuenta" ahora usa el mismo diseño que la bandeja.** Tenía una hoja de
+  estilos propia, escrita a mano y siempre oscura: otro diseño que mantener y
+  que se iba pareciendo cada vez menos al correo. Ahora carga la misma hoja,
+  el mismo tema —claro, oscuro y el preset que tengas— y los mismos campos,
+  tarjetas y botones.
+- Las páginas sueltas comparten un armazón (`inc/pagina.php`), para que la
+  siguiente no vuelva a inventarse su aspecto.
+
 ## [1.11.0] — 2026-09-01
 
 ### Añadido

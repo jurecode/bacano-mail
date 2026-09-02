@@ -1110,3 +1110,86 @@ a.mj-cuenta-liga:hover{ background:var(--mj-hover); color:var(--mj-txt); }
 .mj-cuentas-nota{ margin:6px 8px 2px; max-width:260px; font-size:11px; line-height:1.45; color:var(--mj-txt3); }
 
 .mj-carpetas-pie{ position:relative; }
+
+/* ============================================================
+   15. PÁGINAS SUELTAS (ajustes de la cuenta y demás)
+   Mismo tema y misma hoja que la bandeja: sin un segundo diseño
+   que mantener.
+   ============================================================ */
+/* Como la bandeja: la raíz ocupa la pantalla y lo que se desplaza es el
+   contenido de dentro. Así las manchas del fondo quedan siempre encuadradas
+   —están pensadas para el alto de la ventana— en vez de descolgarse al bajar. */
+.mj-suelta{
+  position:relative; height:100svh; overflow:hidden;
+  background:var(--mj-app);
+  font-family:var(--mj-fuente); color:var(--mj-txt);
+  -webkit-font-smoothing:antialiased;
+}
+.mj-suelta > .mj-fondo{ position:absolute; inset:0; }
+.mj-hoja{
+  height:100%; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin;
+  padding:clamp(24px,5vw,54px) 18px 70px;
+}
+.mj-hoja > *{ width:100%; max-width:560px; margin-inline:auto; }
+.mj-hoja-cab{ display:flex; align-items:flex-start; gap:12px; margin-bottom:20px; }
+.mj-hoja-atras{
+  flex:none; display:grid; place-items:center; width:34px; height:34px; margin-top:2px;
+  border-radius:var(--mj-r-md); border:1px solid var(--mj-borde2);
+  background:var(--mj-flotante); color:var(--mj-txt2); text-decoration:none;
+  transition:color .15s, border-color .15s;
+}
+.mj-hoja-atras:hover{ color:var(--mj-txt); border-color:var(--mj-borde); }
+.mj-hoja-t{ margin-block:0; font-size:21px; font-weight:700; letter-spacing:-.02em; }
+.mj-hoja-t2{ margin-block:34px 3px; font-size:17px; font-weight:700; letter-spacing:-.015em; }
+.mj-hoja-d{ margin-block:3px 0; font-size:13px; color:var(--mj-txt3); }
+
+.mj-tarjeta{
+  margin-top:14px; padding:20px 22px;
+  border-radius:var(--mj-r-lg); background:var(--mj-flotante);
+  border:1px solid var(--mj-borde2); box-shadow:var(--mj-sombra);
+}
+.mj-tarjeta-cab{ margin-bottom:6px; }
+.mj-tarjeta-t{ margin:0; font-size:15px; font-weight:700; }
+.mj-tarjeta-d{ margin:2px 0 0; font-size:12.5px; color:var(--mj-txt3); }
+
+/* Los campos son los mismos del compositor; aquí la etiqueta va más ancha
+   porque las palabras son más largas que "Para" o "CC". */
+.mj-tarjeta .mj-campo > span{ flex:0 0 86px; }
+.mj-tarjeta .mj-campo input[readonly]{ color:var(--mj-txt3); }
+.mj-tarjeta .mj-campo-area > span{ display:block; margin-bottom:2px; }
+.mj-tarjeta .mj-campo-area textarea{ min-height:96px; }
+
+.mj-pista{ margin-block:8px 0; font-size:12px; line-height:1.5; color:var(--mj-txt3); }
+.mj-pista a{ color:var(--mj-txt2); }
+.mj-pista-sola{ margin-block:0; font-size:13px; }
+
+.mj-previo{
+  margin-block:16px 0; padding:11px 13px;
+  border-radius:var(--mj-r-md); background:var(--mj-campo);
+  font-size:12.5px; line-height:1.55; color:var(--mj-txt3);
+}
+.mj-previo strong{ color:var(--mj-txt); }
+.mj-previo-ojo{ background:rgba(229,72,77,.10); }
+
+.mj-nota{
+  margin-block:14px 0; padding:11px 13px;
+  border-radius:var(--mj-r-md); font-size:13px; line-height:1.5;
+  background:var(--mj-campo); border:1px solid var(--mj-borde2); color:var(--mj-txt2);
+}
+.mj-nota-bien{ background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.34); color:var(--mj-txt); }
+.mj-nota-mal{ background:rgba(229,72,77,.12); border-color:rgba(229,72,77,.36); color:var(--mj-txt); }
+
+.mj-tarjeta .mj-modal-pie{ margin-top:18px; }
+a.mj-btn{ text-decoration:none; }
+
+@media (max-width:560px){
+  .mj-tarjeta{ padding:18px 16px; }
+  .mj-tarjeta .mj-campo{ flex-direction:column; align-items:stretch; gap:3px; }
+  .mj-tarjeta .mj-campo > span{ flex:none; }
+  .mj-modal-pie-btns{ width:100%; }
+  /* El botón principal manda; el de volver se queda con lo que sobre, sin
+     partir su texto en dos líneas. */
+  .mj-tarjeta .mj-modal-pie-btns .mj-btn{ justify-content:center; white-space:nowrap; }
+  .mj-tarjeta .mj-modal-pie-btns .mj-btn[type="submit"]{ flex:1 1 auto; }
+  .mj-tarjeta .mj-modal-pie-btns a.mj-btn{ flex:0 1 auto; padding-inline:12px; }
+}

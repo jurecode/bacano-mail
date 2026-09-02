@@ -138,16 +138,7 @@ function mj_correo(array $ov = []): void
   }
 
   // ---- Variables de tema en línea ----
-  $estilo = '--mj-radio:' . $cfg['tema']['radio'] . ';'
-          . '--mj-ancho:' . $cfg['tema']['ancho_maximo'] . ';'
-          . '--mj-alto:'  . ($cfg['tema']['alto'] ?? '100svh') . ';'
-          . '--mj-fuente:' . $cfg['tema']['fuente_texto'] . ';'
-          . '--mj-fuente-titulo:' . $cfg['tema']['fuente_titulo'] . ';'
-          . '--mj-fuente-marca:' . ($cfg['tema']['fuente_marca'] ?? $cfg['tema']['fuente_titulo']) . ';'
-          . (!empty($cfg['tema']['color_marca']) ? '--mj-marca-color:' . $cfg['tema']['color_marca'] . ';' : '')
-          . (!empty($cfg['tema']['acento']) ? '--mj-acento:' . $cfg['tema']['acento'] . ';' : '')
-          . ($cfg['tema']['fondo'] === 'imagen' && $cfg['tema']['fondo_imagen']
-              ? "--mj-fondo-img:url('" . mj_e($cfg['tema']['fondo_imagen']) . "');" : '');
+  $estilo = mj_estilo_tema($cfg);
 
   $raiz_attrs = mj_datos([
     'tema'      => $cfg['tema']['preset'],
@@ -372,6 +363,21 @@ function mj_plegar_citado(string $html): string
     return $nuevo
         . '<details class="mj-citado"><summary title="Mostrar lo anterior">···</summary>'
         . '<div class="mj-citado-cuerpo">' . $citado . '</div></details>';
+}
+
+/** Las variables de tema que van en el atributo style de la raíz */
+function mj_estilo_tema(array $cfg): string
+{
+  return '--mj-radio:' . $cfg['tema']['radio'] . ';'
+       . '--mj-ancho:' . $cfg['tema']['ancho_maximo'] . ';'
+       . '--mj-alto:'  . ($cfg['tema']['alto'] ?? '100svh') . ';'
+       . '--mj-fuente:' . $cfg['tema']['fuente_texto'] . ';'
+       . '--mj-fuente-titulo:' . $cfg['tema']['fuente_titulo'] . ';'
+       . '--mj-fuente-marca:' . ($cfg['tema']['fuente_marca'] ?? $cfg['tema']['fuente_titulo']) . ';'
+       . (!empty($cfg['tema']['color_marca']) ? '--mj-marca-color:' . $cfg['tema']['color_marca'] . ';' : '')
+       . (!empty($cfg['tema']['acento']) ? '--mj-acento:' . $cfg['tema']['acento'] . ';' : '')
+       . ($cfg['tema']['fondo'] === 'imagen' && $cfg['tema']['fondo_imagen']
+           ? "--mj-fondo-img:url('" . mj_e($cfg['tema']['fondo_imagen']) . "');" : '');
 }
 
 /** La agenda: se llena sola con cada envío, y se puede editar a mano */
