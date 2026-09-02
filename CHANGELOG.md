@@ -10,6 +10,14 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.10.1] — 2026-09-01
+
+### Añadido
+- **Al redactar, el correo se completa solo.** En "Para" y en "CC", según se
+  escribe aparecen los contactos de la agenda que coinciden —nombre y
+  dirección— y se eligen con el ratón o con las flechas y Enter. Si la
+  dirección ya está entera, como al responder, no molesta con sugerencias.
+
 ## [1.10.0] — 2026-09-01
 
 ### Añadido

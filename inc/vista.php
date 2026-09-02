@@ -222,6 +222,11 @@ function mj_correo(array $ov = []): void
       'colores'  => $cfg['colores_estrella'],
       'carpetas' => array_map(fn($c) => ['id' => $c['id'], 'nombre' => $c['nombre']],
                      array_merge($cfg['carpetas'], $cfg['carpetas_propias'])),
+      // Para sugerir destinatarios al redactar. Se recorta: una agenda muy
+      // larga no tiene por qué viajar entera en cada carga de la página.
+      'contactos' => array_map(
+                       fn($c) => ['e' => $c['email'], 'n' => $c['nombre']],
+                       array_slice($contactos, 0, 300)),
       'opciones' => [
         'carpeta'     => $carpeta,
         'autoLeer'    => (bool) $cfg['interfaz']['auto_marcar_leido'],

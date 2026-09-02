@@ -1038,3 +1038,28 @@
   .mj-agenda-nuevo span{ display:none; }
   .mj-agenda-nuevo{ padding:0 10px; }
 }
+
+/* ---- Sugerencias de destinatario al redactar ---- */
+.mj-campo{ position:relative; }
+.mj-sugerencias{
+  position:absolute; z-index:5; top:calc(100% - 2px); left:62px; right:0;
+  list-style:none; margin:0; padding:5px;
+  max-height:min(46vh, 268px); overflow-y:auto;
+  border-radius:var(--mj-r-md); background:var(--mj-flotante);
+  border:1px solid var(--mj-borde2); box-shadow:var(--mj-sombra);
+  scrollbar-width:thin;
+}
+.mj-sugerencia{
+  display:flex; flex-direction:column; gap:1px;
+  padding:7px 10px; border-radius:var(--mj-r-sm); cursor:pointer;
+}
+.mj-sugerencia.is-activo{ background:var(--mj-hover); }
+.mj-sugerencia strong{
+  font-size:13px; font-weight:600; color:var(--mj-txt);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.mj-sugerencia span{
+  font-size:12px; color:var(--mj-txt3);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+@media (max-width:640px){ .mj-sugerencias{ left:0; } }

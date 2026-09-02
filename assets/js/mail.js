@@ -18,6 +18,7 @@
     var d       = leerDatos(raiz);
     var T       = d.textos || {};
     var OP      = d.opciones || {};
+    var AGENDA  = d.contactos || [];
     var lista   = raiz.querySelector('.mj-lista');
     var lector  = raiz.querySelector('[data-rol="lector"]');
     var buscar  = raiz.querySelector('#mj-buscar');
@@ -552,6 +553,89 @@
           });
       }, 'Quitar de la agenda', 'Quitar');
     }
+
+    /* ---------------------------------------------------------
+       Sugerencias al escribir un destinatario
+       --------------------------------------------------------- */
+    function sugerencias(campo) {
+      if (!campo || !AGENDA.length) return;
+
+      var caja = document.createElement('ul');
+      caja.className = 'mj-sugerencias';
+      caja.hidden = true;
+      campo.parentNode.appendChild(caja);
+      campo.setAttribute('autocomplete', 'off');
+
+      var elegido = -1;
+
+      function cerrar() { caja.hidden = true; caja.innerHTML = ''; elegido = -1; }
+
+      function pintar() {
+        var q = campo.value.trim().toLowerCase();
+        if (q.length < 1) { cerrar(); return; }
+
+        var hallados = AGENDA.filter(function (c) {
+          return (c.e + ' ' + (c.n || '')).toLowerCase().indexOf(q) !== -1;
+        }).slice(0, 6);
+
+        // Si ya está escrita la dirección entera, no hay nada que sugerir:
+        // pasa al responder, que llega con el destinatario puesto.
+        if (hallados.length === 1 && hallados[0].e.toLowerCase() === q) { cerrar(); return; }
+        if (!hallados.length) { cerrar(); return; }
+
+        caja.innerHTML = '';
+        hallados.forEach(function (c, i) {
+          var li = document.createElement('li');
+          li.className = 'mj-sugerencia';
+          li.dataset.email = c.e;
+          li.setAttribute('role', 'option');
+          li.innerHTML = '<strong></strong><span></span>';
+          li.firstChild.textContent = c.n || c.e;
+          li.lastChild.textContent = c.e;
+          li.addEventListener('mousedown', function (ev) {
+            ev.preventDefault();          // no perder el foco antes de tiempo
+            campo.value = c.e; cerrar();
+          });
+          li.addEventListener('mouseenter', function () { marcar(i); });
+          caja.appendChild(li);
+        });
+
+        elegido = -1;
+        caja.hidden = false;
+      }
+
+      function marcar(i) {
+        var hijos = caja.children;
+        elegido = i;
+        for (var j = 0; j < hijos.length; j++) {
+          hijos[j].classList.toggle('is-activo', j === i);
+        }
+      }
+
+      campo.addEventListener('input', pintar);
+      campo.addEventListener('focus', pintar);
+      campo.addEventListener('blur', function () { setTimeout(cerrar, 120); });
+
+      campo.addEventListener('keydown', function (ev) {
+        if (caja.hidden) return;
+        var n = caja.children.length;
+
+        if (ev.key === 'ArrowDown')      { ev.preventDefault(); marcar((elegido + 1) % n); }
+        else if (ev.key === 'ArrowUp')   { ev.preventDefault(); marcar((elegido - 1 + n) % n); }
+        else if (ev.key === 'Escape')    { cerrar(); }
+        else if (ev.key === 'Enter' || ev.key === 'Tab') {
+          if (elegido >= 0) {
+            ev.preventDefault();
+            campo.value = caja.children[elegido].dataset.email;
+            cerrar();
+          }
+        }
+      });
+    }
+
+    raiz.querySelectorAll('[data-rol="form-redactar"] [name="para"], ' +
+                          '[data-rol="form-redactar"] [name="cc"]')
+        .forEach(sugerencias);
 
     /* Abre la ficha vacía (alta) o con lo que ya tenga la fila (edición) */
     function fichaContacto(fila) {
