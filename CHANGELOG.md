@@ -10,6 +10,25 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.8.2] — 2026-09-01
+
+### Corregido
+- **Al eliminar, el mensaje seguía en Recibidos.** La lista agrupa
+  conversaciones, pero a la papelera sólo viajaba el mensaje visible; los
+  demás se quedaban y la fila reaparecía en cuanto se recargaba. Ahora se
+  mueve la conversación entera.
+- **Los hermanos de la conversación se pedían con la conexión ya abierta**,
+  lo que obligaba a abrir una segunda anidada contra el mismo servidor. Se
+  resuelven antes de conectar.
+
+### Añadido
+- **Eliminar permanentemente.** Dentro de la papelera, el menú del botón
+  derecho ya no ofrece "Eliminar" (no hay dónde caer): ofrece "Eliminar
+  permanentemente", en rojo, y pide confirmación en una ventana propia que
+  dice cuántos mensajes se van y avisa de que no hay vuelta atrás. Por
+  debajo hace `UID STORE \Deleted` + `UID EXPUNGE`.
+- "Archivar" se oculta en la papelera, donde no tiene sentido.
+
 ## [1.8.1] — 2026-09-01
 
 ### Corregido

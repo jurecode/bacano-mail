@@ -919,3 +919,14 @@
   background: color-mix(in srgb, currentColor 14%, transparent);
   opacity: .75;
 }
+
+/* Acción sin vuelta atrás */
+.mj-menu-item.mj-menu-peligro{ color:#e5484d }
+.mj-menu-item.mj-menu-peligro .mj-i{ stroke:#e5484d }
+.mj-menu-item.mj-menu-peligro:hover{ background:rgba(229,72,77,.12) }
+
+/* Ventana de confirmación de borrado definitivo */
+.mj-confirmar-texto{ margin:14px 0 6px; font-size:14px; line-height:1.5; color:var(--mj-texto); }
+.mj-confirmar-nota{ margin:0 0 4px; font-size:13px; color:#e5484d; font-weight:600; }
+.mj-btn-peligro{ background:#e5484d; border-color:#e5484d; color:#fff; }
+.mj-btn-peligro:hover{ background:#cf3a3f; border-color:#cf3a3f; color:#fff; }

@@ -551,6 +551,19 @@ class MjProveedorImapSocket implements MjProveedor
         }
         $uid = (int) $c[2];
 
+        // Se resuelve la conversación antes de conectar: pedirla con la
+        // conexión abierta abriría una segunda anidada, y hay servidores
+        // que no la atienden hasta que la primera termina.
+        $delHilo = [$uid];
+        if (in_array($accion, ['mover', 'borrar'], true)) {
+            foreach ($this->hermanos_todos($id) as $otro) {
+                if (preg_match('/^imap-' . preg_quote($c[1], '/') . '-(\d+)$/', $otro, $x)) {
+                    $delHilo[] = (int) $x[1];
+                }
+            }
+            $delHilo = array_values(array_unique($delHilo));
+        }
+
         $imap = new MjImap($this->conf);
         if (!$imap->conectar() || !$imap->entrar()) {
             return ['ok' => false, 'mensaje' => $imap->error ?: 'No se pudo conectar.'];
@@ -595,8 +608,23 @@ class MjProveedorImapSocket implements MjProveedor
                     $texto = 'Tu servidor no tiene una carpeta para eso.';
                     break;
                 }
-                $ok = $imap->mover($uid, $destino);
-                $texto = $ok ? '' : 'El servidor no dejó mover el mensaje.';
+
+                // La lista muestra conversaciones: si sólo se mueve el mensaje
+                // visible, los demás se quedan y la fila reaparece.
+                $ok = true;
+                foreach ($delHilo as $u) {
+                    if (!$imap->mover($u, $destino)) { $ok = false; }
+                }
+                $texto = $ok ? '' : 'El servidor no dejó mover algún mensaje.';
+                break;
+
+            case 'borrar':
+                // Borrado definitivo: sólo tiene sentido desde la papelera
+                $ok = true;
+                foreach ($delHilo as $u) {
+                    if (!$imap->borrar($u)) { $ok = false; }
+                }
+                $texto = $ok ? '' : 'El servidor no dejó borrar algún mensaje.';
                 break;
 
             default:
@@ -615,6 +643,22 @@ class MjProveedorImapSocket implements MjProveedor
      * Los ids de los demás mensajes de la misma conversación.
      * Abrir un hilo debe marcarlo entero, como en cualquier cliente serio.
      */
+    /** Todos los del hilo, leídos o no (para mover o borrar en bloque). */
+    public function hermanos_todos(string $id): array
+    {
+        $hilo = null;
+        foreach ($this->mensajes() as $m) {
+            if ($m['id'] === $id) { $hilo = $m['hilo'] ?? ''; break; }
+        }
+        if ($hilo === null || $hilo === '') return [];
+
+        $ids = [];
+        foreach ($this->mensajes() as $m) {
+            if (($m['hilo'] ?? '') === $hilo) { $ids[] = $m['id']; }
+        }
+        return $ids;
+    }
+
     public function hermanos(string $id): array
     {
         $hilo = null;

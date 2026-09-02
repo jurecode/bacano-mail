@@ -160,6 +160,23 @@ class MjImap
         return true;
     }
 
+    /** Borra de verdad: marca \Deleted y purga. No hay vuelta atrás. */
+    public function borrar(int $uid): bool
+    {
+        if ($this->solo_lectura) {
+            $this->error = 'El servidor abrió la carpeta en sólo lectura.';
+            return false;
+        }
+        if (!$this->orden("UID STORE $uid +FLAGS (\\Deleted)")['ok']) {
+            $this->error = 'El servidor rechazó el borrado.';
+            return false;
+        }
+        // UID EXPUNGE purga sólo ese mensaje; si no está, se purga la carpeta
+        $r = $this->orden("UID EXPUNGE $uid");
+        if (!$r['ok']) { $r = $this->orden('EXPUNGE'); }
+        return $r['ok'];
+    }
+
     /** Mueve un mensaje a otra carpeta. Usa MOVE, o COPY + borrar si no está. */
     public function mover(int $uid, string $destino): bool
     {

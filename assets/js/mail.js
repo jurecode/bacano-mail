@@ -155,7 +155,10 @@
         case 'responder_todo': responder('todos'); break;
         case 'reenviar':       responder('reenviar'); break;
 
-        case 'eliminar':   quitar(itemActivo(), 'eliminado', 'papelera'); break;
+        case 'eliminar':
+          if (OP.carpeta === 'papelera') { borrarSiempre(itemActivo()); }
+          else { quitar(itemActivo(), 'eliminado', 'papelera'); }
+          break;
         case 'archivar':   quitar(itemActivo(), 'archivado', 'archivo'); break;
         case 'importante': destacar(itemActivo()); break;
 
@@ -260,6 +263,41 @@
       accionServidor(on ? 'quitar_destacado' : 'destacar', item.dataset.id, c);
     }
 
+    /* Borrado definitivo: sin papelera donde caer y sin Deshacer, así que
+       se pregunta con todas las letras antes de tocar nada. */
+    function borrarSiempre(item) {
+      if (!item) return;
+
+      var quien = (item.dataset.nombre || 'este mensaje');
+      var cuantos = parseInt(item.dataset.hilo || '1', 10);
+      var texto = cuantos > 1
+        ? 'Se borrarán definitivamente los ' + cuantos + ' mensajes de esta conversación de ' + quien + '.'
+        : 'Se borrará definitivamente el mensaje de ' + quien + '.';
+
+      confirmar(texto, function () { borrarYa(item, cuantos); });
+    }
+
+    function borrarYa(item, cuantos) {
+      var padre = item.parentNode, sig = item.nextSibling;
+      if (item.dataset.leido === '0') badge(-1);
+      item.remove();
+      contar();
+      if (item.classList.contains('is-activo')) {
+        var otro = visibles()[0];
+        if (otro) abrir(otro, false); else vaciarLector();
+      }
+
+      accionServidor('borrar', item.dataset.id).then(function (r) {
+        if (r && r.ok) {
+          aviso(cuantos > 1 ? 'Conversación eliminada definitivamente' : 'Mensaje eliminado definitivamente');
+        } else {
+          // no se pudo: se devuelve a su sitio para no mentir
+          padre.insertBefore(item, sig);
+          contar(); filtrar();
+        }
+      });
+    }
+
     function quitar(item, verbo, destino) {
       if (!item) return;
       if (OP.confirmar && !confirm('¿Eliminar este mensaje?')) return;
@@ -326,6 +364,16 @@
       var no = menu.querySelector('[data-menu="no_leido"]');
       if (no) no.querySelector('span').textContent =
         item.dataset.leido === '1' ? 'Marcar como no leído' : 'Marcar como leído';
+
+      // En la papelera no hay a dónde mover: ahí eliminar es para siempre
+      var eliminar = menu.querySelector('[data-menu="eliminar"]');
+      if (eliminar) {
+        eliminar.querySelector('span').textContent =
+          OP.carpeta === 'papelera' ? 'Eliminar permanentemente' : 'Eliminar';
+        eliminar.classList.toggle('mj-menu-peligro', OP.carpeta === 'papelera');
+      }
+      var archivar = menu.querySelector('[data-menu="archivar"]');
+      if (archivar) archivar.hidden = (OP.carpeta === 'papelera');
     }
 
     function cerrarMenu() { if (menu && !menu.hidden) { menu.hidden = true; objetivo = null; } }
@@ -338,7 +386,10 @@
         case 'abrir':      abrir(item, true); break;
         case 'no_leido':   marcarLeido(item, item.dataset.leido !== '1'); break;
         case 'destacar':   destacar(item, btn.dataset.color); break;
-        case 'eliminar':   quitar(item, 'eliminado', 'papelera'); break;
+        case 'eliminar':
+          if (OP.carpeta === 'papelera') { borrarSiempre(item); }
+          else { quitar(item, 'eliminado', 'papelera'); }
+          break;
         case 'archivar':   quitar(item, 'archivado', 'archivo'); break;
         case 'spam':       quitar(item, 'movido a Spam', 'spam'); break;
         case 'silenciar':  aviso('Silenciar todavía no está disponible'); break;
@@ -466,6 +517,22 @@
     }
     function cerrarModal() {
       raiz.querySelectorAll('.mj-modal').forEach(function (m) { m.hidden = true; });
+    }
+
+    /* Ventana de confirmación propia: el confirm() del navegador desentona
+       y en el móvil algunos lo bloquean. */
+    function confirmar(texto, alAceptar) {
+      var m = raiz.querySelector('[data-modal="confirmar"]');
+      if (!m) { if (window.confirm(texto)) alAceptar(); return; }
+
+      m.querySelector('[data-rol="confirmar-texto"]').textContent = texto;
+      var si = m.querySelector('[data-rol="confirmar-si"]');
+      var nuevo = si.cloneNode(true);        // se limpia el oyente anterior
+      si.parentNode.replaceChild(nuevo, si);
+      nuevo.addEventListener('click', function () { cerrarModal(); alAceptar(); });
+
+      m.hidden = false;
+      nuevo.focus();
     }
 
     var form = raiz.querySelector('[data-rol="form-redactar"]');

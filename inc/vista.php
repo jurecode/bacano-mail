@@ -189,6 +189,7 @@ function mj_correo(array $ov = []): void
     <?php if ($cfg['interfaz']['menu_contextual']) mj_v_menu($cfg); ?>
     <?php if ($cfg['interfaz']['boton_redactar'])  mj_v_compositor($cfg); ?>
     <?php if ($cfg['interfaz']['mostrar_ayuda_atajos'] && $cfg['interfaz']['atajos_teclado']) mj_v_atajos($cfg); ?>
+    <?php mj_v_confirmar(); ?>
 
     <div class="mj-avisos" role="status" aria-live="polite"></div>
 
@@ -206,6 +207,7 @@ function mj_correo(array $ov = []): void
       'carpetas' => array_map(fn($c) => ['id' => $c['id'], 'nombre' => $c['nombre']],
                      array_merge($cfg['carpetas'], $cfg['carpetas_propias'])),
       'opciones' => [
+        'carpeta'     => $carpeta,
         'autoLeer'    => (bool) $cfg['interfaz']['auto_marcar_leido'],
         'atajos'      => (bool) $cfg['interfaz']['atajos_teclado'],
         'avisos'      => (bool) $cfg['interfaz']['notificaciones'],
@@ -854,6 +856,28 @@ function mj_v_compositor(array $cfg): void
 <?php }
 
 /** Ayuda de atajos */
+/** Ventana de confirmación para las acciones sin vuelta atrás */
+function mj_v_confirmar(): void
+{ ?>
+  <div class="mj-modal" data-modal="confirmar" hidden>
+    <div class="mj-modal-fondo" data-accion="cerrar-modal"></div>
+    <div class="mj-modal-caja mj-modal-chica" role="alertdialog" aria-modal="true" aria-labelledby="mj-conf-t">
+      <header class="mj-modal-cab">
+        <h2 class="mj-h2" id="mj-conf-t" data-rol="confirmar-titulo">Eliminar definitivamente</h2>
+        <button class="mj-icono-btn" type="button" data-accion="cerrar-modal" aria-label="Cerrar"><?= mj_icono('cerrar', 18) ?></button>
+      </header>
+      <p class="mj-confirmar-texto" data-rol="confirmar-texto"></p>
+      <p class="mj-confirmar-nota">Esta acción no se puede deshacer.</p>
+      <div class="mj-modal-pie">
+        <div class="mj-modal-pie-btns">
+          <button class="mj-btn" type="button" data-accion="cerrar-modal">Cancelar</button>
+          <button class="mj-btn mj-btn-peligro" type="button" data-rol="confirmar-si">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+<?php }
+
 function mj_v_atajos(array $cfg): void
 {
   $filas = [
