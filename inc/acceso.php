@@ -10,17 +10,15 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/recuerdo.php';
+
 function mj_sesion(): void
 {
     if (session_status() === PHP_SESSION_NONE) {
         session_name('bacano_mail');
-
-        // Si se pidió mantener la sesión, la cookie dura 30 días; si no,
-        // se cierra al cerrar el navegador.
-        $dias = !empty($_COOKIE['bacano_recordar']) ? 30 * 24 * 3600 : 0;
         session_set_cookie_params([
-            'lifetime' => $dias,
-            'path'     => '/',
+            'lifetime' => 0,          // la sesión muere con el navegador;
+            'path'     => '/',        // lo que sobrevive es el vale de recuerdo.php
             'httponly' => true,
             'samesite' => 'Lax',
             'secure'   => !empty($_SERVER['HTTPS']),
@@ -38,9 +36,13 @@ function mj_dentro(): bool
 function mj_salir(): void
 {
     mj_sesion();
+    require_once __DIR__ . '/recuerdo.php';
+
+    mj_recuerdo_borrar((string) ($_COOKIE[MJ_RECUERDO_COOKIE] ?? ''));
+    mj_recuerdo_cookie('');
+
     $_SESSION = [];
     session_destroy();
-    setcookie('bacano_recordar', '', ['expires' => time() - 3600, 'path' => '/']);
 }
 
 /** Token para los formularios que hacen algo (enviar, por ejemplo). */
@@ -122,6 +124,28 @@ function mj_exigir_acceso(array $cfg): bool
         return true;
     }
 
+    // ¿Hay un vale de "mantener la sesión abierta"? Se restaura desde él.
+    if (!empty($_COOKIE[MJ_RECUERDO_COOKIE] ?? '')) {
+        require_once __DIR__ . '/recuerdo.php';
+        $vale = mj_recuerdo_leer((string) $_COOKIE[MJ_RECUERDO_COOKIE]);
+
+        if ($vale !== null) {
+            session_regenerate_id(true);
+            $_SESSION['mj_acceso']  = true;
+            $_SESSION['mj_usuario'] = $vale['usuario'];
+            $_SESSION['mj_clave']   = $vale['clave'];
+
+            // el vale se renueva en cada uso: si alguien copió el token viejo,
+            // deja de servir en cuanto la persona vuelve a entrar
+            mj_recuerdo_borrar((string) $_COOKIE[MJ_RECUERDO_COOKIE]);
+            $nuevo = mj_recuerdo_crear($vale['usuario'], $vale['clave']);
+            if ($nuevo !== '') { mj_recuerdo_cookie($nuevo); }
+
+            return true;
+        }
+        mj_recuerdo_cookie('');
+    }
+
     $modo = ($cfg['acceso']['modo'] ?? 'casilla') === 'clave' ? 'clave' : 'casilla';
     $hash = (string) ($cfg['admin']['clave_hash'] ?? '');
     $servidor = trim((string) ($cfg['origen']['imap']['host'] ?? ''));
@@ -168,20 +192,17 @@ function mj_exigir_acceso(array $cfg): bool
                 if ($imap->conectar() && $imap->entrar()) {
                     $imap->cerrar();
 
-                    // la cookie de "recordarme" se decide antes de crear la sesión
-                    $recordar = isset($_POST['mj_recordar']);
-                    setcookie('bacano_recordar', $recordar ? '1' : '', [
-                        'expires'  => $recordar ? time() + 30 * 24 * 3600 : time() - 3600,
-                        'path'     => '/',
-                        'httponly' => true,
-                        'samesite' => 'Lax',
-                        'secure'   => !empty($_SERVER['HTTPS']),
-                    ]);
-
                     session_regenerate_id(true);
                     $_SESSION['mj_acceso']  = true;
                     $_SESSION['mj_usuario'] = $correo;
                     $_SESSION['mj_clave']   = $clave;
+
+                    if (isset($_POST['mj_recordar'])) {
+                        require_once __DIR__ . '/recuerdo.php';
+                        $token = mj_recuerdo_crear($correo, $clave);
+                        if ($token !== '') { mj_recuerdo_cookie($token); }
+                    }
+
                     header('Location: ./');
                     exit;
                 }

@@ -10,6 +10,17 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.8.1] — 2026-09-01
+
+### Corregido
+- **"Mantener la sesión abierta" no mantenía nada.** La cookie se decidía
+  antes de saber si la persona había marcado la casilla, y aunque hubiera
+  durado, PHP borra los datos de sesión a los 24 minutos. Ahora se guarda un
+  vale en el servidor con la casilla y su clave cifrada (AES-256-GCM), y el
+  navegador conserva sólo el token que lo abre, 30 días.
+- El vale se renueva en cada uso, se borra al cerrar sesión, caduca solo y se
+  limpia del disco cuando vence.
+
 ## [1.8.0] — 2026-09-01
 
 ### Cambiado
