@@ -278,6 +278,20 @@ return [
   ],
 
   /* ---------------------------------------------------------
+     16b. PANEL DEL HOSTING (cPanel)
+     Sólo hace falta para cambiar la contraseña de una casilla:
+     por IMAP eso no se puede hacer. El token se guarda en
+     config.local.php y manda sobre todas las casillas del panel.
+     --------------------------------------------------------- */
+  'cpanel' => [
+    'host'    => '',      // p. ej. madejalex.cl  (sin https:// ni :2083)
+    'puerto'  => 2083,
+    'usuario' => '',      // el usuario de cPanel, no el correo
+    'token'   => '',      // Seguridad → Administrar tokens de API
+    'validar_certificado' => false,
+  ],
+
+  /* ---------------------------------------------------------
      17. PANEL DE ADMINISTRACIÓN
      La clave se guarda cifrada (hash) en config.local.php
      cuando completas instalar.php.

@@ -10,6 +10,32 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.11.0] — 2026-09-01
+
+### Añadido
+- **Cambiar la contraseña de la casilla**, en "Tu cuenta". Por IMAP no se
+  puede —ese protocolo lee y escribe mensajes, no administra cuentas—, así
+  que se le pide al panel del hosting por su API. Hay que conectar cPanel una
+  vez en `instalar.php` → "Panel del hosting", con un token de API.
+  Antes de cambiarla se comprueba la de ahora contra el servidor, y después
+  la sesión, el vale de "mantener la sesión abierta" y la casilla guardada se
+  actualizan solos para no quedarse fuera.
+- **Dos casillas, y cambiar de una a otra con un clic.** Desde tu nombre, al
+  pie del menú: "Agregar otra casilla" pide su dirección y contraseña sin
+  cerrar la que ya está abierta, y desde ahí se salta entre ellas. Cada una
+  conserva su nombre, su firma y su agenda.
+- Las casillas guardadas se pueden quitar de este equipo una a una.
+
+### Seguridad
+- Las contraseñas guardadas se cifran con AES-256-GCM y la llave del
+  servidor, la misma de "mantener la sesión abierta"; el archivo vive fuera
+  de la web y sólo se abre con el token del navegador que las guardó.
+- Cambiar de casilla y quitar una exigen el token de la sesión, para que no
+  baste con hacer clic en un enlace ajeno.
+- El token de cPanel manda sobre TODAS las casillas del panel. Se guarda en
+  `config.local.php`, que no se sube al repositorio; si se filtra, hay que
+  revocarlo desde cPanel.
+
 ## [1.10.1] — 2026-09-01
 
 ### Añadido

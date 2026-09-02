@@ -1063,3 +1063,50 @@
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
 @media (max-width:640px){ .mj-sugerencias{ left:0; } }
+
+/* ---- Cambiar de casilla ---- */
+.mj-usuario-btn{
+  border:0; background:transparent; font:inherit; color:inherit;
+  text-align:left; cursor:pointer; border-radius:var(--mj-r-md);
+  padding:4px; margin:-4px; transition:background .15s;
+}
+.mj-usuario-btn:hover{ background:var(--mj-hover); }
+
+.mj-cuentas{
+  /* Se sale del ancho de la barra a propósito: las direcciones de correo
+     no caben en una columna de menú. */
+  position:absolute; z-index:40; bottom:calc(100% + 8px); left:10px;
+  width:max-content; min-width:calc(100% - 20px); max-width:min(320px, 82vw);
+  padding:8px; border-radius:var(--mj-r-lg);
+  background:var(--mj-flotante); border:1px solid var(--mj-borde2);
+  box-shadow:var(--mj-sombra);
+  animation:mj-sube .16s ease-out;
+}
+.mj-cuentas-t{
+  margin:2px 8px 7px; font-size:10.5px; font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--mj-txt3);
+}
+.mj-cuentas-lista{ list-style:none; margin:0; padding:0; }
+.mj-cuenta{ display:flex; align-items:center; gap:2px; }
+.mj-cuenta-liga{
+  flex:1 1 auto; min-width:0; display:flex; align-items:center; gap:9px;
+  padding:7px 8px; border-radius:var(--mj-r-sm);
+  color:var(--mj-txt2); text-decoration:none; font-size:12.5px;
+}
+a.mj-cuenta-liga:hover{ background:var(--mj-hover); color:var(--mj-txt); }
+.mj-cuenta.is-activa .mj-cuenta-liga{ color:var(--mj-txt); font-weight:600; }
+.mj-cuenta-txt{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mj-cuenta-x{ flex:none; opacity:0; transition:opacity .15s; }
+.mj-cuenta:hover .mj-cuenta-x, .mj-cuenta:focus-within .mj-cuenta-x{ opacity:.7; }
+.mj-cuenta-x:hover{ opacity:1; }
+
+.mj-cuentas-mas{
+  display:flex; align-items:center; gap:9px; margin-top:4px; white-space:nowrap;
+  padding:8px; border-radius:var(--mj-r-sm);
+  color:var(--mj-txt2); text-decoration:none; font-size:12.5px; font-weight:600;
+  border-top:1px solid var(--mj-borde2);
+}
+.mj-cuentas-mas:hover{ background:var(--mj-hover); color:var(--mj-txt); }
+.mj-cuentas-nota{ margin:6px 8px 2px; max-width:260px; font-size:11px; line-height:1.45; color:var(--mj-txt3); }
+
+.mj-carpetas-pie{ position:relative; }

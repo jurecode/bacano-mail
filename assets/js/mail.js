@@ -179,6 +179,15 @@
         case 'borrar-contacto':
           quitarContacto(btn.closest('.mj-contacto'));
           break;
+        case 'cuentas': {
+          var caja = raiz.querySelector('[data-rol="cuentas"]');
+          if (caja) {
+            caja.hidden = !caja.hidden;
+            btn.setAttribute('aria-expanded', String(!caja.hidden));
+          }
+          break;
+        }
+
         case 'nuevo-contacto':
           fichaContacto(null);
           break;
@@ -748,6 +757,15 @@
 
       var nada = raiz.querySelector('[data-rol="sin-coincidencias"]');
       if (nada) nada.hidden = visibles > 0 || q === '';
+    });
+
+    document.addEventListener('click', function (ev) {
+      var caja = raiz.querySelector('[data-rol="cuentas"]');
+      if (!caja || caja.hidden) return;
+      if (caja.contains(ev.target) || ev.target.closest('[data-accion="cuentas"]')) return;
+      caja.hidden = true;
+      var b = raiz.querySelector('[data-accion="cuentas"]');
+      if (b) b.setAttribute('aria-expanded', 'false');
     });
 
     function abrirModal(nombre, datos) {

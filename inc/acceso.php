@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/recuerdo.php';
+require_once __DIR__ . '/cuentas.php';
 
 function mj_sesion(): void
 {
@@ -120,12 +121,49 @@ function mj_exigir_acceso(array $cfg): bool
         header('Location: ./');
         exit;
     }
-    if (mj_dentro()) {
+    // Cambiar a otra casilla ya guardada en este equipo
+    if (isset($_GET['cuenta']) && mj_dentro() && mj_token_valido($_GET['t'] ?? null)) {
+        $otra  = strtolower(trim((string) $_GET['cuenta']));
+        $clave = mj_cuenta_clave($otra);
+
+        if ($clave !== null) {
+            session_regenerate_id(true);   // higiene: sesión nueva por casilla
+            $_SESSION['mj_acceso']  = true;
+            $_SESSION['mj_usuario'] = $otra;
+            $_SESSION['mj_clave']   = $clave;
+        }
+        header('Location: ./');
+        exit;
+    }
+
+    // Quitar una casilla guardada de este equipo
+    if (isset($_GET['olvidar']) && mj_dentro() && mj_token_valido($_GET['t'] ?? null)) {
+        mj_cuenta_olvidar((string) $_GET['olvidar']);
+        header('Location: ./');
+        exit;
+    }
+
+    // Agregar otra casilla: se pide el acceso sin cerrar la que ya está
+    if (isset($_GET['agregar']) && mj_dentro()) {
+        $_SESSION['mj_agregando'] = true;
+        header('Location: ./');
+        exit;
+    }
+
+    if (mj_dentro() && empty($_SESSION['mj_agregando'])) {
         return true;
     }
 
+    // Se puede volver atrás sin agregar nada
+    if (isset($_GET['cancelar_agregar'])) {
+        unset($_SESSION['mj_agregando']);
+        header('Location: ./');
+        exit;
+    }
+
     // ¿Hay un vale de "mantener la sesión abierta"? Se restaura desde él.
-    if (!empty($_COOKIE[MJ_RECUERDO_COOKIE] ?? '')) {
+    // Mientras se agrega otra casilla no, que repondría la de siempre.
+    if (empty($_SESSION['mj_agregando']) && !empty($_COOKIE[MJ_RECUERDO_COOKIE] ?? '')) {
         require_once __DIR__ . '/recuerdo.php';
         $vale = mj_recuerdo_leer((string) $_COOKIE[MJ_RECUERDO_COOKIE]);
 
@@ -192,10 +230,24 @@ function mj_exigir_acceso(array $cfg): bool
                 if ($imap->conectar() && $imap->entrar()) {
                     $imap->cerrar();
 
+                    // Al agregar una segunda casilla se guardan las dos: pedir
+                    // "agregar otra cuenta" es justamente el permiso para ello.
+                    if (!empty($_SESSION['mj_agregando'])) {
+                        $antes = mj_credenciales();
+                        if ($antes !== null) {
+                            mj_cuenta_recordar($antes['usuario'], $antes['clave']);
+                        }
+                        mj_cuenta_recordar($correo, $clave);
+                    } elseif (mj_cuenta_clave($correo) !== null) {
+                        // ya estaba guardada: se refresca por si cambió la clave
+                        mj_cuenta_recordar($correo, $clave);
+                    }
+
                     session_regenerate_id(true);
                     $_SESSION['mj_acceso']  = true;
                     $_SESSION['mj_usuario'] = $correo;
                     $_SESSION['mj_clave']   = $clave;
+                    unset($_SESSION['mj_agregando']);
 
                     if (isset($_POST['mj_recordar'])) {
                         require_once __DIR__ . '/recuerdo.php';
@@ -211,11 +263,11 @@ function mj_exigir_acceso(array $cfg): bool
         }
     }
 
-    mj_pantalla_acceso($cfg, $error, false, $modo);
+    mj_pantalla_acceso($cfg, $error, false, $modo, !empty($_SESSION['mj_agregando']));
     return false;
 }
 
-function mj_pantalla_acceso(array $cfg, string $error = '', bool $soloAviso = false, string $modo = 'casilla'): void
+function mj_pantalla_acceso(array $cfg, string $error = '', bool $soloAviso = false, string $modo = 'casilla', bool $agregando = false): void
 {
     $marca  = $cfg['marca']['nombre'] ?? 'Correo';
     $corto  = $cfg['marca']['nombre_corto'] ?? mb_substr($marca, 0, 1);
@@ -388,6 +440,9 @@ function mj_pantalla_acceso(array $cfg, string $error = '', bool $soloAviso = fa
     font-size:13px;
   }
 
+  .cancelar{ margin-top:14px; text-align:center; font-size:13px }
+  .cancelar a{ color:var(--tinta-2); text-decoration:underline; text-underline-offset:3px }
+  .cancelar a:hover{ color:var(--tinta) }
   .creditos{
     margin-top:26px; padding-top:16px;
     border-top:1px solid var(--linea);
@@ -440,11 +495,16 @@ function mj_pantalla_acceso(array $cfg, string $error = '', bool $soloAviso = fa
     </section>
 
     <section class="acceso">
-      <h1>Entrar al correo</h1>
+      <h1><?= $agregando ? 'Agregar otra casilla' : 'Entrar al correo' ?></h1>
       <p class="acceso__sub">
-        <?= $modo === 'casilla'
-            ? 'Usa tu dirección y la contraseña de tu casilla.'
-            : 'Esta casilla es privada.' ?>
+        <?php if ($agregando): ?>
+          Escribe la dirección y la contraseña de la otra casilla. Quedará
+          guardada en este equipo para poder cambiar de una a otra.
+        <?php else: ?>
+          <?= $modo === 'casilla'
+              ? 'Usa tu dirección y la contraseña de tu casilla.'
+              : 'Esta casilla es privada.' ?>
+        <?php endif; ?>
       </p>
 
       <?php if ($error !== ''): ?><p class="aviso"><?= mj_e($error) ?></p><?php endif; ?>
@@ -487,7 +547,10 @@ function mj_pantalla_acceso(array $cfg, string $error = '', bool $soloAviso = fa
           </span>
         </div>
 
-        <button class="entrar" type="submit">Entrar</button>
+        <button class="entrar" type="submit"><?= $agregando ? 'Agregar' : 'Entrar' ?></button>
+        <?php if ($agregando): ?>
+          <p class="cancelar"><a href="?cancelar_agregar=1">Volver sin agregar nada</a></p>
+        <?php endif; ?>
       </form>
       <?php endif; ?>
 

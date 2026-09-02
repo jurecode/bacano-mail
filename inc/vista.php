@@ -567,14 +567,71 @@ function mj_v_carpetas(array $cfg, string $carpeta, array $conteo): void
     </nav>
 
     <div class="mj-carpetas-pie">
-      <div class="mj-usuario">
-        <?= mj_v_avatar(['nombre' => $cfg['usuario']['nombre'], 'avatar' => $cfg['usuario']['avatar']], 32) ?>
-        <div class="mj-usuario-txt">
-          <strong><?= mj_e($cfg['usuario']['nombre']) ?></strong>
-          <span><?= mj_e($cfg['usuario']['email']) ?></span>
+      <?php
+        $dentro  = function_exists('mj_dentro') && mj_dentro();
+        $guardadas = [];
+        if ($dentro && function_exists('mj_cuentas_lista')) {
+          $guardadas = mj_cuentas_lista();
+        }
+        $tok = $dentro && function_exists('mj_token_sesion') ? mj_token_sesion() : '';
+      ?>
+      <?php if ($dentro): ?>
+        <button class="mj-usuario mj-usuario-btn" type="button" data-accion="cuentas"
+                aria-haspopup="true" aria-expanded="false" title="Cambiar de casilla">
+          <?= mj_v_avatar(['nombre' => $cfg['usuario']['nombre'], 'avatar' => $cfg['usuario']['avatar']], 32) ?>
+          <div class="mj-usuario-txt">
+            <strong><?= mj_e($cfg['usuario']['nombre']) ?></strong>
+            <span><?= mj_e($cfg['usuario']['email']) ?></span>
+          </div>
+        </button>
+
+        <div class="mj-cuentas" data-rol="cuentas" hidden>
+          <p class="mj-cuentas-t">Casillas en este equipo</p>
+          <ul class="mj-cuentas-lista">
+            <?php
+              $actual = strtolower((string) $cfg['usuario']['email']);
+              $vistas = [];
+              foreach ($guardadas as $g) {
+                $vistas[] = strtolower($g['usuario']);
+              }
+              if (!in_array($actual, $vistas, true)) {
+                array_unshift($guardadas, ['usuario' => $actual]);
+              }
+              foreach ($guardadas as $g):
+                $es = strtolower($g['usuario']) === $actual;
+            ?>
+              <li class="mj-cuenta<?= $es ? ' is-activa' : '' ?>">
+                <?php if ($es): ?>
+                  <span class="mj-cuenta-liga">
+                    <?= mj_v_avatar(['nombre' => '', 'email' => $g['usuario']], 26) ?>
+                    <span class="mj-cuenta-txt"><?= mj_e($g['usuario']) ?></span>
+                    <?= mj_icono('check', 15) ?>
+                  </span>
+                <?php else: ?>
+                  <a class="mj-cuenta-liga" href="?cuenta=<?= rawurlencode($g['usuario']) ?>&amp;t=<?= mj_e($tok) ?>">
+                    <?= mj_v_avatar(['nombre' => '', 'email' => $g['usuario']], 26) ?>
+                    <span class="mj-cuenta-txt"><?= mj_e($g['usuario']) ?></span>
+                  </a>
+                  <a class="mj-icono-btn mj-cuenta-x" title="Quitar de este equipo"
+                     aria-label="Quitar <?= mj_e($g['usuario']) ?> de este equipo"
+                     href="?olvidar=<?= rawurlencode($g['usuario']) ?>&amp;t=<?= mj_e($tok) ?>"><?= mj_icono('cerrar', 14) ?></a>
+                <?php endif; ?>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+          <a class="mj-cuentas-mas" href="?agregar=1"><?= mj_icono('mas', 16) ?><span>Agregar otra casilla</span></a>
+          <p class="mj-cuentas-nota">Las contraseñas se guardan cifradas en el servidor. No lo hagas en un equipo compartido.</p>
         </div>
-      </div>
-      <?php if (function_exists('mj_dentro') && mj_dentro()): ?>
+      <?php else: ?>
+        <div class="mj-usuario">
+          <?= mj_v_avatar(['nombre' => $cfg['usuario']['nombre'], 'avatar' => $cfg['usuario']['avatar']], 32) ?>
+          <div class="mj-usuario-txt">
+            <strong><?= mj_e($cfg['usuario']['nombre']) ?></strong>
+            <span><?= mj_e($cfg['usuario']['email']) ?></span>
+          </div>
+        </div>
+      <?php endif; ?>
+      <?php if ($dentro): ?>
         <a class="mj-icono-btn" href="cuenta.php" title="Ajustes de tu cuenta" aria-label="Ajustes de tu cuenta">
           <?= mj_icono('ajustes', 18) ?>
         </a>

@@ -114,6 +114,14 @@ $SECCIONES = [
     'origen.smtp.desde'       => ['t' => 'texto', 'l' => 'Enviar desde', 'p' => 'correo@midominio.cl'],
   ],
 
+  'Panel del hosting' => [
+    'cpanel.host'    => ['t' => 'texto', 'l' => 'Servidor de cPanel', 'a' => 'Sólo hace falta para cambiar la contraseña de una casilla: por IMAP eso no se puede. Sin https:// ni puerto', 'p' => 'midominio.cl'],
+    'cpanel.puerto'  => ['t' => 'numero', 'l' => 'Puerto', 'p' => '2083'],
+    'cpanel.usuario' => ['t' => 'texto', 'l' => 'Usuario de cPanel', 'a' => 'El del panel, no el del correo'],
+    'cpanel.token'   => ['t' => 'clave', 'l' => 'Token de API', 'a' => 'En cPanel: Seguridad → Administrar tokens de API. Manda sobre todas las casillas del panel. Déjalo vacío para conservar el guardado'],
+    'cpanel.validar_certificado' => ['t' => 'bool', 'l' => 'Validar el certificado del panel', 'a' => 'Apágalo si el panel usa un certificado propio'],
+  ],
+
   'Actualizaciones' => [
     'actualizaciones.repositorio' => ['t' => 'texto', 'l' => 'Repositorio en GitHub', 'a' => 'Formato usuario/proyecto', 'p' => 'jurecode/bacano-mail'],
     'actualizaciones.token'       => ['t' => 'clave', 'l' => 'Token de GitHub', 'a' => 'Sólo si el repositorio es privado. Déjalo vacío para conservar el guardado'],
