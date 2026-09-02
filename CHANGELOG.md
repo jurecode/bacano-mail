@@ -10,6 +10,19 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.12.1] — 2026-09-01
+
+### Corregido
+- **"Agregar otra casilla" te sacaba a la pantalla de acceso.** Pedía los datos
+  de la otra casilla en el login de siempre, y parecía que se había cerrado la
+  sesión. Ahora se piden en un cuadro dentro de la ventana, sin moverse de
+  donde estabas: se comprueban contra el servidor antes de guardar nada y la
+  lista de casillas se actualiza al momento.
+- El enlace sigue llevando a la pantalla de acceso si el JavaScript no llega a
+  cargarse, así que la función no se pierde en ningún caso.
+- Al agregar ya no se cambia de casilla: se queda la que estabas usando, y se
+  cambia cuando quieras con "Usar".
+
 ## [1.12.0] — 2026-09-01
 
 ### Cambiado

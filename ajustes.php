@@ -102,4 +102,43 @@ if ($que === 'clave') {
     $responder(true, 'Contraseña cambiada. Acuérdate de actualizarla también en el celular.');
 }
 
+/* --- agregar otra casilla a este equipo --- */
+if ($que === 'agregar') {
+    $otro  = strtolower(trim((string) ($_POST['correo'] ?? '')));
+    $clave = (string) ($_POST['clave'] ?? '');
+
+    if (!filter_var($otro, FILTER_VALIDATE_EMAIL)) $responder(false, 'Escribe la dirección completa.');
+    if ($clave === '')                             $responder(false, 'Falta la contraseña de esa casilla.');
+    if ($otro === strtolower($correo))             $responder(false, 'Esa es la casilla con la que ya estás dentro.');
+
+    // Se comprueba contra el servidor antes de guardar nada: si no, se
+    // guardaría una contraseña que no sirve y el cambio de cuenta fallaría
+    // más tarde, lejos de donde se cometió el error.
+    require_once __DIR__ . '/inc/imap-cliente.php';
+    $imap = new MjImap([
+        'host'    => (string) ($cfg['origen']['imap']['host'] ?? ''),
+        'puerto'  => (int) ($cfg['origen']['imap']['puerto'] ?? 993),
+        'cifrado' => (string) ($cfg['origen']['imap']['cifrado'] ?? 'ssl'),
+        'validar_certificado' => !empty($cfg['origen']['imap']['validar_certificado']),
+        'usuario' => $otro,
+        'clave'   => $clave,
+    ]);
+    if (!$imap->conectar() || !$imap->entrar()) {
+        $responder(false, $imap->error ?: 'No se pudo entrar con esos datos.');
+    }
+    $imap->cerrar();
+
+    // Se guardan las dos: sin la de ahora no habría a dónde volver
+    $cred = mj_credenciales();
+    if ($cred !== null) { mj_cuenta_recordar($cred['usuario'], $cred['clave']); }
+
+    if (!mj_cuenta_recordar($otro, $clave)) {
+        $responder(false, 'No se pudo guardar la casilla en este equipo.');
+    }
+
+    $responder(true, 'Casilla agregada', 200, [
+        'filas' => mj_v_casillas($correo, mj_cuentas_lista(), mj_token_sesion()),
+    ]);
+}
+
 $responder(false, 'Acción desconocida.');

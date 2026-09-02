@@ -202,6 +202,7 @@ function mj_correo(array $ov = []): void
     <?php if ($cfg['interfaz']['mostrar_ayuda_atajos'] && $cfg['interfaz']['atajos_teclado']) mj_v_atajos($cfg); ?>
     <?php mj_v_confirmar(); ?>
     <?php if ($carpeta === 'contactos') mj_v_ficha_contacto(); ?>
+    <?php if (function_exists('mj_dentro') && mj_dentro()) mj_v_nueva_casilla(); ?>
 
     <div class="mj-avisos" role="status" aria-live="polite"></div>
 
@@ -471,31 +472,14 @@ function mj_v_ajustes(array $cfg): void
             <p class="mj-bloque-d">Para cambiar de una a otra sin escribir la contraseña.</p>
           </div>
 
-          <ul class="mj-set-casillas">
-            <?php
-              $actual = strtolower($correo);
-              $vistas = array_map(fn($g) => strtolower($g['usuario']), $otras);
-              if (!in_array($actual, $vistas, true) && $actual !== '') {
-                array_unshift($otras, ['usuario' => $actual]);
-              }
-              foreach ($otras as $g): $es = strtolower($g['usuario']) === $actual; ?>
-              <li class="mj-set-casilla<?= $es ? ' is-activa' : '' ?>">
-                <?= mj_v_avatar(['nombre' => '', 'email' => $g['usuario']], 28) ?>
-                <span class="mj-set-casilla-txt"><?= mj_e($g['usuario']) ?></span>
-                <?php if ($es): ?>
-                  <span class="mj-set-marca"><?= mj_icono('check', 15) ?> En uso</span>
-                <?php else: ?>
-                  <a class="mj-btn mj-btn-2 mj-btn-chico" href="?cuenta=<?= rawurlencode($g['usuario']) ?>&amp;t=<?= mj_e($tok) ?>">Usar</a>
-                  <a class="mj-icono-btn" title="Quitar de este equipo"
-                     aria-label="Quitar <?= mj_e($g['usuario']) ?> de este equipo"
-                     href="?olvidar=<?= rawurlencode($g['usuario']) ?>&amp;t=<?= mj_e($tok) ?>"><?= mj_icono('cerrar', 15) ?></a>
-                <?php endif; ?>
-              </li>
-            <?php endforeach; ?>
+          <ul class="mj-set-casillas" data-rol="lista-casillas">
+            <?= mj_v_casillas($correo, $otras, $tok) ?>
           </ul>
 
           <div class="mj-bloque-pie mj-bloque-pie-izq">
-            <a class="mj-btn mj-btn-2" href="?agregar=1"><?= mj_icono('mas', 16) ?><span>Agregar otra casilla</span></a>
+            <?php /* El enlace sigue sirviendo sin JavaScript; con él, se abre
+                     el cuadro sin salir de la ventana. */ ?>
+            <a class="mj-btn mj-btn-2" href="?agregar=1" data-accion="nueva-casilla"><?= mj_icono('mas', 16) ?><span>Agregar otra casilla</span></a>
             <a class="mj-btn mj-btn-2" href="?salir=1"><?= mj_icono('salir', 16) ?><span>Cerrar sesión</span></a>
           </div>
         </section>
@@ -503,6 +487,68 @@ function mj_v_ajustes(array $cfg): void
       </div>
     </div>
   </section>
+<?php }
+
+/** Las filas de las casillas guardadas. Las usan la vista y el guardado. */
+function mj_v_casillas(string $correo, array $otras, string $tok): string
+{
+  $actual = strtolower($correo);
+  $vistas = array_map(fn($g) => strtolower($g['usuario']), $otras);
+  if (!in_array($actual, $vistas, true) && $actual !== '') {
+    array_unshift($otras, ['usuario' => $actual]);
+  }
+
+  ob_start();
+  foreach ($otras as $g): $es = strtolower($g['usuario']) === $actual; ?>
+    <li class="mj-set-casilla<?= $es ? ' is-activa' : '' ?>">
+      <?= mj_v_avatar(['nombre' => '', 'email' => $g['usuario']], 28) ?>
+      <span class="mj-set-casilla-txt"><?= mj_e($g['usuario']) ?></span>
+      <?php if ($es): ?>
+        <span class="mj-set-marca"><?= mj_icono('check', 15) ?> En uso</span>
+      <?php else: ?>
+        <a class="mj-btn mj-btn-2 mj-btn-chico" href="?cuenta=<?= rawurlencode($g['usuario']) ?>&amp;t=<?= mj_e($tok) ?>">Usar</a>
+        <a class="mj-icono-btn" title="Quitar de este equipo"
+           aria-label="Quitar <?= mj_e($g['usuario']) ?> de este equipo"
+           href="?olvidar=<?= rawurlencode($g['usuario']) ?>&amp;t=<?= mj_e($tok) ?>"><?= mj_icono('cerrar', 15) ?></a>
+      <?php endif; ?>
+    </li>
+  <?php endforeach;
+  return (string) ob_get_clean();
+}
+
+/** Cuadro para agregar otra casilla sin salir de la ventana */
+function mj_v_nueva_casilla(): void
+{ ?>
+  <div class="mj-modal" data-modal="casilla" hidden>
+    <div class="mj-modal-fondo" data-accion="cerrar-modal"></div>
+    <div class="mj-modal-caja mj-modal-chica" role="dialog" aria-modal="true" aria-labelledby="mj-cas-t">
+      <header class="mj-modal-cab">
+        <h2 class="mj-h2" id="mj-cas-t">Agregar otra casilla</h2>
+        <button class="mj-icono-btn" type="button" data-accion="cerrar-modal" aria-label="Cerrar"><?= mj_icono('cerrar', 18) ?></button>
+      </header>
+      <form class="mj-form" data-rol="form-casilla"
+            data-token="<?= mj_e(function_exists('mj_token_sesion') ? mj_token_sesion() : '') ?>">
+        <p class="mj-set-nota">
+          Quedará guardada en este equipo para cambiar de una a otra sin volver a
+          escribir la contraseña. No lo hagas en un computador compartido.
+        </p>
+        <label class="mj-campo">
+          <span>Correo</span>
+          <input type="email" name="correo" placeholder="otra@tudominio.cl" autocomplete="off" required>
+        </label>
+        <label class="mj-campo">
+          <span>Contraseña</span>
+          <input type="password" name="clave" autocomplete="new-password" required>
+        </label>
+        <div class="mj-modal-pie">
+          <div class="mj-modal-pie-btns">
+            <button class="mj-btn mj-btn-2" type="button" data-accion="cerrar-modal">Cancelar</button>
+            <button class="mj-btn" type="submit">Agregar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 <?php }
 
 /** Las variables de tema que van en el atributo style de la raíz */
@@ -765,7 +811,7 @@ function mj_v_carpetas(array $cfg, string $carpeta, array $conteo): void
               </li>
             <?php endforeach; ?>
           </ul>
-          <a class="mj-cuentas-mas" href="?agregar=1"><?= mj_icono('mas', 16) ?><span>Agregar otra casilla</span></a>
+          <a class="mj-cuentas-mas" href="?agregar=1" data-accion="nueva-casilla"><?= mj_icono('mas', 16) ?><span>Agregar otra casilla</span></a>
           <p class="mj-cuentas-nota">Las contraseñas se guardan cifradas en el servidor. No lo hagas en un equipo compartido.</p>
         </div>
       <?php else: ?>

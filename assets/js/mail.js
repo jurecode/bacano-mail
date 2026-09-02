@@ -609,6 +609,53 @@
       });
     }
 
+    /* Agregar otra casilla sin salir de la ventana. El enlace sigue
+       llevando a la pantalla de acceso si esto no llega a cargarse. */
+    raiz.querySelectorAll('[data-accion="nueva-casilla"]').forEach(function (a) {
+      a.addEventListener('click', function (ev) {
+        var m = raiz.querySelector('[data-modal="casilla"]');
+        if (!m) return;                       // sin cuadro, que siga el enlace
+        ev.preventDefault();
+
+        var caja = raiz.querySelector('[data-rol="cuentas"]');
+        if (caja) caja.hidden = true;         // el desplegable estorba
+
+        m.querySelector('[data-rol="form-casilla"]').reset();
+        m.hidden = false;
+        m.querySelector('[name="correo"]').focus();
+      });
+    });
+
+    var formCasilla = raiz.querySelector('[data-rol="form-casilla"]');
+    if (formCasilla) formCasilla.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+
+      var boton = formCasilla.querySelector('[type="submit"]');
+      var antes = boton.textContent;
+      boton.disabled = true; boton.textContent = 'Comprobando…';
+
+      var datos = new FormData(formCasilla);
+      datos.append('que', 'agregar');
+      datos.append('token', formCasilla.dataset.token || '');
+
+      fetch('ajustes.php', { method: 'POST', body: datos, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          boton.disabled = false; boton.textContent = antes;
+          if (!r || !r.ok) { aviso((r && r.mensaje) || 'No se pudo agregar la casilla.'); return; }
+
+          var lista = raiz.querySelector('[data-rol="lista-casillas"]');
+          if (lista && r.filas) { lista.innerHTML = r.filas; }
+          cerrarModal();
+          aviso(r.mensaje);
+          if (!lista) { location.reload(); }   // se agregó desde otra carpeta
+        })
+        .catch(function () {
+          boton.disabled = false; boton.textContent = antes;
+          aviso('No se pudo agregar la casilla. Revisa la conexión.');
+        });
+    });
+
     var formClave = raiz.querySelector('[data-rol="form-clave"]');
     if (formClave) formClave.addEventListener('submit', function (ev) {
       ev.preventDefault();
