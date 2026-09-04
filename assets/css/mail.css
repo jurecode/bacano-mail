@@ -1235,3 +1235,93 @@ a.mj-btn{ text-decoration:none; }
 .mj-logo-vacio{ font-size:11.5px; color:var(--mj-txt3); }
 .mj-logo-btns{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
 .mj-set-ayuda-suelta{ margin-top:9px; }
+
+/* ============================================================
+   17. NOVEDADES
+   ============================================================ */
+.mj-nav-nuevo{ margin-top:6px; }
+.mj-badge-nuevo{ background:var(--mj-acento); color:var(--mj-acento-txt); }
+
+.mj-novedades{
+  display:flex; min-height:0; min-width:0; overflow:hidden;
+  background:var(--mj-lector);
+}
+.mj-novedades-col{
+  flex:1 1 auto; display:flex; flex-direction:column; min-height:0;
+  width:100%; max-width:680px; margin-inline:auto;
+}
+.mj-novedades-cab{ padding:22px var(--mj-pad) 6px; }
+.mj-novedades-cuerpo{
+  flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+  padding:10px var(--mj-pad) 32px; scrollbar-width:thin;
+}
+
+.mj-nov{
+  display:flex; gap:14px; padding:18px 20px; margin-bottom:12px;
+  border-radius:var(--mj-r-lg);
+  background:var(--mj-flotante); border:1px solid var(--mj-borde2);
+}
+/* Lo que todavía no ha visto se distingue de un vistazo */
+.mj-nov.is-nueva{ border-color:var(--mj-acento); box-shadow:0 0 0 1px var(--mj-acento) inset; }
+
+.mj-nov-marca{
+  flex:none; display:grid; place-items:center; width:38px; height:38px;
+  border-radius:var(--mj-r-md); background:var(--mj-campo); color:var(--mj-txt2);
+}
+.mj-nov.is-nueva .mj-nov-marca{ background:var(--mj-acento); color:var(--mj-acento-txt); }
+
+.mj-nov-txt{ flex:1 1 auto; min-width:0; }
+.mj-nov-alto{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.mj-nov-t{ margin:0; font-size:15px; font-weight:700; letter-spacing:-.01em; color:var(--mj-txt); }
+.mj-nov-tag{
+  padding:2px 8px; border-radius:999px;
+  background:var(--mj-acento); color:var(--mj-acento-txt);
+  font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+}
+.mj-nov-que{ margin:5px 0 0; font-size:13.5px; line-height:1.55; color:var(--mj-txt2); }
+
+.mj-nov-pasos{
+  margin:11px 0 0; padding:0; list-style:none;
+  display:flex; flex-direction:column; gap:6px;
+}
+.mj-nov-pasos li{
+  position:relative; padding-left:17px;
+  font-size:13px; line-height:1.55; color:var(--mj-txt2);
+}
+.mj-nov-pasos li::before{
+  content:""; position:absolute; left:3px; top:8px;
+  width:5px; height:5px; border-radius:50%; background:var(--mj-txt3);
+}
+.mj-nov-ojo{
+  margin:11px 0 0; padding:9px 11px; border-radius:var(--mj-r-md);
+  background:rgba(245,158,11,.12);
+  font-size:12.5px; line-height:1.5; color:var(--mj-txt2);
+}
+.mj-nov-ojo strong{ color:var(--mj-txt); }
+.mj-nov-pie{ margin:12px 0 0; font-size:11.5px; color:var(--mj-txt3); }
+
+.mj-nov-final{
+  margin:4px 0 0; padding:14px 16px; border-radius:var(--mj-r-lg);
+  border:1px dashed var(--mj-borde); text-align:center;
+  font-size:12.5px; color:var(--mj-txt3);
+}
+
+@media (max-width:640px){
+  .mj-novedades-cab{ padding-top:16px; }
+  .mj-nov{ padding:16px; gap:12px; }
+  .mj-nov-marca{ width:32px; height:32px; }
+}
+
+/* El aviso de novedades, sobre el buscador de la bandeja */
+.mj-avisonov{
+  display:flex; align-items:center; gap:10px;
+  margin:0 var(--mj-pad) 12px; padding:10px 12px;
+  border-radius:var(--mj-r-md); text-decoration:none;
+  background:var(--mj-acento); color:var(--mj-acento-txt);
+  transition:opacity .15s;
+}
+.mj-avisonov:hover{ opacity:.9; }
+.mj-avisonov-i{ flex:none; display:grid; place-items:center; }
+.mj-avisonov-t{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; line-height:1.3; }
+.mj-avisonov-t strong{ font-size:12.5px; font-weight:700; }
+.mj-avisonov-t span{ font-size:11.5px; opacity:.75; }

@@ -10,6 +10,19 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.14.0] — 2026-09-04
+
+### Añadido
+- **Novedades.** Una sección nueva en el menú que cuenta, en lenguaje llano,
+  qué se ha ido agregando al correo y cómo usarlo: qué hace cada cosa, los
+  pasos para probarla y las advertencias que convenga saber. No es el
+  CHANGELOG —ese habla de MIME y de UID— sino su versión para quien usa el
+  correo.
+- El menú marca cuántas hay sin ver, y la bandeja muestra un aviso arriba
+  mientras queden novedades por mirar. Ambos desaparecen solos al abrirlas.
+- Lo visto se guarda por casilla: si dos personas comparten la instalación,
+  cada una ve sus propias novedades pendientes.
+
 ## [1.13.0] — 2026-09-04
 
 ### Añadido

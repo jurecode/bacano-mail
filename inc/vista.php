@@ -29,6 +29,7 @@ function mj_correo(array $ov = []): void
   // La agenda es de quien entró, no del servidor de correo
   require_once __DIR__ . '/contactos.php';
   require_once __DIR__ . '/mime.php';
+  require_once __DIR__ . '/novedades.php';
   $buzon     = mj_buzon_actual($cfg);
   $contactos = $buzon !== '' ? mj_contactos($buzon) : [];
 
@@ -37,7 +38,8 @@ function mj_correo(array $ov = []): void
     array_column($cfg['carpetas'], 'id'),
     array_column($cfg['carpetas_propias'], 'id')
   );
-  $carpetas_ids[] = 'cuenta';   // vista de ajustes: no es carpeta ni sale en el menú
+  $carpetas_ids[] = 'cuenta';     // vista de ajustes: no es carpeta ni sale en el menú
+  $carpetas_ids[] = 'novedades';
   $carpeta = mj_param('carpeta', $carpetas_ids, $carpetas_ids[0] ?? 'entrada');
   $filtro  = mj_param('f', ['todos', 'leidos', 'no_leidos'], 'todos');
   $busca   = trim((string) ($_GET['q'] ?? ''));
@@ -79,6 +81,17 @@ function mj_correo(array $ov = []): void
   }
 
   $conteo['contactos']['total'] = count($contactos);
+
+  // Se marcan al abrirlas, antes de contar: si no, el aviso seguiría encendido
+  // hasta la siguiente recarga y parecería que no se enteró.
+  // Se marcan al abrirlas, pero hace falta saber qué había visto antes para
+  // poder señalar cuáles son nuevas en esta misma visita.
+  $vistoAntes = '';
+  if ($carpeta === 'novedades') {
+    $vistoAntes = mj_novedades_visto($buzon);
+    mj_novedades_marcar($buzon);
+  }
+  $sinVer = mj_novedades_sin_ver($buzon);
 
   // ---- Mensajes de la carpeta activa ----
   $lista = array_values(array_filter($msgs, fn($m) => $m['carpeta'] === $carpeta));
@@ -165,7 +178,7 @@ function mj_correo(array $ov = []): void
 
       <?php if ($cfg['interfaz']['mostrar_rail']) mj_v_rail($cfg, $base); ?>
 
-      <?php if ($cfg['interfaz']['mostrar_carpetas']) mj_v_carpetas($cfg, $carpeta, $conteo); ?>
+      <?php if ($cfg['interfaz']['mostrar_carpetas']) mj_v_carpetas($cfg, $carpeta, $conteo, $sinVer); ?>
 
       <?php if ($carpeta === 'contactos'): ?>
 
@@ -175,9 +188,13 @@ function mj_correo(array $ov = []): void
 
         <?php mj_v_ajustes($cfg); ?>
 
+      <?php elseif ($carpeta === 'novedades'): ?>
+
+        <?php mj_v_novedades($cfg, $vistoAntes); ?>
+
       <?php else: ?>
 
-        <?php mj_v_lista($cfg, $lista, $carpeta, $filtro, $busca, $sel); ?>
+        <?php mj_v_lista($cfg, $lista, $carpeta, $filtro, $busca, $sel, $sinVer); ?>
 
         <?php if ($cfg['interfaz']['panel_lectura'] !== 'oculto') {
                 mj_v_lector($cfg, $sel, mj_conversacion($msgs, $sel));
@@ -373,6 +390,75 @@ function mj_plegar_citado(string $html): string
     return $nuevo
         . '<details class="mj-citado"><summary title="Mostrar lo anterior">···</summary>'
         . '<div class="mj-citado-cuerpo">' . $citado . '</div></details>';
+}
+
+/** Novedades: qué cambió y qué se puede hacer con ello */
+function mj_v_novedades(array $cfg, string $visto = ''): void
+{
+  require_once __DIR__ . '/novedades.php';
+  $lista = mj_novedades();
+  ?>
+  <section class="mj-novedades" aria-label="Novedades">
+    <div class="mj-novedades-col">
+
+      <header class="mj-novedades-cab">
+        <div class="mj-agenda-titulo">
+          <?php if ($cfg['interfaz']['mostrar_carpetas']): ?>
+            <button class="mj-icono-btn mj-solo-movil" type="button" data-accion="abrir-carpetas"
+                    aria-label="Abrir el menú de carpetas"><?= mj_icono('menu', 20) ?></button>
+          <?php endif; ?>
+          <h1 class="mj-h1">Novedades</h1>
+        </div>
+        <p class="mj-agenda-nota">Lo que se ha ido agregando a tu correo, y cómo usarlo.</p>
+      </header>
+
+      <div class="mj-novedades-cuerpo">
+        <?php foreach ($lista as $i => $x):
+          $nueva = mj_novedad_nueva($x, $visto); ?>
+          <article class="mj-nov<?= $nueva ? ' is-nueva' : '' ?>">
+            <div class="mj-nov-marca" aria-hidden="true"><?= mj_icono($x['icono'], 20) ?></div>
+
+            <div class="mj-nov-txt">
+              <div class="mj-nov-alto">
+                <h2 class="mj-nov-t"><?= mj_e($x['titulo']) ?></h2>
+                <?php if ($nueva): ?><span class="mj-nov-tag">Nuevo</span><?php endif; ?>
+              </div>
+              <p class="mj-nov-que"><?= mj_e($x['que']) ?></p>
+
+              <?php if (!empty($x['hacer'])): ?>
+                <ul class="mj-nov-pasos">
+                  <?php foreach ($x['hacer'] as $paso): ?>
+                    <li><?= mj_e($paso) ?></li>
+                  <?php endforeach; ?>
+                </ul>
+              <?php endif; ?>
+
+              <?php if (!empty($x['ojo'])): ?>
+                <p class="mj-nov-ojo"><strong>Ojo:</strong> <?= mj_e($x['ojo']) ?></p>
+              <?php endif; ?>
+
+              <p class="mj-nov-pie">Versión <?= mj_e($x['v']) ?> · <?= mj_e(mj_fecha_corta_iso($x['fecha'])) ?></p>
+            </div>
+          </article>
+        <?php endforeach; ?>
+
+        <p class="mj-nov-final">
+          ¿Echas algo en falta o algo no funciona como esperabas? Cuéntalo y se revisa.
+        </p>
+      </div>
+
+    </div>
+  </section>
+<?php }
+
+/** "2026-09-04" → "4 de septiembre de 2026" */
+function mj_fecha_corta_iso(string $iso): string
+{
+  $meses = ['enero','febrero','marzo','abril','mayo','junio','julio',
+            'agosto','septiembre','octubre','noviembre','diciembre'];
+  $t = strtotime($iso);
+  if ($t === false) { return $iso; }
+  return (int) date('j', $t) . ' de ' . ($meses[(int) date('n', $t) - 1] ?? '') . ' de ' . date('Y', $t);
 }
 
 /** Ajustes de la cuenta, dentro de la propia ventana */
@@ -728,7 +814,7 @@ function mj_v_ficha_contacto(): void
 <?php }
 
 /** Columna de carpetas */
-function mj_v_carpetas(array $cfg, string $carpeta, array $conteo): void
+function mj_v_carpetas(array $cfg, string $carpeta, array $conteo, int $sinVer = 0): void
 {
   $t = $cfg['textos'];
   $enlace = fn($id) => '?' . http_build_query(['carpeta' => $id]);
@@ -755,6 +841,14 @@ function mj_v_carpetas(array $cfg, string $carpeta, array $conteo): void
             </a>
           </li>
         <?php endforeach; ?>
+        <li>
+          <a class="mj-nav-item mj-nav-nuevo<?= $carpeta === 'novedades' ? ' is-activo' : '' ?>"
+             href="?carpeta=novedades" data-carpeta="novedades">
+            <?= mj_icono('estrella', 19) ?>
+            <span>Novedades</span>
+            <?php if ($sinVer > 0): ?><em class="mj-badge mj-badge-nuevo"><?= (int) $sinVer ?></em><?php endif; ?>
+          </a>
+        </li>
       </ul>
 
       <?php if ($cfg['carpetas_propias'] || $cfg['mostrar_agregar_carpeta']): ?>
@@ -873,7 +967,7 @@ function mj_v_carpetas(array $cfg, string $carpeta, array $conteo): void
 <?php }
 
 /** Columna del listado */
-function mj_v_lista(array $cfg, array $lista, string $carpeta, string $filtro, string $busca, ?array $sel): void
+function mj_v_lista(array $cfg, array $lista, string $carpeta, string $filtro, string $busca, ?array $sel, int $sinVer = 0): void
 {
   $t = $cfg['textos'];
   $nombre_carpeta = 'Correo';
@@ -899,6 +993,17 @@ function mj_v_lista(array $cfg, array $lista, string $carpeta, string $filtro, s
         </button>
       <?php endif; ?>
     </header>
+
+    <?php if ($sinVer > 0): ?>
+      <a class="mj-avisonov" href="?carpeta=novedades">
+        <span class="mj-avisonov-i"><?= mj_icono('estrella', 15) ?></span>
+        <span class="mj-avisonov-t">
+          <strong><?= $sinVer === 1 ? 'Hay una novedad' : 'Hay ' . (int) $sinVer . ' novedades' ?> en tu correo</strong>
+          <span>Mira qué cambió y cómo usarlo</span>
+        </span>
+        <?= mj_icono('adelante', 15) ?>
+      </a>
+    <?php endif; ?>
 
     <?php if ($cfg['interfaz']['mostrar_buscador']): ?>
       <div class="mj-buscador">
