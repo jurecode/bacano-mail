@@ -610,13 +610,22 @@
 .mj-vacio-lector{ min-height:340px; }
 
 .mj-avatar{
-  flex:0 0 auto; border-radius:50%; object-fit:cover;
+  /* flex:none, no 0 0 auto: dentro de una fila apretada el círculo se
+     achataba y dejaba de ser círculo. aspect-ratio lo remata. */
+  flex:none; aspect-ratio:1;
+  border-radius:50%; object-fit:cover;
   background:var(--mj-hover);
 }
 .mj-avatar-txt{
-  display:grid; place-items:center; color:#fff;
-  background:var(--mj-av,#666);
-  font-size:12.5px; font-weight:600; letter-spacing:.02em;
+  display:grid; place-items:center;
+  color:#fff; background:var(--mj-av,#666);
+  /* Las iniciales crecen con el círculo; 12.5px fijos quedaban diminutos
+     en los de 46 y apretados en los de 26. */
+  font-size:calc(var(--mj-av-t, 38px) * .4);
+  font-weight:600; line-height:1; letter-spacing:.01em;
+  text-transform:uppercase;
+  overflow:hidden;          /* dos iniciales no se salen del círculo */
+  user-select:none;
 }
 
 /* ============================================================

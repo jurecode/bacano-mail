@@ -1473,7 +1473,9 @@ function mj_v_atajos(array $cfg): void
 function mj_v_avatar(array $p, int $tam = 38): string
 {
   $nombre = $p['nombre'] ?: ($p['email'] ?? '');
-  $st = 'width:' . $tam . 'px;height:' . $tam . 'px';
+  // El tamaño viaja también como variable: las iniciales se escalan con él,
+  // que si no, la misma letra de 12px queda perdida en un avatar de 46.
+  $st = 'width:' . $tam . 'px;height:' . $tam . 'px;--mj-av-t:' . $tam . 'px';
   if (!empty($p['avatar'])) {
     return '<img class="mj-avatar" src="' . mj_e($p['avatar']) . '" alt="" loading="lazy" style="' . $st . '">';
   }

@@ -10,6 +10,18 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.14.2] — 2026-09-04
+
+### Corregido
+- **Las iniciales del avatar no crecían con el círculo.** Estaban fijas en
+  12,5 px, así que en los avatares grandes —los 46 px del lector— quedaban
+  diminutas y perdidas, y en los pequeños, apretadas. Ahora se escalan con el
+  tamaño (un 40 % del diámetro).
+- El círculo lleva `aspect-ratio:1` y `flex:none`: dentro de una fila apretada
+  podía achatarse y dejar de ser redondo.
+- Dos iniciales ya no pueden desbordar el círculo, y el texto no se
+  selecciona al arrastrar sobre él.
+
 ## [1.14.1] — 2026-09-04
 
 ### Cambiado
