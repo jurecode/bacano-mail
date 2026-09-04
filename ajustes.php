@@ -102,6 +102,16 @@ if ($que === 'clave') {
     $responder(true, 'Contraseña cambiada. Acuérdate de actualizarla también en el celular.');
 }
 
+/* --- logo de la firma --- */
+if ($que === 'logo') {
+    $r = mj_logo_guardar($correo, $_FILES['logo'] ?? []);
+    $responder($r['ok'], $r['mensaje']);
+}
+if ($que === 'quitar-logo') {
+    mj_logo_borrar($correo);
+    $responder(true, 'Logo quitado');
+}
+
 /* --- agregar otra casilla a este equipo --- */
 if ($que === 'agregar') {
     $otro  = strtolower(trim((string) ($_POST['correo'] ?? '')));

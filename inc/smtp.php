@@ -10,8 +10,9 @@
 declare(strict_types=1);
 
 /** Diálogo SMTP. Devuelve ['ok'=>bool,'mensaje'=>string,'registro'=>array] */
-function mj_smtp_enviar(array $c, string $para, string $asunto, string $cuerpo, string $responderA = '', string $nombreResponde = '', string $respondeA = ''): array
+function mj_smtp_enviar(array $c, string $para, string $asunto, string $cuerpo, string $responderA = '', string $nombreResponde = '', string $respondeA = '', array $extras = []): array
 {
+    require_once __DIR__ . '/mime.php';
     $registro = [];
     $falla = function (string $m) use (&$registro): array {
         return ['ok' => false, 'mensaje' => $m, 'registro' => $registro];
@@ -124,17 +125,24 @@ function mj_smtp_enviar(array $c, string $para, string $asunto, string $cuerpo, 
     // que permite que la respuesta quede en la misma conversación.
     $idMensaje = bin2hex(random_bytes(12)) . '@' . $servidor;
 
-    $cabeceras = [
+    // El cuerpo puede ser texto pelado o un árbol con firma en HTML y adjuntos
+    $pieza = mj_mime_mensaje([
+        'texto'       => $cuerpo,
+        'html'        => (string) ($extras['html'] ?? ''),
+        'incrustadas' => $extras['incrustadas'] ?? [],
+        'adjuntos'    => $extras['adjuntos'] ?? [],
+    ]);
+
+    $cabeceras = array_merge([
         'Date: ' . date('r'),
         'From: ' . $codificar($nombre) . ' <' . $desde . '>',
         'To: <' . $para . '>',
         'Subject: ' . $codificar($asunto),
         'Message-ID: <' . $idMensaje . '>',
         'MIME-Version: 1.0',
-        'Content-Type: text/plain; charset=UTF-8',
-        'Content-Transfer-Encoding: base64',
+    ], $pieza['cabeceras'], [
         'X-Mailer: Madeja',
-    ];
+    ]);
     if ($respondeA !== '') {
         $cabeceras[] = 'In-Reply-To: <' . $respondeA . '>';
         $cabeceras[] = 'References: <' . $respondeA . '>';
@@ -144,8 +152,10 @@ function mj_smtp_enviar(array $c, string $para, string $asunto, string $cuerpo, 
                      . '<' . $responderA . '>';
     }
 
-    $mensaje = implode("\r\n", $cabeceras) . "\r\n\r\n"
-             . chunk_split(base64_encode($cuerpo), 76, "\r\n");
+    $mensaje = implode("\r\n", $cabeceras) . "\r\n\r\n" . $pieza['cuerpo'];
+
+    // Una línea que empiece por un punto cortaría el envío en seco
+    $mensaje = preg_replace('/^\./m', '..', $mensaje);
 
     fwrite($sock, $mensaje . "\r\n.\r\n");
     $registro[] = '> (mensaje)';
@@ -155,6 +165,7 @@ function mj_smtp_enviar(array $c, string $para, string $asunto, string $cuerpo, 
     @fclose($sock);
 
     return $codigo === 250
-        ? ['ok' => true, 'mensaje' => 'Correo enviado.', 'registro' => $registro, 'id_mensaje' => $idMensaje]
+        ? ['ok' => true, 'mensaje' => 'Correo enviado.', 'registro' => $registro,
+           'id_mensaje' => $idMensaje, 'mime' => $pieza]
         : $falla('El servidor no aceptó el mensaje. ' . $texto);
 }

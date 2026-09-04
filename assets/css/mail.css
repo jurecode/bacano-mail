@@ -1204,3 +1204,34 @@ a.mj-btn{ text-decoration:none; }
   /* La fila de la casilla no se parte: la dirección se recorta y ya. */
   .mj-set-casilla{ gap:8px; }
 }
+
+/* ============================================================
+   16. ADJUNTOS AL REDACTAR Y LOGO DE LA FIRMA
+   ============================================================ */
+.mj-adjuntar{
+  list-style:none; margin:10px 0 0; padding:0;
+  display:flex; flex-direction:column; gap:5px;
+}
+.mj-adjuntar-item{
+  display:flex; align-items:center; gap:9px;
+  padding:7px 8px 7px 11px; border-radius:var(--mj-r-md);
+  background:var(--mj-campo); font-size:12.5px;
+}
+.mj-adjuntar-n{
+  flex:1 1 auto; min-width:0; color:var(--mj-txt);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.mj-adjuntar-p{ flex:none; color:var(--mj-txt3); font-variant-numeric:tabular-nums; }
+.mj-adjuntar-item .mj-icono-btn{ flex:none; width:24px; height:24px; font-size:17px; line-height:1; }
+
+.mj-logo{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.mj-logo-caja{
+  flex:none; display:grid; place-items:center;
+  width:120px; height:64px; padding:6px;
+  border:1px dashed var(--mj-borde); border-radius:var(--mj-r-md);
+  background:var(--mj-campo);
+}
+.mj-logo-caja img{ max-width:100%; max-height:100%; object-fit:contain; }
+.mj-logo-vacio{ font-size:11.5px; color:var(--mj-txt3); }
+.mj-logo-btns{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+.mj-set-ayuda-suelta{ margin-top:9px; }

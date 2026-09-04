@@ -14,6 +14,7 @@ require __DIR__ . '/correo.php';
 require_once __DIR__ . '/inc/smtp.php';
 require_once __DIR__ . '/inc/cuenta.php';
 require_once __DIR__ . '/inc/contactos.php';
+require_once __DIR__ . '/inc/mime.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -70,7 +71,54 @@ if ($firma !== '') {
     $cuerpo .= "\n\n--\n" . $firma;
 }
 
-$r = mj_smtp_enviar($conf, $para, $asunto, $cuerpo, '', '', $responde);
+/* --- los archivos que se adjuntan --- */
+$adjuntos = [];
+$pesan    = 0;
+
+foreach (mj_archivos_subidos('adjuntos') as $a) {
+    if ($a['error'] === UPLOAD_ERR_INI_SIZE || $a['error'] === UPLOAD_ERR_FORM_SIZE) {
+        $responder(false, '"' . $a['name'] . '" pasa del máximo que admite el servidor ('
+                        . mj_limite_legible() . ').');
+    }
+    if ($a['error'] !== UPLOAD_ERR_OK) {
+        $responder(false, 'No se pudo subir "' . $a['name'] . '".');
+    }
+
+    $pesan += $a['size'];
+    if ($pesan > mj_limite_subida()) {
+        $responder(false, 'Entre todos los archivos pasan de ' . mj_limite_legible()
+                        . ', que es lo que admite el servidor.');
+    }
+    if (count($adjuntos) >= MJ_ADJUNTOS_N) {
+        $responder(false, 'No se pueden mandar más de ' . MJ_ADJUNTOS_N . ' archivos a la vez.');
+    }
+
+    $adjuntos[] = [
+        'nombre' => (string) $a['name'],
+        'tipo'   => mj_tipo_archivo($a['tmp_name'], (string) $a['name']),
+        'datos'  => (string) file_get_contents($a['tmp_name']),
+    ];
+}
+
+/* --- la firma con logo obliga a mandar también una versión en HTML --- */
+$extras = ['adjuntos' => $adjuntos];
+$buzonFirma = mj_buzon_actual($cfg) ?: $conf['remitente'];
+
+if (mj_logo_hay($buzonFirma)) {
+    $logo = mj_logo($buzonFirma);
+    if ($logo !== null) {
+        $cid = 'firma' . bin2hex(random_bytes(8));
+        $extras['html'] = mj_cuerpo_html($cuerpo, $cid);
+        $extras['incrustadas'] = [[
+            'cid'    => $cid,
+            'nombre' => 'logo.' . $logo['ext'],
+            'tipo'   => $logo['tipo'],
+            'datos'  => $logo['datos'],
+        ]];
+    }
+}
+
+$r = mj_smtp_enviar($conf, $para, $asunto, $cuerpo, '', '', $responde, $extras);
 
 // Copia en la carpeta de enviados del servidor, para que quede en la casilla
 if ($r['ok']) {
@@ -84,6 +132,11 @@ if ($r['ok']) {
                 if ($c['papel'] === 'enviados') { $carpeta = $c['nombre']; break; }
             }
             $nombreDe = (string) ($conf['remitente_nombre'] ?? '');
+
+            // El mismo cuerpo que salió, con sus adjuntos: si la copia fuera
+            // sólo el texto, en Enviados no quedaría lo que se mandó.
+            $pieza = $r['mime'] ?? mj_mime_mensaje(['texto' => $cuerpo]);
+
             $sobre = "From: " . ($nombreDe !== '' ? '=?UTF-8?B?' . base64_encode($nombreDe) . '?= ' : '')
                    . '<' . $conf['remitente'] . ">\r\n"
                    . "To: <$para>\r\n"
@@ -94,8 +147,8 @@ if ($r['ok']) {
                    . 'Message-ID: <' . ($r['id_mensaje'] ?? '') . ">\r\n"
                    . ($responde !== '' ? "In-Reply-To: <$responde>\r\nReferences: <$responde>\r\n" : '')
                    . "MIME-Version: 1.0\r\n"
-                   . "Content-Type: text/plain; charset=UTF-8\r\n\r\n"
-                   . $cuerpo;
+                   . implode("\r\n", $pieza['cabeceras']) . "\r\n\r\n"
+                   . $pieza['cuerpo'];
             $imap->guardar($carpeta, $sobre);
             $imap->cerrar();
         }
@@ -103,7 +156,7 @@ if ($r['ok']) {
 }
 
 if ($r['ok'] && $cc !== '') {
-    mj_smtp_enviar($conf, $cc, $asunto, $cuerpo);
+    mj_smtp_enviar($conf, $cc, $asunto, $cuerpo, '', '', '', $extras);
 }
 
 // A quien se le escribe, queda en la agenda. Es lo último que se hace:

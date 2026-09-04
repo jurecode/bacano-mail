@@ -28,6 +28,7 @@ function mj_correo(array $ov = []): void
 
   // La agenda es de quien entró, no del servidor de correo
   require_once __DIR__ . '/contactos.php';
+  require_once __DIR__ . '/mime.php';
   $buzon     = mj_buzon_actual($cfg);
   $contactos = $buzon !== '' ? mj_contactos($buzon) : [];
 
@@ -232,6 +233,9 @@ function mj_correo(array $ov = []): void
         'confirmar'   => (bool) $cfg['interfaz']['confirmar_eliminar'],
         'seleccion'   => (bool) $cfg['interfaz']['seleccion_multiple'],
         'modo'        => $cfg['tema']['modo'],
+        // Lo que de verdad deja subir este servidor, para avisar antes de enviar
+        'topeSubida'  => mj_limite_subida(),
+        'topeTexto'   => mj_limite_legible(),
         'permitirModo'=> (bool) $cfg['tema']['permitir_cambio_modo'],
       ],
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
@@ -416,6 +420,32 @@ function mj_v_ajustes(array $cfg): void
             <textarea class="mj-set-c" name="firma" rows="3" maxlength="500"
                       placeholder="Se agrega al final de los correos que envíes"><?= mj_e($datos['firma']) ?></textarea>
           </label>
+
+          <div class="mj-set">
+            <span class="mj-set-l">Logo de la firma</span>
+            <div class="mj-logo" data-rol="logo">
+              <div class="mj-logo-caja">
+                <?php if (mj_logo_hay($correo)): ?>
+                  <img src="logo.php?v=<?= mj_e((string) @filemtime(mj_logo_archivo($correo) . '.bin')) ?>" alt="Logo de tu firma">
+                <?php else: ?>
+                  <span class="mj-logo-vacio">Sin logo</span>
+                <?php endif; ?>
+              </div>
+              <div class="mj-logo-btns">
+                <button class="mj-btn mj-btn-2 mj-btn-chico" type="button" data-accion="subir-logo">
+                  <?= mj_logo_hay($correo) ? 'Cambiar' : 'Subir imagen' ?>
+                </button>
+                <button class="mj-btn mj-btn-2 mj-btn-chico" type="button" data-accion="quitar-logo"
+                        <?= mj_logo_hay($correo) ? '' : 'hidden' ?>>Quitar</button>
+                <input class="mj-sr" type="file" accept="image/png,image/jpeg,image/gif" data-rol="logo-archivo"
+                       aria-label="Imagen del logo">
+              </div>
+            </div>
+            <p class="mj-set-ayuda mj-set-ayuda-suelta">
+              PNG, JPG o GIF, hasta 500 KB. Viaja dentro del correo, así que se ve
+              aunque quien lo reciba bloquee las imágenes de internet.
+            </p>
+          </div>
 
           <p class="mj-set-previo">
             <?= mj_v_avatar(['nombre' => $datos['nombre'], 'email' => $correo], 30) ?>
@@ -1245,9 +1275,14 @@ function mj_v_compositor(array $cfg): void
           <span class="mj-sr">Mensaje</span>
           <textarea name="cuerpo" rows="9" placeholder="Escribe tu mensaje…"></textarea>
         </label>
+
+        <ul class="mj-adjuntar" data-rol="lista-adjuntos" hidden></ul>
         <footer class="mj-modal-pie">
           <div class="mj-modal-pie-iconos">
-            <button class="mj-icono-btn" type="button" aria-label="Adjuntar archivo"><?= mj_icono('clip', 18) ?></button>
+            <button class="mj-icono-btn" type="button" data-accion="adjuntar"
+                    title="Adjuntar archivos" aria-label="Adjuntar archivos"><?= mj_icono('clip', 18) ?></button>
+            <input class="mj-sr" type="file" name="adjuntos[]" multiple data-rol="adjuntos"
+                   aria-label="Archivos para adjuntar">
             <button class="mj-icono-btn" type="button" aria-label="Descartar"><?= mj_icono('papelera', 18) ?></button>
           </div>
           <div class="mj-modal-pie-btns">

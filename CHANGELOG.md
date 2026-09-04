@@ -10,6 +10,31 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.13.0] — 2026-09-04
+
+### Añadido
+- **Adjuntar archivos.** El clip del compositor no hacía nada: era un botón sin
+  función. Ahora abre el selector, los archivos elegidos se ven en una lista
+  con su peso y se pueden quitar de uno en uno antes de enviar. La copia que
+  queda en Enviados lleva los mismos adjuntos.
+- **Logo en la firma.** Se sube desde "Tu cuenta" (PNG, JPG o GIF, hasta
+  500 KB) y viaja *dentro* del correo, no enlazado: se ve aunque quien lo
+  reciba tenga bloqueadas las imágenes de internet. El mensaje pasa a llevar
+  también una versión en HTML, con la firma separada del cuerpo por una línea.
+- El tope de subida se lee del propio servidor (`upload_max_filesize` y
+  `post_max_size`) y se avisa antes de enviar, en vez de prometer un tamaño
+  que el hosting no acepta.
+
+### Detalles
+- Un correo sin adjuntos ni logo sigue siendo un `text/plain` pelado, como
+  siempre: las capas MIME sólo aparecen cuando hacen falta.
+- El tipo de cada archivo se deduce de su contenido, no de lo que declare el
+  navegador, y el logo se comprueba con `getimagesize()`.
+- El logo se guarda fuera de la web y se sirve por `logo.php` sólo a quien ha
+  entrado, y sólo el suyo.
+- `finfo_close()` quedó obsoleta en PHP 8.5 y ensuciaba la respuesta JSON del
+  envío; queda guardada tras una comprobación de versión.
+
 ## [1.12.1] — 2026-09-01
 
 ### Corregido

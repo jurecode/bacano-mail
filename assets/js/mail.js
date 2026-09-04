@@ -188,6 +188,24 @@
           break;
         }
 
+        case 'adjuntar': {
+          var campo = raiz.querySelector('[data-rol="adjuntos"]');
+          if (campo) campo.click();
+          break;
+        }
+        case 'quitar-adjunto':
+          quitarAdjunto(parseInt(btn.dataset.i, 10));
+          break;
+
+        case 'subir-logo': {
+          var f = raiz.querySelector('[data-rol="logo-archivo"]');
+          if (f) f.click();
+          break;
+        }
+        case 'quitar-logo':
+          confirmar('Se quitará el logo de tu firma.', quitarLogo, 'Quitar el logo', 'Quitar');
+          break;
+
         case 'nuevo-contacto':
           fichaContacto(null);
           break;
@@ -564,6 +582,138 @@
     }
 
     /* ---------------------------------------------------------
+       Adjuntos del compositor
+       --------------------------------------------------------- */
+    var campoAdj = raiz.querySelector('[data-rol="adjuntos"]');
+    var listaAdj = raiz.querySelector('[data-rol="lista-adjuntos"]');
+    var elegidos = [];                 // se guardan aparte: un input file no
+                                       // deja quitar uno solo de la lista
+
+    function pesoLegible(n) {
+      if (n < 1024) return n + ' B';
+      if (n < 1048576) return Math.round(n / 1024) + ' KB';
+      return (n / 1048576).toFixed(1).replace('.0', '') + ' MB';
+    }
+
+    function pintarAdjuntos() {
+      if (!listaAdj) return;
+      listaAdj.innerHTML = '';
+      listaAdj.hidden = elegidos.length === 0;
+
+      elegidos.forEach(function (f, i) {
+        var li = document.createElement('li');
+        li.className = 'mj-adjuntar-item';
+        li.innerHTML = '<span class="mj-adjuntar-n"></span>' +
+                       '<span class="mj-adjuntar-p"></span>' +
+                       '<button class="mj-icono-btn" type="button" data-accion="quitar-adjunto" ' +
+                       'data-i="' + i + '" aria-label="Quitar archivo">&times;</button>';
+        li.children[0].textContent = f.name;
+        li.children[1].textContent = pesoLegible(f.size);
+        listaAdj.appendChild(li);
+      });
+
+      // El input lleva lo que se manda: se rehace con lo que quedó
+      var dt = new DataTransfer();
+      elegidos.forEach(function (f) { dt.items.add(f); });
+      if (campoAdj) campoAdj.files = dt.files;
+    }
+
+    function quitarAdjunto(i) {
+      if (isNaN(i)) return;
+      elegidos.splice(i, 1);
+      pintarAdjuntos();
+    }
+
+    if (campoAdj) campoAdj.addEventListener('change', function () {
+      // El tope lo pone el servidor, no esta pantalla
+      var tope = OP.topeSubida || 25 * 1024 * 1024;
+      var enPalabras = OP.topeTexto || '25 MB';
+      var suma = 0, entran = elegidos.slice();
+
+      Array.prototype.forEach.call(campoAdj.files, function (f) {
+        if (entran.some(function (x) { return x.name === f.name && x.size === f.size; })) return;
+        entran.push(f);
+      });
+
+      var pasan = [];
+      for (var i = 0; i < entran.length; i++) {
+        if (entran[i].size > tope) {
+          aviso('"' + entran[i].name + '" pasa de ' + enPalabras + ', el máximo de este servidor.');
+          continue;
+        }
+        if (suma + entran[i].size > tope) {
+          aviso('Entre todos no pueden pasar de ' + enPalabras + '.'); break;
+        }
+        if (pasan.length >= 10) { aviso('Como mucho 10 archivos por correo.'); break; }
+        suma += entran[i].size;
+        pasan.push(entran[i]);
+      }
+
+      elegidos = pasan;
+      pintarAdjuntos();
+    });
+
+    /* ---------------------------------------------------------
+       Logo de la firma
+       --------------------------------------------------------- */
+    var campoLogo = raiz.querySelector('[data-rol="logo-archivo"]');
+
+    if (campoLogo) campoLogo.addEventListener('change', function () {
+      var f = campoLogo.files && campoLogo.files[0];
+      if (!f) return;
+
+      var datos = new FormData();
+      datos.append('que', 'logo');
+      datos.append('logo', f);
+      datos.append('token', tokenAjustes());
+
+      fetch('ajustes.php', { method: 'POST', body: datos, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          aviso((r && r.mensaje) || 'No se pudo subir el logo.');
+          if (r && r.ok) verLogo(URL.createObjectURL(f), true);
+          campoLogo.value = '';
+        })
+        .catch(function () { aviso('No se pudo subir el logo.'); });
+    });
+
+    function quitarLogo() {
+      var datos = new FormData();
+      datos.append('que', 'quitar-logo');
+      datos.append('token', tokenAjustes());
+
+      fetch('ajustes.php', { method: 'POST', body: datos, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          aviso((r && r.mensaje) || 'No se pudo quitar el logo.');
+          if (r && r.ok) verLogo('', false);
+        })
+        .catch(function () { aviso('No se pudo quitar el logo.'); });
+    }
+
+    /* Deja el recuadro y los botones acordes a si hay logo o no */
+    function verLogo(url, hay) {
+      var caja = raiz.querySelector('.mj-logo-caja');
+      if (caja) {
+        caja.innerHTML = hay ? '' : '<span class="mj-logo-vacio">Sin logo</span>';
+        if (hay) {
+          var img = document.createElement('img');
+          img.src = url; img.alt = 'Logo de tu firma';
+          caja.appendChild(img);
+        }
+      }
+      var subir  = raiz.querySelector('[data-accion="subir-logo"]');
+      var quitar = raiz.querySelector('[data-accion="quitar-logo"]');
+      if (subir)  subir.textContent = hay ? 'Cambiar' : 'Subir imagen';
+      if (quitar) quitar.hidden = !hay;
+    }
+
+    function tokenAjustes() {
+      var f = raiz.querySelector('[data-rol="form-perfil"]');
+      return f ? (f.dataset.token || '') : tokenSesion();
+    }
+
+    /* ---------------------------------------------------------
        Ajustes de la cuenta
        --------------------------------------------------------- */
     function enviarAjuste(form, que, alTerminar) {
@@ -919,6 +1069,8 @@
           if (r.ok) {
             cerrarModal();
             form.reset();
+            elegidos = [];              // y con él, los archivos elegidos
+            pintarAdjuntos();
           }
           aviso(r.mensaje);
         })
