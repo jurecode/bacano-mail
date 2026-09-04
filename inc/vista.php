@@ -91,10 +91,13 @@ function mj_correo(array $ov = []): void
 
   $aviso_nov = [
     'cuantas' => mj_novedades_sin_ver($buzon),
-    'version' => mj_novedades_ultima(),
+    'version' => mj_novedades_version(),
     // Si ya conocía versiones anteriores, esto es una actualización; si nunca
     // ha mirado nada, no lo es: es la primera vez que ve el correo.
     'actualizado' => $vistoAntes !== '',
+    // Puede haber actualización sin entrada nueva en el catálogo; entonces el
+    // aviso igual tiene que salir, sólo que sin número.
+    'update'  => mj_novedades_hay_update($buzon),
   ];
   $sinVer = $aviso_nov['cuantas'];
 
@@ -183,7 +186,7 @@ function mj_correo(array $ov = []): void
 
       <?php if ($cfg['interfaz']['mostrar_rail']) mj_v_rail($cfg, $base); ?>
 
-      <?php if ($cfg['interfaz']['mostrar_carpetas']) mj_v_carpetas($cfg, $carpeta, $conteo, $sinVer); ?>
+      <?php if ($cfg['interfaz']['mostrar_carpetas']) mj_v_carpetas($cfg, $carpeta, $conteo, $sinVer, !empty($aviso_nov['update'])); ?>
 
       <?php if ($carpeta === 'contactos'): ?>
 
@@ -822,7 +825,7 @@ function mj_v_ficha_contacto(): void
 <?php }
 
 /** Columna de carpetas */
-function mj_v_carpetas(array $cfg, string $carpeta, array $conteo, int $sinVer = 0): void
+function mj_v_carpetas(array $cfg, string $carpeta, array $conteo, int $sinVer = 0, bool $update = false): void
 {
   $t = $cfg['textos'];
   $enlace = fn($id) => '?' . http_build_query(['carpeta' => $id]);
@@ -854,7 +857,11 @@ function mj_v_carpetas(array $cfg, string $carpeta, array $conteo, int $sinVer =
              href="?carpeta=novedades" data-carpeta="novedades">
             <?= mj_icono('estrella', 19) ?>
             <span>Novedades</span>
-            <?php if ($sinVer > 0): ?><em class="mj-badge mj-badge-nuevo"><?= (int) $sinVer ?></em><?php endif; ?>
+            <?php if ($sinVer > 0): ?>
+              <em class="mj-badge mj-badge-nuevo"><?= (int) $sinVer ?></em>
+            <?php elseif ($update): ?>
+              <em class="mj-badge mj-badge-nuevo mj-badge-punto" title="Se actualizó"></em>
+            <?php endif; ?>
           </a>
         </li>
       </ul>
@@ -1002,13 +1009,16 @@ function mj_v_lista(array $cfg, array $lista, string $carpeta, string $filtro, s
       <?php endif; ?>
     </header>
 
-    <?php if (($nov['cuantas'] ?? 0) > 0):
-      $n = (int) $nov['cuantas'];
+    <?php if (($nov['cuantas'] ?? 0) > 0 || !empty($nov['update'])):
+      $n = (int) ($nov['cuantas'] ?? 0);
       $titulo = !empty($nov['actualizado'])
         ? 'Tu correo se actualizó'
         : 'Tu correo tiene cosas nuevas';
-      $sub = $n === 1 ? 'Hay 1 novedad: mira qué cambió y cómo usarlo'
-                      : 'Hay ' . $n . ' novedades: mira qué cambió y cómo usarlo'; ?>
+      $sub = match (true) {
+        $n === 0 => 'Versión ' . $nov['version'] . ': mira qué trae',
+        $n === 1 => 'Hay 1 novedad: mira qué cambió y cómo usarlo',
+        default  => 'Hay ' . $n . ' novedades: mira qué cambió y cómo usarlo',
+      }; ?>
       <a class="mj-avisonov" href="?carpeta=novedades">
         <span class="mj-avisonov-i"><?= mj_icono('estrella', 15) ?></span>
         <span class="mj-avisonov-t">
@@ -1396,6 +1406,11 @@ function mj_v_compositor(array $cfg): void
         </label>
 
         <ul class="mj-adjuntar" data-rol="lista-adjuntos" hidden></ul>
+
+        <div class="mj-progreso" data-rol="progreso" hidden>
+          <div class="mj-progreso-pista"><div class="mj-progreso-barra"></div></div>
+          <p class="mj-progreso-txt" role="status" aria-live="polite">Subiendo archivos…</p>
+        </div>
         <footer class="mj-modal-pie">
           <div class="mj-modal-pie-iconos">
             <button class="mj-icono-btn" type="button" data-accion="adjuntar"

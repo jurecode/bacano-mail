@@ -16,6 +16,28 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.15.0',
+            'fecha'  => '2026-09-04',
+            'icono'  => 'refrescar',
+            'titulo' => 'Barra de carga al enviar con archivos',
+            'que'    => 'Cuando adjuntas algo, ves cuánto lleva subido y el correo no se puede enviar dos veces.',
+            'hacer'  => [
+                'Al pulsar Enviar aparece una barra con el porcentaje. Mientras sube, el formulario queda bloqueado: no se puede cambiar nada ni cerrarlo por error.',
+                'Si la conexión falla a medio camino, te avisa y el mensaje se queda como estaba, para volver a intentarlo.',
+            ],
+        ],
+        [
+            'v'      => '1.14.2',
+            'fecha'  => '2026-09-04',
+            'icono'  => 'check',
+            'titulo' => 'Retoques',
+            'que'    => 'Detalles pequeños que se veían mal.',
+            'hacer'  => [
+                'Las iniciales de los círculos de color ahora crecen con el círculo; antes quedaban diminutas en los grandes.',
+                'El aviso de aquí arriba dice ahora que tu correo se actualizó, no sólo que hay cosas nuevas.',
+            ],
+        ],
+        [
             'v'      => '1.14.0',
             'fecha'  => '2026-09-04',
             'icono'  => 'estrella',
@@ -111,11 +133,29 @@ function mj_novedades(): array
     ];
 }
 
-/** La versión más reciente de la lista. */
+/** La versión más reciente del catálogo. */
 function mj_novedades_ultima(): string
 {
     $n = mj_novedades();
     return (string) ($n[0]['v'] ?? '');
+}
+
+/**
+ * La versión instalada. Es la que manda para avisar: si el aviso dependiera
+ * del catálogo, una actualización sin entrada nueva pasaría en silencio, que
+ * es justo lo que no se quiere.
+ */
+function mj_novedades_version(): string
+{
+    return function_exists('mj_version') ? mj_version() : mj_novedades_ultima();
+}
+
+/** ¿Se ha actualizado desde la última vez que miró? */
+function mj_novedades_hay_update(string $correo): bool
+{
+    if ($correo === '') { return false; }
+    $visto = mj_novedades_visto($correo);
+    return $visto !== '' && version_compare(mj_novedades_version(), $visto, '>');
 }
 
 function mj_novedades_archivo(string $correo): string
@@ -161,5 +201,6 @@ function mj_novedades_marcar(string $correo): void
     if (!is_file($carpeta . '/.htaccess')) {
         @file_put_contents($carpeta . '/.htaccess', "Require all denied\n");
     }
-    @file_put_contents(mj_novedades_archivo($correo), mj_novedades_ultima());
+    // Se anota la versión instalada, no la del catálogo
+    @file_put_contents(mj_novedades_archivo($correo), mj_novedades_version());
 }

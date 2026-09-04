@@ -1053,33 +1053,93 @@
     }
 
     var form = raiz.querySelector('[data-rol="form-redactar"]');
+    var enviando = false;
+
     if (form) form.addEventListener('submit', function (ev) {
       ev.preventDefault();
+      if (enviando) return;             // doble clic o Enter repetido
 
       var boton = form.querySelector('[type="submit"]');
       var textoBoton = boton ? boton.textContent : '';
-      if (boton) { boton.disabled = true; boton.textContent = 'Enviando…'; }
+      var barra = raiz.querySelector('[data-rol="progreso"]');
+      var pista = barra ? barra.querySelector('.mj-progreso-barra') : null;
+      var dice  = barra ? barra.querySelector('.mj-progreso-txt') : null;
+
+      var pesa = elegidos.reduce(function (n, f) { return n + f.size; }, 0);
+
+      function bloquear(si) {
+        enviando = si;
+        if (boton) { boton.disabled = si; boton.textContent = si ? 'Enviando…' : textoBoton; }
+        // Mientras sube no se toca nada: ni cambiar los archivos ni cerrar
+        form.querySelectorAll('input, textarea, [data-accion]').forEach(function (e) {
+          if (e !== boton) e.disabled = si;
+        });
+        raiz.querySelectorAll('[data-modal="redactar"] [data-accion="cerrar-modal"]')
+            .forEach(function (b) { b.disabled = si; });
+      }
+
+      function progreso(hechos, total) {
+        if (!barra) return;
+        barra.hidden = false;
+        var pct = total > 0 ? Math.round(hechos / total * 100) : 0;
+        if (pista) pista.style.width = pct + '%';
+        if (dice) {
+          dice.textContent = pct < 100
+            ? 'Subiendo archivos… ' + pct + '%'
+            : 'Enviando el mensaje…';
+        }
+      }
+
+      function limpiar() {
+        bloquear(false);
+        if (barra) { barra.hidden = true; }
+        if (pista) { pista.style.width = '0%'; }
+      }
 
       var datos = new FormData(form);
       datos.append('token', form.dataset.token || '');
 
-      fetch('enviar.php', { method: 'POST', body: datos, credentials: 'same-origin' })
-        .then(function (r) { return r.json(); })
-        .then(function (r) {
-          if (r.ok) {
-            cerrarModal();
-            form.reset();
-            elegidos = [];              // y con él, los archivos elegidos
-            pintarAdjuntos();
-          }
-          aviso(r.mensaje);
-        })
-        .catch(function () {
-          aviso('No se pudo enviar: revisa la conexión.');
-        })
-        .finally(function () {
-          if (boton) { boton.disabled = false; boton.textContent = textoBoton; }
+      bloquear(true);
+      if (pesa > 0) { progreso(0, pesa); }
+
+      // XHR y no fetch: fetch no informa de cuánto lleva subido, y con
+      // adjuntos de varios MB la espera sin señal parece que se colgó.
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', 'enviar.php', true);
+      xhr.withCredentials = true;
+
+      if (pesa > 0) {
+        xhr.upload.addEventListener('progress', function (e) {
+          if (e.lengthComputable) progreso(e.loaded, e.total);
         });
+        xhr.upload.addEventListener('load', function () { progreso(1, 1); });
+      }
+
+      xhr.addEventListener('load', function () {
+        limpiar();
+        var r;
+        try { r = JSON.parse(xhr.responseText); } catch (e) { r = null; }
+
+        if (!r) { aviso('El servidor respondió algo inesperado.'); return; }
+        if (r.ok) {
+          cerrarModal();
+          form.reset();
+          elegidos = [];                // y con él, los archivos elegidos
+          pintarAdjuntos();
+        }
+        aviso(r.mensaje);
+      });
+
+      xhr.addEventListener('error', function () {
+        limpiar();
+        aviso('No se pudo enviar: revisa la conexión.');
+      });
+      xhr.addEventListener('abort', function () {
+        limpiar();
+        aviso('Envío cancelado.');
+      });
+
+      xhr.send(datos);
     });
 
     /* ---------------------------------------------------

@@ -10,6 +10,25 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.15.0] — 2026-09-04
+
+### Añadido
+- **Barra de carga al enviar con adjuntos.** Se ve el porcentaje subido, y
+  mientras tanto el formulario queda bloqueado: no se puede cambiar el
+  destinatario, ni tocar los archivos, ni cerrar la ventana por error, ni
+  mandar el mismo correo dos veces por pulsar Enviar de nuevo.
+- El envío pasó de `fetch` a `XMLHttpRequest`: `fetch` no informa de cuánto
+  lleva subido, y con archivos de varios MB la espera sin señal parece que la
+  aplicación se colgó.
+
+### Corregido
+- **Las actualizaciones no se anunciaban.** El aviso miraba la última entrada
+  del catálogo de novedades, no la versión instalada: si una versión salía sin
+  entrada nueva —como pasó con la 1.14.1 y la 1.14.2— la persona no se
+  enteraba de nada. Ahora el aviso lo dispara el cambio de versión, y si no hay
+  nada que contar, lo dice igual ("Versión X: mira qué trae") con un punto en
+  el menú en vez de un número.
+
 ## [1.14.2] — 2026-09-04
 
 ### Corregido
