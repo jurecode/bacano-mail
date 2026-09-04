@@ -10,6 +10,21 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.14.1] — 2026-09-04
+
+### Cambiado
+- **El aviso dice ahora que hubo una actualización**, no sólo que hay cosas
+  nuevas: "Tu correo se actualizó · Hay N novedades: mira qué cambió y cómo
+  usarlo". A quien entra por primera vez le dice "Tu correo tiene cosas
+  nuevas", que es lo que corresponde: para esa persona no hubo ninguna
+  actualización.
+- La versión instalada se ve en la cabecera de Novedades. No va en el titular
+  del aviso a propósito: ahí chocaría con la versión de cada tarjeta, que es
+  otra cosa —cuándo llegó esa novedad— y verlas distintas confunde.
+
+### Añadido
+- Falta la novedad del propio panel: ahora Novedades se explica a sí misma.
+
 ## [1.14.0] — 2026-09-04
 
 ### Añadido

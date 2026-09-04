@@ -86,12 +86,17 @@ function mj_correo(array $ov = []): void
   // hasta la siguiente recarga y parecería que no se enteró.
   // Se marcan al abrirlas, pero hace falta saber qué había visto antes para
   // poder señalar cuáles son nuevas en esta misma visita.
-  $vistoAntes = '';
-  if ($carpeta === 'novedades') {
-    $vistoAntes = mj_novedades_visto($buzon);
-    mj_novedades_marcar($buzon);
-  }
-  $sinVer = mj_novedades_sin_ver($buzon);
+  $vistoAntes = mj_novedades_visto($buzon);
+  if ($carpeta === 'novedades') { mj_novedades_marcar($buzon); }
+
+  $aviso_nov = [
+    'cuantas' => mj_novedades_sin_ver($buzon),
+    'version' => mj_novedades_ultima(),
+    // Si ya conocía versiones anteriores, esto es una actualización; si nunca
+    // ha mirado nada, no lo es: es la primera vez que ve el correo.
+    'actualizado' => $vistoAntes !== '',
+  ];
+  $sinVer = $aviso_nov['cuantas'];
 
   // ---- Mensajes de la carpeta activa ----
   $lista = array_values(array_filter($msgs, fn($m) => $m['carpeta'] === $carpeta));
@@ -194,7 +199,7 @@ function mj_correo(array $ov = []): void
 
       <?php else: ?>
 
-        <?php mj_v_lista($cfg, $lista, $carpeta, $filtro, $busca, $sel, $sinVer); ?>
+        <?php mj_v_lista($cfg, $lista, $carpeta, $filtro, $busca, $sel, $aviso_nov); ?>
 
         <?php if ($cfg['interfaz']['panel_lectura'] !== 'oculto') {
                 mj_v_lector($cfg, $sel, mj_conversacion($msgs, $sel));
@@ -409,7 +414,10 @@ function mj_v_novedades(array $cfg, string $visto = ''): void
           <?php endif; ?>
           <h1 class="mj-h1">Novedades</h1>
         </div>
-        <p class="mj-agenda-nota">Lo que se ha ido agregando a tu correo, y cómo usarlo.</p>
+        <p class="mj-agenda-nota">
+          Lo que se ha ido agregando a tu correo, y cómo usarlo.
+          <span class="mj-nov-version">Tienes la versión <?= mj_e(mj_version()) ?></span>
+        </p>
       </header>
 
       <div class="mj-novedades-cuerpo">
@@ -967,7 +975,7 @@ function mj_v_carpetas(array $cfg, string $carpeta, array $conteo, int $sinVer =
 <?php }
 
 /** Columna del listado */
-function mj_v_lista(array $cfg, array $lista, string $carpeta, string $filtro, string $busca, ?array $sel, int $sinVer = 0): void
+function mj_v_lista(array $cfg, array $lista, string $carpeta, string $filtro, string $busca, ?array $sel, array $nov = []): void
 {
   $t = $cfg['textos'];
   $nombre_carpeta = 'Correo';
@@ -994,12 +1002,18 @@ function mj_v_lista(array $cfg, array $lista, string $carpeta, string $filtro, s
       <?php endif; ?>
     </header>
 
-    <?php if ($sinVer > 0): ?>
+    <?php if (($nov['cuantas'] ?? 0) > 0):
+      $n = (int) $nov['cuantas'];
+      $titulo = !empty($nov['actualizado'])
+        ? 'Tu correo se actualizó'
+        : 'Tu correo tiene cosas nuevas';
+      $sub = $n === 1 ? 'Hay 1 novedad: mira qué cambió y cómo usarlo'
+                      : 'Hay ' . $n . ' novedades: mira qué cambió y cómo usarlo'; ?>
       <a class="mj-avisonov" href="?carpeta=novedades">
         <span class="mj-avisonov-i"><?= mj_icono('estrella', 15) ?></span>
         <span class="mj-avisonov-t">
-          <strong><?= $sinVer === 1 ? 'Hay una novedad' : 'Hay ' . (int) $sinVer . ' novedades' ?> en tu correo</strong>
-          <span>Mira qué cambió y cómo usarlo</span>
+          <strong><?= mj_e($titulo) ?></strong>
+          <span><?= mj_e($sub) ?></span>
         </span>
         <?= mj_icono('adelante', 15) ?>
       </a>

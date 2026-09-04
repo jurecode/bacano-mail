@@ -16,6 +16,18 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.14.0',
+            'fecha'  => '2026-09-04',
+            'icono'  => 'estrella',
+            'titulo' => 'Esta misma sección: Novedades',
+            'que'    => 'Cada vez que se actualice tu correo, aquí queda contado qué cambió y cómo usarlo.',
+            'hacer'  => [
+                'Cuando haya algo nuevo, verás un número junto a "Novedades" en el menú y un aviso sobre la bandeja.',
+                'Los dos se apagan solos en cuanto entras a mirar; no hay que cerrar nada.',
+                'Lo que ya viste no vuelve a marcarse, y cada casilla lleva su propia cuenta.',
+            ],
+        ],
+        [
             'v'      => '1.13.0',
             'fecha'  => '2026-09-04',
             'icono'  => 'clip',
