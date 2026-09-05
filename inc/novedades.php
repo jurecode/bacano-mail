@@ -16,6 +16,17 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.15.1',
+            'fecha'  => '2026-09-04',
+            'icono'  => 'enviar',
+            'titulo' => 'Tus correos salen a tu nombre',
+            'que'    => 'El remitente ya no es el de la instalación: es la casilla con la que entraste.',
+            'hacer'  => [
+                'Si entras con tu dirección, los correos salen desde tu dirección, no desde otra.',
+                'Para que aparezca tu nombre completo y no sólo el de tu correo, ponlo en Tu cuenta → Cómo te ven.',
+            ],
+        ],
+        [
             'v'      => '1.15.0',
             'fecha'  => '2026-09-04',
             'icono'  => 'refrescar',

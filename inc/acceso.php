@@ -103,17 +103,21 @@ function mj_aplicar_credenciales(array $cfg): array
 
     $cfg['origen']['smtp']['usuario'] = $cred['usuario'];
     $cfg['origen']['smtp']['clave']   = $cred['clave'];
-    if (trim((string) ($cfg['origen']['smtp']['desde'] ?? '')) === '') {
-        $cfg['origen']['smtp']['desde'] = $cred['usuario'];
-    }
+    // Quien entra es quien firma. Antes el 'desde' de instalar.php sólo se
+    // reemplazaba si estaba vacío, así que todas las casillas enviaban con la
+    // dirección de la instalación y no con la suya.
+    $cfg['origen']['smtp']['desde'] = $cred['usuario'];
     if (trim((string) ($cfg['origen']['smtp']['host'] ?? '')) === '') {
         $cfg['origen']['smtp']['host'] = (string) ($cfg['origen']['imap']['host'] ?? '');
     }
 
     $cfg['usuario']['email'] = $cred['usuario'];
-    if (($cfg['usuario']['nombre'] ?? '') === 'Mi cuenta') {
-        $cfg['usuario']['nombre'] = ucfirst(strtok($cred['usuario'], '@') ?: 'Mi cuenta');
-    }
+
+    // Lo mismo con el nombre: el de instalar.php es de la instalación, no de
+    // quien entró. Si esta casilla no tiene el suyo puesto en "Tu cuenta",
+    // se deduce de la dirección; mj_cuenta_aplicar() pisa esto después si lo hay.
+    $cfg['usuario']['nombre'] = ucfirst(strtok($cred['usuario'], '@') ?: 'Mi cuenta');
+
     return $cfg;
 }
 

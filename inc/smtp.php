@@ -23,7 +23,12 @@ function mj_smtp_enviar(array $c, string $para, string $asunto, string $cuerpo, 
     $usuario  = trim((string) ($c['usuario'] ?? ''));
     $clave    = (string) ($c['clave'] ?? '');
     $desde    = trim((string) ($c['remitente'] ?? '')) ?: $usuario;
-    $nombre   = trim((string) ($c['remitente_nombre'] ?? '')) ?: 'Madeja';
+    // Sin nombre configurado, se deduce de la dirección. Poner aquí el de la
+    // instalación haría que todas las casillas firmaran igual.
+    $nombre   = trim((string) ($c['remitente_nombre'] ?? ''));
+    if ($nombre === '') {
+        $nombre = ucfirst(strtok($desde, '@') ?: $desde);
+    }
 
     if ($servidor === '' || $usuario === '' || $clave === '') {
         return $falla('Faltan datos de la cuenta de correo.');

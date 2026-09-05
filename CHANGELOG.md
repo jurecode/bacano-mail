@@ -10,6 +10,20 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.15.1] — 2026-09-04
+
+### Corregido
+- **Todos los correos salían con la dirección de la instalación.** Al entrar
+  con una casilla se cambiaban el usuario y la clave del SMTP, pero el
+  remitente sólo se reemplazaba si el campo estaba vacío; con un "Enviar
+  desde" puesto en `instalar.php`, cualquiera que entrara enviaba desde esa
+  dirección y no desde la suya. Ahora quien entra es quien firma.
+- Lo mismo con el nombre visible: el de `instalar.php` es de la instalación, no
+  de quien entró. Si la casilla no tiene el suyo puesto en "Tu cuenta", se
+  deduce de la dirección.
+- El cliente SMTP ponía literalmente "Madeja" como nombre cuando no había
+  ninguno configurado. Ahora deduce el nombre de la propia dirección.
+
 ## [1.15.0] — 2026-09-04
 
 ### Añadido
