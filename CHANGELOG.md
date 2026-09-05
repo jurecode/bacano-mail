@@ -10,6 +10,21 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.15.2] — 2026-09-04
+
+### Corregido
+- **Con la casilla caída aparecían correos de ejemplo.** Si el servidor IMAP
+  no respondía, el proveedor caía en `data/demo.json` y la bandeja se llenaba
+  de mensajes de muestra —con nombres y asuntos verosímiles— junto a un aviso
+  discreto. Parecía que se habían cruzado las casillas. Con una casilla real
+  configurada ya no se cae nunca en los ejemplos: se muestra la bandeja vacía
+  y el motivo del fallo bien a la vista, con un botón para reintentar.
+- El aviso ya no dice "revisa los datos en instalar.php" cuando el fallo es de
+  conexión: los datos están bien y el servidor no contesta; mandar a cambiar
+  lo que funciona sólo empeora las cosas.
+- Con la casilla caída ya no se muestra "No hay mensajes aquí", que
+  contradecía al aviso: no es que no haya, es que no se pudieron leer.
+
 ## [1.15.1] — 2026-09-04
 
 ### Corregido

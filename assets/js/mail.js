@@ -188,6 +188,10 @@
           break;
         }
 
+        case 'reintentar':
+          location.reload();
+          break;
+
         case 'adjuntar': {
           var campo = raiz.querySelector('[data-rol="adjuntos"]');
           if (campo) campo.click();
@@ -496,7 +500,7 @@
       var vacio = raiz.querySelector('[data-rol="vacio"]');
       var sinRes = raiz.querySelector('[data-rol="sin-resultados"]');
       var total = lista.querySelectorAll('.mj-item').length;
-      if (vacio)  vacio.hidden  = total !== 0;
+      if (vacio)  vacio.hidden  = total !== 0 || casillaCaida();
       if (sinRes) sinRes.hidden = !(total > 0 && n === 0);
       contar(n);
     }
@@ -1236,7 +1240,13 @@
     function vaciarSiFalta() {
       if (!visibles().length) vaciarLector();
       var vacio = raiz.querySelector('[data-rol="vacio"]');
-      if (vacio) vacio.hidden = lista.querySelectorAll('.mj-item').length !== 0;
+      if (vacio) vacio.hidden = lista.querySelectorAll('.mj-item').length !== 0 || casillaCaida();
+    }
+
+    /* Si la casilla no se pudo leer, "no hay mensajes" es mentira: no es que
+       no haya, es que no se pudieron traer. Manda el aviso de arriba. */
+    function casillaCaida() {
+      return !!raiz.querySelector('.mj-caido');
     }
     function quitarParam(p) {
       var u = new URL(location.href); u.searchParams.delete(p);

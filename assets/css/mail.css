@@ -1361,3 +1361,17 @@ a.mj-btn{ text-decoration:none; }
 .mj-icono-btn:disabled{ opacity:.4; cursor:default; }
 .mj-btn:disabled{ opacity:.5; cursor:default; }
 .mj-btn:disabled:hover{ opacity:.5; }
+
+/* ---- La casilla no respondió ---- */
+.mj-caido{
+  display:flex; gap:12px; align-items:flex-start;
+  margin:0 var(--mj-pad) 12px; padding:14px 15px;
+  border-radius:var(--mj-r-md);
+  background:rgba(229,72,77,.10); border:1px solid rgba(229,72,77,.30);
+}
+.mj-caido-i{ flex:none; display:grid; place-items:center; color:#e5484d; margin-top:1px; }
+.mj-caido strong{ display:block; font-size:13.5px; color:var(--mj-txt); }
+.mj-caido p{ margin:4px 0 0; font-size:12.5px; line-height:1.5; color:var(--mj-txt2); }
+.mj-caido-q{ color:var(--mj-txt3) !important; }
+.mj-caido-ok{ color:var(--mj-txt3) !important; font-style:italic; }
+.mj-caido .mj-btn{ margin-top:11px; }

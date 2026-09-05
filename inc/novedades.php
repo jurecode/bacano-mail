@@ -16,6 +16,17 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.15.2',
+            'fecha'  => '2026-09-04',
+            'icono'  => 'spam',
+            'titulo' => 'Si tu casilla no responde, ya no aparecen correos de ejemplo',
+            'que'    => 'Cuando el servidor de correo no contestaba, la bandeja se llenaba con mensajes de muestra que venían con el programa. Parecían correos reales de gente desconocida.',
+            'hacer'  => [
+                'Si ves un aviso rojo diciendo que no se pudo abrir tu casilla, es que el servidor no respondió: pulsa Reintentar en un momento.',
+                'Ningún correo se pierde ni se cruza: los mensajes viven en el servidor y aquí sólo se leen.',
+            ],
+        ],
+        [
             'v'      => '1.15.1',
             'fecha'  => '2026-09-04',
             'icono'  => 'enviar',

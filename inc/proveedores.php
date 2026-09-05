@@ -777,6 +777,15 @@ function mj_proveedor(array $cfg): MjProveedor
 
     if ($imap->fallo() === null) { return $cache = $imap; }
     $GLOBALS['mj_fallo_imap'] = $imap->fallo();
+
+    // Con una casilla de verdad configurada, caer en los mensajes de ejemplo
+    // es peor que no mostrar nada: parecen correos reales, de gente que no
+    // conoces, y da la impresión de que se cruzaron las casillas. Mejor la
+    // bandeja vacía y el motivo del fallo bien a la vista.
+    $conf = $cfg['origen']['imap'] ?? [];
+    if (trim((string) ($conf['host'] ?? '')) !== '') {
+      return $cache = $imap;      // no leyó nada, pero es la casilla correcta
+    }
   }
 
   return $cache = new MjProveedorJson($archivo, $cfg);

@@ -1070,12 +1070,28 @@ function mj_v_lista(array $cfg, array $lista, string $carpeta, string $filtro, s
       </div>
     <?php endif; ?>
 
-    <?php if (($mj_fallo = mj_fallo_imap()) !== null): ?>
-      <p class="mj-aviso-demo">
-        <strong>Estás viendo mensajes de ejemplo.</strong>
-        No se pudo leer la casilla real: <?= mj_e($mj_fallo) ?>
-        Revisa los datos en <code>instalar.php</code>.
-      </p>
+    <?php $mj_fallo = mj_fallo_imap();
+          if ($mj_fallo !== null):
+      // Un tiempo agotado o un rechazo de conexión no es culpa de los datos:
+      // son correctos y el servidor no contesta. Decir "revisa instalar.php"
+      // manda a la persona a cambiar lo que está bien.
+      $deConexion = (bool) preg_match('/timed out|timeout|refused|resol|conect/i', $mj_fallo); ?>
+      <div class="mj-caido" role="alert">
+        <span class="mj-caido-i" aria-hidden="true"><?= mj_icono('spam', 20) ?></span>
+        <div>
+          <strong>No se pudo abrir tu casilla</strong>
+          <p><?= mj_e($mj_fallo) ?></p>
+          <p class="mj-caido-q">
+            <?= $deConexion
+                ? 'El servidor de correo no respondió. Suele ser algo pasajero: vuelve a intentarlo en un momento.'
+                : 'Si se repite, comprueba los datos de la casilla en instalar.php.' ?>
+          </p>
+          <p class="mj-caido-ok">Tus correos están a salvo en el servidor: aquí sólo se leen.</p>
+          <button class="mj-btn mj-btn-2 mj-btn-chico" type="button" data-accion="reintentar">
+            <?= mj_icono('refrescar', 15) ?><span>Reintentar</span>
+          </button>
+        </div>
+      </div>
     <?php elseif (($cfg['origen']['tipo'] ?? 'demo') !== 'imap'): ?>
       <p class="mj-aviso-demo">
         <strong>Estás viendo mensajes de ejemplo.</strong>
@@ -1106,7 +1122,9 @@ function mj_v_lista(array $cfg, array $lista, string $carpeta, string $filtro, s
       endforeach; ?>
     </ol>
 
-    <div class="mj-vacio" <?= $lista ? 'hidden' : '' ?> data-rol="vacio">
+    <?php /* Con la casilla caída, "no hay mensajes" contradice al aviso de
+             arriba: no es que no haya, es que no se pudieron leer. */ ?>
+    <div class="mj-vacio" <?= ($lista || $mj_fallo !== null) ? 'hidden' : '' ?> data-rol="vacio">
       <?= mj_icono('bandeja', 34) ?>
       <p class="mj-vacio-t"><?= mj_e($t['sin_mensajes']) ?></p>
       <p class="mj-vacio-d"><?= mj_e($t['sin_mensajes_desc']) ?></p>
