@@ -128,7 +128,11 @@ function mj_smtp_enviar(array $c, string $para, string $asunto, string $cuerpo, 
 
     // Un solo identificador para el envío y para la copia en Enviados: es lo
     // que permite que la respuesta quede en la misma conversación.
-    $idMensaje = bin2hex(random_bytes(12)) . '@' . $servidor;
+    // El dominio del identificador tiene que ser el del remitente, no el del
+    // servidor: los filtros comparan los dos y una discordancia suma puntos
+    // para acabar en spam. mail.madejalex.cl → madejalex.cl.
+    $dominio   = strstr($desde, '@') !== false ? substr(strrchr($desde, '@'), 1) : $servidor;
+    $idMensaje = bin2hex(random_bytes(12)) . '@' . $dominio;
 
     // El cuerpo puede ser texto pelado o un árbol con firma en HTML y adjuntos
     $pieza = mj_mime_mensaje([

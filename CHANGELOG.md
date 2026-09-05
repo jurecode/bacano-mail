@@ -10,6 +10,21 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.16.1] — 2026-09-04
+
+### Corregido
+- **El `Message-ID` llevaba el dominio del servidor, no el del remitente**
+  (`mail.madejalex.cl` en vez de `madejalex.cl`). Los filtros comparan los dos
+  y una discordancia suma puntos para acabar en spam.
+
+### Añadido
+- Al adjuntar `.php`, `.exe`, `.js`, `.zip` y compañía se avisa de que suelen
+  acabar en spam o ser rechazados. No se bloquean: a veces hay que mandarlos.
+- `diagnostico.php` comprueba **SPF, DKIM y DMARC** del dominio y dice qué
+  falta. Distingue "no hay registro" de "este servidor no pudo preguntar", y
+  las consultas tienen presupuesto de tiempo: sin él, un DNS que no responde
+  tumbaba la página entera al agotar el límite de ejecución de PHP.
+
 ## [1.16.0] — 2026-09-04
 
 ### Añadido

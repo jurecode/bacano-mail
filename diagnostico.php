@@ -23,6 +23,81 @@ $anotar = function (string $texto, string $tipo = '') use (&$lineas) {
     $lineas[] = ['t' => $texto, 'c' => $tipo];
 };
 
+/* El dominio desde el que se envía: es el que miran los filtros */
+$dominio_correo = (string) ($conf['usuario'] ?? '');
+$dominio_correo = strstr($dominio_correo, '@') !== false
+    ? substr(strrchr($dominio_correo, '@'), 1)
+    : preg_replace('/^mail\./i', '', (string) ($conf['host'] ?? ''));
+
+/**
+ * Comprueba SPF, DKIM y DMARC. Sin ellos, un correo perfectamente legítimo
+ * acaba en spam, y no hay nada que se pueda arreglar desde esta aplicación:
+ * son registros DNS del dominio.
+ */
+function mj_dns_correo(string $dominio): array
+{
+    $out = [];
+    if ($dominio === '' || !function_exists('dns_get_record')) {
+        return [['t' => 'No se pudo consultar el DNS desde este servidor.', 'c' => 'ojo']];
+    }
+    $out[] = ['t' => 'Dominio: ' . $dominio, 'c' => ''];
+
+    // dns_get_record no admite tiempo de espera y un resolutor que no
+    // contesta cuelga la página entera hasta que PHP la mata. Se le pone un
+    // presupuesto: en cuanto se pasa, se deja de preguntar.
+    $arranque = microtime(true);
+    $queda = static fn(): bool => (microtime(true) - $GLOBALS['mj_dns_t0']) < 6.0;
+    $GLOBALS['mj_dns_t0'] = $arranque;
+
+    $txt = static function (string $nombre) use ($queda): array {
+        if (!$queda()) { return []; }
+        $r = @dns_get_record($nombre, DNS_TXT) ?: [];
+        return array_map(function ($x) {
+            // Una clave DKIM pasa de 255 caracteres y viaja partida en trozos
+            if (!empty($x['entries']) && is_array($x['entries'])) {
+                return implode('', $x['entries']);
+            }
+            return (string) ($x['txt'] ?? '');
+        }, $r);
+    };
+
+    // SPF: quién puede enviar en nombre del dominio
+    $spf = array_values(array_filter($txt($dominio), fn($v) => stripos($v, 'v=spf1') === 0));
+    $out[] = $spf
+        ? ['t' => 'SPF ✓  ' . $spf[0], 'c' => 'bien']
+        : ['t' => 'SPF ✗  No hay registro. Sin él, muchos servidores desconfían.', 'c' => 'mal'];
+
+    // DKIM: la firma que demuestra que el correo no se manipuló
+    $sel = ['default', 'dkim', 'mail'];   // cPanel usa "default"
+    $hay = '';
+    foreach ($sel as $x) {
+        foreach ($txt($x . '._domainkey.' . $dominio) as $v) {
+            if (stripos($v, 'v=DKIM1') !== false || stripos($v, 'p=') !== false) { $hay = $x; break 2; }
+        }
+    }
+    $out[] = $hay
+        ? ['t' => 'DKIM ✓  firmado con el selector "' . $hay . '"', 'c' => 'bien']
+        : ['t' => 'DKIM ✗  No se encontró clave en los selectores habituales ('
+               . implode(', ', $sel) . '). Puede ser que use otro nombre: compruébalo en '
+               . 'cPanel → Correo electrónico → Autenticación de correo.', 'c' => 'ojo'];
+
+    // DMARC: qué hacer cuando algo no cuadra
+    $dmarc = array_values(array_filter($txt('_dmarc.' . $dominio), fn($v) => stripos($v, 'v=DMARC1') === 0));
+    if (!$dmarc) {
+        $out[] = ['t' => 'DMARC ✗  No hay registro.', 'c' => 'mal'];
+    } elseif (preg_match('/p\s*=\s*none/i', $dmarc[0])) {
+        $out[] = ['t' => 'DMARC ~  ' . $dmarc[0] . '  (p=none sólo observa; con el tiempo conviene subirlo a quarantine)', 'c' => 'ojo'];
+    } else {
+        $out[] = ['t' => 'DMARC ✓  ' . $dmarc[0], 'c' => 'bien'];
+    }
+
+    if (!$queda()) {
+        $out[] = ['t' => 'El DNS de este servidor tarda demasiado en responder, así que puede '
+                       . 'faltar alguna comprobación. Míralo desde fuera con mxtoolbox.com.', 'c' => 'ojo'];
+    }
+    return $out;
+}
+
 $imap = new MjImap($conf);
 
 if (!$imap->conectar()) {
@@ -101,7 +176,7 @@ $dialogo = $imap->registro;
   h1{ font-family:system-ui,sans-serif; font-size:20px; margin:0 0 4px }
   p.sub{ font-family:system-ui,sans-serif; color:#93a0b8; margin:0 0 22px; font-size:13px }
   .caja{ padding:16px 18px; background:#111a2b; border:1px solid rgba(255,255,255,.10); border-radius:12px; margin-bottom:18px }
-  .ok{ color:#6ee7a8 } .mal{ color:#fca5a5 }
+  .ok,.bien{ color:#6ee7a8 } .mal{ color:#fca5a5 } .ojo{ color:#fcd34d }
   pre{ margin:0; white-space:pre-wrap; word-break:break-word; color:#93a0b8; font-size:12px; max-height:420px; overflow:auto }
   form{ font-family:system-ui,sans-serif; margin-bottom:18px }
   input{ padding:8px 10px; border-radius:8px; background:#0b1220; border:1px solid rgba(255,255,255,.16); color:#e8eaf0 }
@@ -110,8 +185,18 @@ $dialogo = $imap->registro;
 </style>
 </head>
 <body>
-  <h1>Diagnóstico de lectura</h1>
-  <p class="sub">Qué ve y qué acepta tu servidor IMAP, sin intermediarios.</p>
+  <h1>Diagnóstico</h1>
+  <p class="sub">Qué ve y qué acepta tu servidor, sin intermediarios.</p>
+
+  <h2 style="font-family:system-ui,sans-serif;font-size:16px;margin:24px 0 4px">¿Llegarán tus correos?</h2>
+  <p class="sub">Los tres registros que miran Gmail y los demás para decidir si un correo es de fiar.</p>
+  <div class="caja">
+    <?php foreach (mj_dns_correo($dominio_correo) as $x): ?>
+      <div class="<?= mj_e($x['c']) ?>"><?= mj_e($x['t']) ?></div>
+    <?php endforeach; ?>
+  </div>
+
+  <h2 style="font-family:system-ui,sans-serif;font-size:16px;margin:24px 0 4px">Lectura y marcas</h2>
 
   <form method="get">
     <label>Probar a marcar como leído el UID:

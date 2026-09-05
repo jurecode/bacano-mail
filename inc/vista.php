@@ -1492,6 +1492,7 @@ function mj_v_compositor(array $cfg): void
         </label>
 
         <ul class="mj-adjuntar" data-rol="lista-adjuntos" hidden></ul>
+        <p class="mj-adjuntar-ojo" data-rol="aviso-adjuntos" hidden></p>
 
         <div class="mj-progreso" data-rol="progreso" hidden>
           <div class="mj-progreso-pista"><div class="mj-progreso-barra"></div></div>

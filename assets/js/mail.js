@@ -610,10 +610,35 @@
       return (n / 1048576).toFixed(1).replace('.0', '') + ' MB';
     }
 
+    /* Extensiones que Gmail y compañía miran con lupa: no se bloquean —a
+       veces hay que mandarlas— pero conviene avisar antes, no después. */
+    var RIESGO = ['php','exe','js','bat','cmd','com','scr','vbs','jar','msi','apk','html','htm'];
+
+    function avisoRiesgo() {
+      var caja = raiz.querySelector('[data-rol="aviso-adjuntos"]');
+      if (!caja) return;
+
+      var malos = elegidos
+        .map(function (f) { return (f.name.split('.').pop() || '').toLowerCase(); })
+        .filter(function (e, i, a) { return RIESGO.indexOf(e) !== -1 && a.indexOf(e) === i; });
+
+      var zip = elegidos.some(function (f) { return /\.(zip|rar|7z)$/i.test(f.name); });
+
+      caja.hidden = malos.length === 0 && !zip;
+      if (caja.hidden) return;
+
+      caja.textContent = malos.length
+        ? 'Los archivos ' + malos.map(function (e) { return '.' + e; }).join(', ')
+          + ' suelen acabar en la carpeta de spam de quien los recibe, o ser rechazados. '
+          + 'Si puedes, mándalos por un enlace de descarga.'
+        : 'Los comprimidos (.zip, .rar) a veces acaban en spam. Si el correo es importante, avisa por otra vía.';
+    }
+
     function pintarAdjuntos() {
       if (!listaAdj) return;
       listaAdj.innerHTML = '';
       listaAdj.hidden = elegidos.length === 0;
+      avisoRiesgo();
 
       elegidos.forEach(function (f, i) {
         var li = document.createElement('li');

@@ -16,6 +16,17 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.16.1',
+            'fecha'  => '2026-09-04',
+            'icono'  => 'spam',
+            'titulo' => 'Menos correos tuyos en la carpeta de spam',
+            'que'    => 'Pequeños ajustes para que tus correos lleguen a la bandeja de quien los recibe.',
+            'hacer'  => [
+                'Al adjuntar archivos como .php, .zip o .exe, ahora se avisa: son los que más rechazan Gmail y compañía. Si el correo es importante, mejor mandar un enlace de descarga.',
+                'En diagnostico.php hay una comprobación nueva de SPF, DKIM y DMARC, los tres registros que miran los filtros para decidir si tu dominio es de fiar.',
+            ],
+        ],
+        [
             'v'      => '1.16.0',
             'fecha'  => '2026-09-04',
             'icono'  => 'carpeta_mas',
