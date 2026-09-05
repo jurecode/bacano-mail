@@ -16,6 +16,20 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.16.0',
+            'fecha'  => '2026-09-04',
+            'icono'  => 'carpeta_mas',
+            'titulo' => 'Crear tus propias carpetas',
+            'que'    => 'Ya puedes crear, renombrar y borrar carpetas. Antes eran de adorno: aparecían en el menú pero no guardaban nada.',
+            'hacer'  => [
+                'Pulsa "Agregar carpeta" en el menú, o el + junto a "Carpetas", y escribe el nombre.',
+                'Para cambiarle el nombre o borrarla, pasa el cursor por encima: aparecen el lápiz y la papelera.',
+                'Las carpetas se crean en tu casilla, así que las verás también en el celular y en cualquier otro programa de correo.',
+                'Para guardar un correo dentro, botón derecho sobre él → Mover a → tu carpeta.',
+            ],
+            'ojo'    => 'Al borrar una carpeta se borran también los correos que tenga dentro.',
+        ],
+        [
             'v'      => '1.15.2',
             'fecha'  => '2026-09-04',
             'icono'  => 'spam',

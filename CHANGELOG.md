@@ -10,6 +10,26 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.16.0] — 2026-09-04
+
+### Añadido
+- **Carpetas propias de verdad.** "Agregar carpeta" ya no responde "por ahora
+  las carpetas se definen en instalar.php": crea la carpeta en el servidor
+  (`CREATE` + `SUBSCRIBE`), así que aparece también en el celular. Se pueden
+  renombrar y borrar desde el propio menú, pasando el cursor por encima.
+- Las carpetas del menú salen ahora **del servidor**, no del perfil de
+  `instalar.php`. Las de antes eran un adorno: el proveedor descartaba toda
+  carpeta sin un papel del sistema, así que "Clientes" y "Tribunales" se veían
+  en el menú pero nunca podían tener mensajes.
+- Se pueden mover correos a esas carpetas, y sus mensajes se leen y se cuentan
+  como los de cualquier otra.
+
+### Corregido
+- El submenú "Mover a" ofrecía "Contactos" y "Destacados" como destinos. La
+  primera es una agenda y la segunda un filtro; mover algo allí no podía
+  funcionar.
+- Las carpetas del sistema quedan protegidas: no se pueden renombrar ni borrar.
+
 ## [1.15.2] — 2026-09-04
 
 ### Corregido

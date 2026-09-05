@@ -129,6 +129,69 @@ class MjImap
         return $salida;
     }
 
+    /* --------------------------------------------------------
+       Administrar carpetas
+       -------------------------------------------------------- */
+
+    /** Crea una carpeta y la deja suscrita, que si no algunos clientes no la ven. */
+    public function crear(string $nombre): bool
+    {
+        $r = $this->orden('CREATE ' . $this->entrecomillar($nombre));
+        if (!$r['ok']) {
+            $this->error = $this->motivo($r['texto']) ?: 'El servidor no dejó crear la carpeta.';
+            return false;
+        }
+        $this->orden('SUBSCRIBE ' . $this->entrecomillar($nombre));
+        return true;
+    }
+
+    public function renombrar(string $de, string $a): bool
+    {
+        $r = $this->orden('RENAME ' . $this->entrecomillar($de) . ' ' . $this->entrecomillar($a));
+        if (!$r['ok']) {
+            $this->error = $this->motivo($r['texto']) ?: 'El servidor no dejó cambiar el nombre.';
+            return false;
+        }
+        $this->orden('SUBSCRIBE ' . $this->entrecomillar($a));
+        return true;
+    }
+
+    public function eliminar(string $nombre): bool
+    {
+        $this->orden('UNSUBSCRIBE ' . $this->entrecomillar($nombre));
+        $r = $this->orden('DELETE ' . $this->entrecomillar($nombre));
+        if (!$r['ok']) {
+            $this->error = $this->motivo($r['texto']) ?: 'El servidor no dejó borrar la carpeta.';
+            return false;
+        }
+        return true;
+    }
+
+    /** El separador de jerarquía que use este servidor: "." en Dovecot, "/" en otros. */
+    public function separador(): string
+    {
+        $r = $this->orden('LIST "" ""');
+        if ($r['ok'] && preg_match('/^\* LIST \([^)]*\)\s+"?([^"\s]+)"?/mi', $r['texto'], $m)) {
+            return $m[1] === 'NIL' ? '.' : $m[1];
+        }
+        return '.';
+    }
+
+    /** Un nombre de carpeta, listo para meter en una orden. */
+    private function entrecomillar(string $nombre): string
+    {
+        return '"' . str_replace(['\\', '"'], ['\\\\', '\\"'], $nombre) . '"';
+    }
+
+    /** El texto que devuelve el servidor cuando dice que no. */
+    private function motivo(string $texto): string
+    {
+        if (preg_match('/^\S+\s+(?:NO|BAD)\s+(.+)$/mi', trim($texto), $m)) {
+            return trim($m[1]);
+        }
+        return '';
+    }
+
     /** Marca banderas en un mensaje: leído, destacado… */
     public function marcar(int $uid, string $banderas = '\\Seen', bool $quitar = false): bool
     {

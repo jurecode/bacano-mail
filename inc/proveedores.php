@@ -40,6 +40,57 @@ function mj_asunto_raiz(string $asunto): string
     return $limpio === '(sin asunto)' ? '' : $limpio;
 }
 
+/**
+ * Reparte identificadores a las carpetas del servidor. Las del sistema
+ * conservan su papel ("entrada", "papelera"…); las propias reciben uno hecho
+ * con su nombre, que es lo que viaja en la URL y en los identificadores de
+ * mensaje.
+ *
+ * Devuelve [['id','nombre','papel','propia'], …]
+ */
+function mj_carpetas_con_id(array $carpetas): array
+{
+    $salida = [];
+    $usados = [];
+
+    foreach ($carpetas as $c) {
+        $papel = (string) ($c['papel'] ?? '');
+        if ($papel !== '') {
+            $salida[] = ['id' => $papel, 'nombre' => $c['nombre'], 'papel' => $papel, 'propia' => false];
+            $usados[$papel] = true;
+        }
+    }
+
+    foreach ($carpetas as $c) {
+        if (($c['papel'] ?? '') !== '') { continue; }
+
+        $base = mj_slug_carpeta($c['nombre']);
+        $id   = $base;
+        $n    = 2;
+        while (isset($usados[$id])) { $id = $base . $n; $n++; }   // dos con el mismo nombre corto
+        $usados[$id] = true;
+
+        $salida[] = ['id' => $id, 'nombre' => $c['nombre'], 'papel' => '', 'propia' => true];
+    }
+    return $salida;
+}
+
+/** El nombre de una carpeta, reducido a algo que quepa en una URL. */
+function mj_slug_carpeta(string $nombre): string
+{
+    // Sólo la última rama: "INBOX.Clientes.Activos" → "Activos"
+    $corto = preg_replace('#^INBOX[./]#i', '', $nombre);
+    $corto = preg_replace('#.*[./]#', '', $corto);
+
+    $s = @iconv('UTF-8', 'ASCII//TRANSLIT', $corto);
+    $s = strtolower((string) ($s !== false ? $s : $corto));
+    $s = preg_replace('/[^a-z0-9]+/', '', $s);
+
+    // El prefijo evita chocar con los papeles del sistema y garantiza que
+    // empiece por letra, que es lo que espera el resto del programa.
+    return 'c' . (substr((string) $s, 0, 18) ?: substr(sha1($nombre), 0, 8));
+}
+
 function mj_hilo_de(array $m): string
 {
     $refs = trim((string) ($m['referencias'] ?? ''));
@@ -442,12 +493,103 @@ class MjProveedorImapSocket implements MjProveedor
 {
     private ?array $cache = null;
     private ?string $fallo = null;
+    private array $carpetas = [];
 
     public function __construct(private array $conf, private array $cfg = []) {}
 
     public static function disponible(): bool
     {
         return function_exists('stream_socket_client') && extension_loaded('openssl');
+    }
+
+    /** Las carpetas del servidor, ya con su identificador. */
+    public function carpetas(): array
+    {
+        if (!$this->carpetas) { $this->mensajes(); }   // se llenan al leer
+        return $this->carpetas;
+    }
+
+    /** Sólo las que ha creado la persona, para pintarlas en el menú. */
+    public function carpetas_propias(): array
+    {
+        return array_values(array_filter($this->carpetas(), fn($c) => $c['propia']));
+    }
+
+    /**
+     * Crea, renombra o borra una carpeta del servidor.
+     * Devuelve ['ok' => bool, 'mensaje' => string, 'id' => string].
+     */
+    public function carpeta(string $accion, string $nombre, string $id = ''): array
+    {
+        $nombre = trim(preg_replace('/\s+/u', ' ', $nombre));
+        $malo = fn(string $m) => ['ok' => false, 'mensaje' => $m, 'id' => ''];
+
+        if ($accion !== 'borrar') {
+            if ($nombre === '')                        return $malo('Escribe un nombre para la carpeta.');
+            if (mb_strlen($nombre) > 60)               return $malo('El nombre es demasiado largo.');
+            // Los separadores partirían la carpeta en subcarpetas sin querer
+            if (preg_match('#[/\\.%*"]#', $nombre))    return $malo('El nombre no puede llevar . / \\ % * ni comillas.');
+        }
+
+        $imap = new MjImap($this->conf);
+        if (!$imap->conectar() || !$imap->entrar()) {
+            return $malo($imap->error ?: 'No se pudo conectar con la casilla.');
+        }
+
+        $todas = mj_carpetas_con_id($imap->carpetas());
+        $sep   = $imap->separador();
+
+        // Las propias cuelgan de INBOX, como las del sistema en Dovecot
+        $ruta = fn(string $n) => 'INBOX' . $sep . $n;
+
+        $actual = null;
+        foreach ($todas as $c) {
+            if ($id !== '' && $c['id'] === $id) { $actual = $c; break; }
+        }
+
+        if ($accion !== 'crear' && $actual === null) {
+            $imap->cerrar();
+            return $malo('Esa carpeta ya no está en el servidor.');
+        }
+        if ($accion !== 'crear' && !$actual['propia']) {
+            $imap->cerrar();
+            return $malo('Las carpetas del sistema no se pueden cambiar.');
+        }
+
+        if ($accion === 'crear' || $accion === 'renombrar') {
+            foreach ($todas as $c) {
+                $suyo = preg_replace('#.*[' . preg_quote($sep, '#') . ']#', '', $c['nombre']);
+                if (mb_strtolower($suyo) === mb_strtolower($nombre)
+                    && (!$actual || $c['id'] !== $actual['id'])) {
+                    $imap->cerrar();
+                    return $malo('Ya tienes una carpeta con ese nombre.');
+                }
+            }
+        }
+
+        $ok = match ($accion) {
+            'crear'     => $imap->crear($ruta($nombre)),
+            'renombrar' => $imap->renombrar($actual['nombre'], $ruta($nombre)),
+            'borrar'    => $imap->eliminar($actual['nombre']),
+            default     => false,
+        };
+        $error = $imap->error;
+        $imap->cerrar();
+
+        if (!$ok) { return $malo($error ?: 'El servidor no aceptó la operación.'); }
+
+        $this->cache = null;             // la lista cambió: hay que releerla
+        $this->carpetas = [];
+
+        return [
+            'ok'      => true,
+            'mensaje' => match ($accion) {
+                'crear'     => 'Carpeta creada',
+                'renombrar' => 'Carpeta renombrada',
+                default     => 'Carpeta eliminada',
+            },
+            'id' => $accion === 'borrar' ? '' : mj_slug_carpeta($ruta($nombre)),
+        ];
     }
 
     public function nombre(): string
@@ -476,19 +618,19 @@ class MjProveedorImapSocket implements MjProveedor
         if (!$carpetas) {
             $carpetas = [['nombre' => (string) ($this->conf['carpeta'] ?? 'INBOX'), 'papel' => 'entrada']];
         }
+        $carpetas = mj_carpetas_con_id($carpetas);
+        $this->carpetas = $carpetas;      // las necesita la vista para el menú
 
         foreach ($carpetas as $c) {
-            if ($c['papel'] === '') continue;
-
             $total = $imap->abrir($c['nombre']);
             if ($total < 1) continue;
 
-            $cuantos = $c['papel'] === 'entrada' ? $limite : max(5, (int) round($limite / 2));
+            $cuantos = $c['id'] === 'entrada' ? $limite : max(5, (int) round($limite / 2));
 
             foreach ($imap->cabeceras($total, $cuantos) as $m) {
                 $this->cache[] = [
-                    'id'         => 'imap-' . $c['papel'] . '-' . $m['uid'],
-                    'carpeta'    => $c['papel'],
+                    'id'         => 'imap-' . $c['id'] . '-' . $m['uid'],
+                    'carpeta'    => $c['id'],
                     // Raíz de la conversación: la primera referencia, o el
                     // propio identificador si el mensaje la empieza.
                     'hilo'       => mj_hilo_de($m),
@@ -546,7 +688,7 @@ class MjProveedorImapSocket implements MjProveedor
      */
     public function accion(string $accion, string $id, string $valor = ''): array
     {
-        if (!preg_match('/^imap-([a-z]+)-(\d+)$/', $id, $c)) {
+        if (!preg_match('/^imap-([a-z0-9]+)-(\d+)$/', $id, $c)) {
             return ['ok' => false, 'mensaje' => 'No reconozco ese mensaje.'];
         }
         $uid = (int) $c[2];
@@ -571,8 +713,8 @@ class MjProveedorImapSocket implements MjProveedor
 
         // dónde está el mensaje, y cómo se llama cada carpeta en este servidor
         $carpetas = [];
-        foreach ($imap->carpetas() as $x) {
-            if ($x['papel'] !== '') { $carpetas[$x['papel']] = $x['nombre']; }
+        foreach (mj_carpetas_con_id($imap->carpetas()) as $x) {
+            $carpetas[$x['id']] = $x['nombre'];
         }
         $origen = $carpetas[$c[1]] ?? (string) ($this->conf['carpeta'] ?? 'INBOX');
         $imap->abrir($origen);
@@ -686,15 +828,15 @@ class MjProveedorImapSocket implements MjProveedor
         }
 
         $carpetas = [];
-        foreach ($imap->carpetas() as $x) {
-            if ($x['papel'] !== '') { $carpetas[$x['papel']] = $x['nombre']; }
+        foreach (mj_carpetas_con_id($imap->carpetas()) as $x) {
+            $carpetas[$x['id']] = $x['nombre'];
         }
 
         // se agrupan por carpeta: cada SELECT cuesta, y hay que abrir la
         // carpeta correcta antes de tocar sus mensajes
         $porCarpeta = [];
         foreach ($ids as $id) {
-            if (preg_match('/^imap-([a-z]+)-(\d+)$/', $id, $c)) {
+            if (preg_match('/^imap-([a-z0-9]+)-(\d+)$/', $id, $c)) {
                 $porCarpeta[$c[1]][] = (int) $c[2];
             }
         }
@@ -723,7 +865,7 @@ class MjProveedorImapSocket implements MjProveedor
 
     public function marcar_leido(string $id): bool
     {
-        if (!preg_match('/^imap-([a-z]+)-(\d+)$/', $id, $c)) {
+        if (!preg_match('/^imap-([a-z0-9]+)-(\d+)$/', $id, $c)) {
             return false;
         }
 
@@ -734,8 +876,8 @@ class MjProveedorImapSocket implements MjProveedor
 
         // hay que abrir la carpeta donde vive el mensaje
         $carpeta = (string) ($this->conf['carpeta'] ?? 'INBOX');
-        foreach ($imap->carpetas() as $x) {
-            if ($x['papel'] === $c[1]) { $carpeta = $x['nombre']; break; }
+        foreach (mj_carpetas_con_id($imap->carpetas()) as $x) {
+            if ($x['id'] === $c[1]) { $carpeta = $x['nombre']; break; }
         }
         $imap->abrir($carpeta);
 

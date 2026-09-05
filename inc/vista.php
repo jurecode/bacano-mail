@@ -34,6 +34,20 @@ function mj_correo(array $ov = []): void
   $contactos = $buzon !== '' ? mj_contactos($buzon) : [];
 
   // ---- Estado desde la URL (funciona incluso sin JavaScript) ----
+  // Las carpetas propias salen del servidor, no del perfil: las del perfil
+  // eran un adorno, no tenían mensajes detrás.
+  if (method_exists($prov, 'carpetas_propias')) {
+    $cfg['carpetas_propias'] = array_map(
+      fn($c) => [
+        'id'     => $c['id'],
+        'nombre' => preg_replace('#^INBOX[./]#i', '', $c['nombre']),
+        'icono'  => 'carpeta',
+        'propia' => true,
+      ],
+      $prov->carpetas_propias()
+    );
+  }
+
   $carpetas_ids = array_merge(
     array_column($cfg['carpetas'], 'id'),
     array_column($cfg['carpetas_propias'], 'id')
@@ -229,6 +243,7 @@ function mj_correo(array $ov = []): void
     <?php mj_v_confirmar(); ?>
     <?php if ($carpeta === 'contactos') mj_v_ficha_contacto(); ?>
     <?php if (function_exists('mj_dentro') && mj_dentro()) mj_v_nueva_casilla(); ?>
+    <?php mj_v_carpeta_form(); ?>
 
     <div class="mj-avisos" role="status" aria-live="polite"></div>
 
@@ -244,7 +259,7 @@ function mj_correo(array $ov = []): void
       'textos'   => $t,
       'colores'  => $cfg['colores_estrella'],
       'carpetas' => array_map(fn($c) => ['id' => $c['id'], 'nombre' => $c['nombre']],
-                     array_merge($cfg['carpetas'], $cfg['carpetas_propias'])),
+                     mj_carpetas_destino($cfg)),
       // Para sugerir destinatarios al redactar. Se recorta: una agenda muy
       // larga no tiene por qué viajar entera en cada carga de la página.
       'contactos' => array_map(
@@ -616,6 +631,50 @@ function mj_v_ajustes(array $cfg): void
   </section>
 <?php }
 
+/**
+ * Las carpetas a las que se puede mover un mensaje. Deja fuera las que no son
+ * carpetas de verdad —Contactos es una agenda— y Destacados, que es un filtro.
+ */
+function mj_carpetas_destino(array $cfg): array
+{
+  $fuera = ['destacado', 'contactos', 'cuenta', 'novedades'];
+
+  return array_values(array_filter(
+    array_merge($cfg['carpetas'], $cfg['carpetas_propias']),
+    fn($c) => empty($c['agenda']) && !in_array($c['id'], $fuera, true)
+  ));
+}
+
+/** Cuadro para crear o renombrar una carpeta */
+function mj_v_carpeta_form(): void
+{ ?>
+  <div class="mj-modal" data-modal="carpeta" hidden>
+    <div class="mj-modal-fondo" data-accion="cerrar-modal"></div>
+    <div class="mj-modal-caja mj-modal-chica" role="dialog" aria-modal="true" aria-labelledby="mj-carp-t">
+      <header class="mj-modal-cab">
+        <h2 class="mj-h2" id="mj-carp-t" data-rol="carpeta-titulo">Nueva carpeta</h2>
+        <button class="mj-icono-btn" type="button" data-accion="cerrar-modal" aria-label="Cerrar"><?= mj_icono('cerrar', 18) ?></button>
+      </header>
+      <form class="mj-form" data-rol="form-carpeta"
+            data-token="<?= mj_e(function_exists('mj_token_sesion') ? mj_token_sesion() : '') ?>">
+        <input type="hidden" name="id" value="">
+        <label class="mj-campo">
+          <span>Nombre</span>
+          <input type="text" name="nombre" maxlength="60" autocomplete="off"
+                 placeholder="Clientes, Tribunales, Causas…" required>
+        </label>
+        <p class="mj-set-ayuda">Se crea en tu casilla, así que la verás también en el celular.</p>
+        <div class="mj-modal-pie">
+          <div class="mj-modal-pie-btns">
+            <button class="mj-btn mj-btn-2" type="button" data-accion="cerrar-modal">Cancelar</button>
+            <button class="mj-btn" type="submit">Crear</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+<?php }
+
 /** Las filas de las casillas guardadas. Las usan la vista y el guardado. */
 function mj_v_casillas(string $correo, array $otras, string $tok): string
 {
@@ -869,8 +928,8 @@ function mj_v_carpetas(array $cfg, string $carpeta, array $conteo, int $sinVer =
       <?php if ($cfg['carpetas_propias'] || $cfg['mostrar_agregar_carpeta']): ?>
         <div class="mj-nav-titulo">
           <span><?= mj_e($t['carpetas']) ?></span>
-          <button class="mj-icono-btn" type="button" data-accion="config-carpetas"
-                  aria-label="Administrar carpetas"><?= mj_icono('ajustes', 16) ?></button>
+          <button class="mj-icono-btn" type="button" data-accion="nueva-carpeta"
+                  title="Nueva carpeta" aria-label="Nueva carpeta"><?= mj_icono('mas', 16) ?></button>
         </div>
         <ul class="mj-nav">
           <?php if ($cfg['mostrar_agregar_carpeta']): ?>
@@ -881,7 +940,8 @@ function mj_v_carpetas(array $cfg, string $carpeta, array $conteo, int $sinVer =
             </li>
           <?php endif; ?>
           <?php foreach ($cfg['carpetas_propias'] as $c): ?>
-            <li>
+            <li class="mj-nav-propia" data-carpeta-id="<?= mj_e($c['id']) ?>"
+                data-carpeta-nombre="<?= mj_e($c['nombre']) ?>">
               <a class="mj-nav-item<?= $carpeta === $c['id'] ? ' is-activo' : '' ?>"
                  href="<?= mj_e($enlace($c['id'])) ?>" data-carpeta="<?= mj_e($c['id']) ?>"
                  <?php if (!empty($c['color'])): ?>style="--mj-carpeta-color:<?= mj_e($c['color']) ?>"<?php endif; ?>>
@@ -891,6 +951,14 @@ function mj_v_carpetas(array $cfg, string $carpeta, array $conteo, int $sinVer =
                   <em class="mj-badge mj-badge-suave"><?= (int) $conteo[$c['id']]['total'] ?></em>
                 <?php endif; ?>
               </a>
+              <?php if (!empty($c['propia'])): ?>
+                <span class="mj-nav-propia-btns">
+                  <button class="mj-icono-btn" type="button" data-accion="renombrar-carpeta"
+                          title="Cambiar el nombre" aria-label="Cambiar el nombre de <?= mj_e($c['nombre']) ?>"><?= mj_icono('lapiz', 14) ?></button>
+                  <button class="mj-icono-btn" type="button" data-accion="borrar-carpeta"
+                          title="Eliminar la carpeta" aria-label="Eliminar la carpeta <?= mj_e($c['nombre']) ?>"><?= mj_icono('papelera', 14) ?></button>
+                </span>
+              <?php endif; ?>
             </li>
           <?php endforeach; ?>
         </ul>
@@ -1375,7 +1443,7 @@ function mj_v_menu(array $cfg): void
         <div class="mj-menu-item mj-menu-sub" tabindex="0" role="menuitem" aria-haspopup="true">
           <span><?= mj_e($it['texto']) ?></span><?= mj_icono('adelante', 14) ?>
           <div class="mj-submenu" role="menu">
-            <?php foreach (array_merge($cfg['carpetas'], $cfg['carpetas_propias']) as $c): ?>
+            <?php foreach (mj_carpetas_destino($cfg) as $c): ?>
               <button type="button" class="mj-menu-item" role="menuitem"
                       data-menu="<?= mj_e($it['id']) ?>" data-destino="<?= mj_e($c['id']) ?>">
                 <?= mj_icono($c['icono'] ?? 'carpeta', 15) ?><span><?= mj_e($c['nombre']) ?></span>

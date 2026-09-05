@@ -218,9 +218,20 @@
           break;
 
         case 'nueva-carpeta':
-        case 'config-carpetas':
-          aviso('Por ahora las carpetas se definen en instalar.php');
+          abrirCarpeta(null);
           break;
+        case 'renombrar-carpeta':
+          abrirCarpeta(btn.closest('.mj-nav-propia'));
+          break;
+        case 'borrar-carpeta': {
+          var li = btn.closest('.mj-nav-propia');
+          if (!li) break;
+          confirmar(
+            'Se eliminará la carpeta "' + li.dataset.carpetaNombre + '" y los correos que tenga dentro.',
+            function () { pedirCarpeta({ accion: 'borrar', id: li.dataset.carpetaId }); },
+            'Eliminar la carpeta', 'Eliminar');
+          break;
+        }
 
         case 'agendar':
           aviso('Programar el envío todavía no está disponible');
@@ -716,6 +727,64 @@
       var f = raiz.querySelector('[data-rol="form-perfil"]');
       return f ? (f.dataset.token || '') : tokenSesion();
     }
+
+    /* ---------------------------------------------------------
+       Carpetas
+       --------------------------------------------------------- */
+    function abrirCarpeta(li) {
+      var m = raiz.querySelector('[data-modal="carpeta"]');
+      if (!m) return;
+
+      var f = m.querySelector('[data-rol="form-carpeta"]');
+      m.querySelector('[data-rol="carpeta-titulo"]').textContent =
+        li ? 'Cambiar el nombre' : 'Nueva carpeta';
+      f.querySelector('[type="submit"]').textContent = li ? 'Guardar' : 'Crear';
+      f.elements.id.value     = li ? li.dataset.carpetaId : '';
+      f.elements.nombre.value = li ? li.dataset.carpetaNombre : '';
+
+      m.hidden = false;
+      f.elements.nombre.focus();
+      f.elements.nombre.select();
+    }
+
+    function pedirCarpeta(datos, boton) {
+      var antes = boton ? boton.textContent : '';
+      if (boton) { boton.disabled = true; boton.textContent = 'Guardando…'; }
+
+      var cuerpo = new FormData();
+      Object.keys(datos).forEach(function (k) { cuerpo.append(k, datos[k]); });
+      cuerpo.append('token', tokenCarpetas());
+
+      return fetch('carpetas.php', { method: 'POST', body: cuerpo, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          if (boton) { boton.disabled = false; boton.textContent = antes; }
+          aviso((r && r.mensaje) || 'No se pudo cambiar la carpeta.');
+          // La lista de carpetas la arma el servidor al pintar la página; se
+          // recarga en vez de rehacerla aquí y arriesgar que se separen.
+          if (r && r.ok) { setTimeout(function () { location.href = '?carpeta=entrada'; }, 500); }
+          return r;
+        })
+        .catch(function () {
+          if (boton) { boton.disabled = false; boton.textContent = antes; }
+          aviso('No se pudo cambiar la carpeta. Revisa la conexión.');
+        });
+    }
+
+    function tokenCarpetas() {
+      var f = raiz.querySelector('[data-rol="form-carpeta"]');
+      return f ? (f.dataset.token || '') : tokenSesion();
+    }
+
+    var formCarpeta = raiz.querySelector('[data-rol="form-carpeta"]');
+    if (formCarpeta) formCarpeta.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      pedirCarpeta({
+        accion: formCarpeta.elements.id.value ? 'renombrar' : 'crear',
+        nombre: formCarpeta.elements.nombre.value,
+        id:     formCarpeta.elements.id.value
+      }, formCarpeta.querySelector('[type="submit"]'));
+    });
 
     /* ---------------------------------------------------------
        Ajustes de la cuenta

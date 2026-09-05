@@ -1375,3 +1375,17 @@ a.mj-btn{ text-decoration:none; }
 .mj-caido-q{ color:var(--mj-txt3) !important; }
 .mj-caido-ok{ color:var(--mj-txt3) !important; font-style:italic; }
 .mj-caido .mj-btn{ margin-top:11px; }
+
+/* ---- Carpetas propias: renombrar y borrar al pasar por encima ---- */
+.mj-nav-propia{ position:relative; display:flex; align-items:center; }
+.mj-nav-propia > .mj-nav-item{ flex:1 1 auto; min-width:0; }
+.mj-nav-propia-btns{
+  position:absolute; right:6px; display:flex; gap:1px;
+  opacity:0; transition:opacity .15s;
+  background:linear-gradient(90deg, transparent, var(--mj-hover) 22%);
+  padding-left:14px; border-radius:var(--mj-r-md);
+}
+.mj-nav-propia:hover .mj-nav-propia-btns,
+.mj-nav-propia:focus-within .mj-nav-propia-btns{ opacity:1; }
+.mj-nav-propia-btns .mj-icono-btn{ width:24px; height:24px; }
+@media (hover:none){ .mj-nav-propia-btns{ opacity:1; background:none; } }
