@@ -118,11 +118,18 @@ class MjImap
                 str_contains($banderas, '\trash')         => 'papelera',
                 str_contains($banderas, '\junk')          => 'spam',
                 str_contains($banderas, '\archive')       => 'archivo',
-                in_array($corto, ['sent', 'sent items', 'enviados'], true) => 'enviados',
-                in_array($corto, ['drafts', 'borradores'], true)           => 'borrador',
-                in_array($corto, ['trash', 'papelera'], true)              => 'papelera',
-                in_array($corto, ['junk', 'spam'], true)                   => 'spam',
-                in_array($corto, ['archive', 'archivados'], true)          => 'archivo',
+                // Por nombre, cuando el servidor no marca la carpeta. Cada
+                // programa de correo crea las suyas con el nombre de su idioma,
+                // así que una casilla vieja puede tener cualquiera de estos.
+                in_array($corto, ['sent', 'sent items', 'sent messages', 'enviados',
+                                  'elementos enviados', 'correo enviado'], true)  => 'enviados',
+                in_array($corto, ['drafts', 'borradores', 'borrador'], true)      => 'borrador',
+                in_array($corto, ['trash', 'papelera', 'borrados', 'deleted',
+                                  'deleted items', 'deleted messages',
+                                  'elementos eliminados', 'papelera de reciclaje'], true) => 'papelera',
+                in_array($corto, ['junk', 'spam', 'junk e-mail', 'correo no deseado',
+                                  'no deseado'], true)                            => 'spam',
+                in_array($corto, ['archive', 'archivados', 'archivo'], true)      => 'archivo',
                 default => '',
             };
             $salida[] = ['nombre' => $nombre, 'papel' => $papel];

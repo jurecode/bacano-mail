@@ -16,6 +16,17 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.17.1',
+            'fecha'  => '2026-09-07',
+            'icono'  => 'papelera',
+            'titulo' => 'El correo eliminado ya no vuelve al recargar',
+            'que'    => 'Si tu casilla no tenía carpeta de papelera, o la tenía con otro nombre, el correo desaparecía de la pantalla pero seguía ahí. Ya no.',
+            'hacer'  => [
+                'Si falta la papelera, la aplicación la crea sola la primera vez que eliminas algo.',
+                'Se reconocen también las carpetas creadas por otros programas: "Elementos eliminados", "Borrados", "Deleted Items" y demás.',
+            ],
+        ],
+        [
             'v'      => '1.17.0',
             'fecha'  => '2026-09-07',
             'icono'  => 'check',

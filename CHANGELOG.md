@@ -10,6 +10,21 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.17.1] — 2026-09-07
+
+### Corregido
+- **El correo eliminado volvía al recargar en las casillas sin papelera.** El
+  destino se resolvía buscando una carpeta con el papel "papelera"; si la
+  casilla no tenía ninguna, o la tenía con un nombre que no reconocíamos, el
+  destino quedaba vacío y la orden no llegaba a salir. La fila desaparecía de
+  la pantalla —era optimista— y el correo reaparecía al recargar. Explica por
+  qué a unas casillas les funcionaba y a otras no, en el mismo servidor.
+- Ahora, si falta la carpeta del sistema, se crea (`CREATE` + `SUBSCRIBE`) en
+  lugar de dejar la acción en un callejón sin salida.
+- Se reconocen los nombres que crean otros programas de correo: "Elementos
+  eliminados", "Borrados", "Deleted Items", "Elementos enviados", "Correo no
+  deseado" y demás.
+
 ## [1.17.0] — 2026-09-07
 
 ### Corregido

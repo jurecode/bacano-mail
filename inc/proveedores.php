@@ -41,6 +41,30 @@ function mj_asunto_raiz(string $asunto): string
 }
 
 /**
+ * Crea la carpeta del sistema que falte y devuelve su nombre real.
+ * Hay casillas viejas sin papelera, o con una que ningún programa reconoce;
+ * sin esto, eliminar un correo ahí no tiene a dónde ir.
+ */
+function mj_crear_carpeta_sistema(MjImap $imap, string $papel): string
+{
+    $nombres = [
+        'papelera'  => 'Trash',
+        'archivo'   => 'Archive',
+        'spam'      => 'Junk',
+        'borrador'  => 'Drafts',
+        'enviados'  => 'Sent',
+    ];
+    if (!isset($nombres[$papel])) { return ''; }
+
+    $ruta = 'INBOX' . $imap->separador() . $nombres[$papel];
+    if (!$imap->crear($ruta)) {
+        // Puede existir ya con ese nombre exacto y no haberse reconocido
+        return $imap->abrir($ruta) >= 0 ? $ruta : '';
+    }
+    return $ruta;
+}
+
+/**
  * Reparte identificadores a las carpetas del servidor. Las del sistema
  * conservan su papel ("entrada", "papelera"…); las propias reciben uno hecho
  * con su nombre, que es lo que viaja en la URL y en los identificadores de
@@ -746,9 +770,17 @@ class MjProveedorImapSocket implements MjProveedor
 
             case 'mover':
                 $destino = $carpetas[$valor] ?? '';
+
+                // Si la casilla no tiene esa carpeta, se crea. Antes esto era
+                // un callejón sin salida: la fila desaparecía de la pantalla,
+                // el servidor no recibía nada y el correo volvía al recargar.
                 if ($destino === '') {
-                    $texto = 'Tu servidor no tiene una carpeta para eso.';
-                    break;
+                    $destino = mj_crear_carpeta_sistema($imap, $valor);
+                    if ($destino === '') {
+                        $texto = 'Tu casilla no tiene carpeta de ' . $valor
+                               . ' y el servidor no dejó crearla. ' . $imap->error;
+                        break;
+                    }
                 }
 
                 // La lista muestra conversaciones: si sólo se mueve el mensaje
