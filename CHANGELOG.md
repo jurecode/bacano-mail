@@ -10,6 +10,25 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.20.0] — 2026-09-07
+
+### Añadido
+- **La sesión dura 30 días y se renueva en cada visita**, como en Gmail. Antes
+  la cookie moría al cerrar el navegador (`lifetime => 0`) y, peor, las
+  sesiones se guardaban en el directorio común del hosting con
+  `session.gc_maxlifetime` en 24 minutos: cualquier otro sitio del servidor
+  podía barrerlas y echar a la persona en mitad del trabajo.
+- Las sesiones pasan a `data/sesiones/php/`, con su `.htaccess`, y con el
+  tiempo de vida puesto por el módulo. Si la carpeta no fuera escribible se
+  sigue usando la del sistema.
+- Se dice en la pantalla de acceso cuánto dura la sesión, y la casilla de
+  recordar pasa a llamarse "Recordarme en este equipo", que es lo que hace
+  ahora que la sesión ya es larga por sí sola.
+
+### Detalles
+- Al cerrar sesión se caduca también la cookie: con 30 días de vida, dejarla
+  puesta señalando a una sesión destruida no tenía sentido.
+
 ## [1.19.0] — 2026-09-07
 
 ### Añadido

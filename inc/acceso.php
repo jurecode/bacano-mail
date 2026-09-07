@@ -13,18 +13,64 @@ declare(strict_types=1);
 require_once __DIR__ . '/recuerdo.php';
 require_once __DIR__ . '/cuentas.php';
 
+/** Cuánto dura la sesión sin tocar nada. Se renueva en cada visita. */
+const MJ_SESION_DIAS = 30;
+
+/**
+ * Guarda las sesiones en la carpeta del módulo. Por defecto PHP las deja en el
+ * directorio común del hosting, donde el recolector de CUALQUIER otro sitio
+ * puede barrerlas: con session.gc_maxlifetime en 24 minutos, eso echaba a la
+ * gente en mitad del trabajo.
+ */
+function mj_sesion_carpeta(): string
+{
+    $dir = __DIR__ . '/../data/sesiones/php';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0700, true);
+    }
+    if (!is_file($dir . '/.htaccess')) {
+        @file_put_contents($dir . '/.htaccess', "Require all denied\n");
+    }
+    return $dir;
+}
+
 function mj_sesion(): void
 {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_name('bacano_mail');
-        session_set_cookie_params([
-            'lifetime' => 0,          // la sesión muere con el navegador;
-            'path'     => '/',        // lo que sobrevive es el vale de recuerdo.php
+    if (session_status() !== PHP_SESSION_NONE) {
+        return;
+    }
+
+    $segundos = MJ_SESION_DIAS * 86400;
+    $propia   = mj_sesion_carpeta();
+
+    if (is_writable($propia)) {
+        ini_set('session.save_path', $propia);
+        ini_set('session.gc_maxlifetime', (string) $segundos);
+        ini_set('session.gc_probability', '1');
+        ini_set('session.gc_divisor', '200');
+    }
+
+    session_name('bacano_mail');
+    session_set_cookie_params([
+        'lifetime' => $segundos,   // sobrevive a cerrar el navegador
+        'path'     => '/',
+        'httponly' => true,
+        'samesite' => 'Lax',
+        'secure'   => !empty($_SERVER['HTTPS']),
+    ]);
+    session_start();
+
+    // Se renueva en cada visita: quien entra a diario no ve nunca la pantalla
+    // de acceso; quien desaparece un mes, sí.
+    if (!empty($_SESSION['mj_acceso'])) {
+        setcookie(session_name(), session_id(), [
+            'expires'  => time() + $segundos,
+            'path'     => '/',
             'httponly' => true,
             'samesite' => 'Lax',
             'secure'   => !empty($_SERVER['HTTPS']),
         ]);
-        session_start();
+        $_SESSION['mj_visto'] = time();
     }
 }
 
@@ -44,6 +90,16 @@ function mj_salir(): void
 
     $_SESSION = [];
     session_destroy();
+
+    // La cookie ahora dura 30 días: si no se caduca a mano, se queda apuntando
+    // a una sesión que ya no existe.
+    setcookie(session_name(), '', [
+        'expires'  => time() - 3600,
+        'path'     => '/',
+        'httponly' => true,
+        'samesite' => 'Lax',
+        'secure'   => !empty($_SERVER['HTTPS']),
+    ]);
 }
 
 /** Token para los formularios que hacen algo (enviar, por ejemplo). */
@@ -559,8 +615,9 @@ function mj_pantalla_acceso(array $cfg, string $error = '', bool $soloAviso = fa
             <i></i>
           </span>
           <span class="opcion__txt">
-            <strong>Mantener la sesión abierta</strong>
-            <span>No la actives en un computador compartido.</span>
+            <strong>Recordarme en este equipo</strong>
+            <span>Vuelve a entrar sola aunque se pierda la sesión. No la actives
+                  en un computador compartido.</span>
           </span>
         </div>
 
@@ -571,7 +628,10 @@ function mj_pantalla_acceso(array $cfg, string $error = '', bool $soloAviso = fa
       </form>
       <?php endif; ?>
 
-      <p class="creditos"><?= mj_e($marca) ?> — acceso privado a la casilla.</p>
+      <p class="creditos">
+        <?= mj_e($marca) ?> — acceso privado a la casilla.
+        La sesión dura <?= (int) MJ_SESION_DIAS ?> días sin necesidad de volver a entrar.
+      </p>
     </section>
 
   </main>

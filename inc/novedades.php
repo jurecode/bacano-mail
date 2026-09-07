@@ -16,6 +16,18 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.20.0',
+            'fecha'  => '2026-09-07',
+            'icono'  => 'llave',
+            'titulo' => 'La sesión ya no se cierra sola',
+            'que'    => 'Entras una vez y sigues dentro 30 días, aunque cierres el navegador o apagues el computador. Como en Gmail.',
+            'hacer'  => [
+                'Cada vez que entras, la cuenta de los 30 días vuelve a empezar: si lo usas a diario, no verás nunca la pantalla de acceso.',
+                'Antes te echaba a los 24 minutos sin tocar nada, y al cerrar el navegador siempre.',
+            ],
+            'ojo'    => 'Por lo mismo, si usas un computador prestado, cierra sesión al terminar: ahora quedaría abierta.',
+        ],
+        [
             'v'      => '1.19.0',
             'fecha'  => '2026-09-07',
             'icono'  => 'refrescar',
