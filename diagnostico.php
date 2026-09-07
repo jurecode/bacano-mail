@@ -132,6 +132,25 @@ if (!$imap->conectar()) {
             mb_substr($m['asunto'], 0, 44)));
     }
 
+    /* --- qué sabe hacer el servidor --- */
+    $caps = $imap->capacidades();
+    $anotar('El servidor dice saber hacer:', '');
+    foreach ([
+        'MOVE'    => 'mover un mensaje de carpeta en un paso (sin esto se copia y se purga)',
+        'UIDPLUS' => 'purgar un mensaje concreto (sin esto sólo se puede purgar la carpeta entera)',
+    ] as $x => $para) {
+        $anotar(($imap->sabe($x) ? '· ' . $x . ' ✓  ' : '· ' . $x . ' ✗  ') . $para,
+                $imap->sabe($x) ? 'ok' : 'ojo');
+    }
+
+    /* --- ¿queda correo marcado como borrado sin purgar? --- */
+    $sucios = $imap->marcados_borrados();
+    $anotar($sucios
+        ? 'Marcados como borrados y aún sin purgar en esta carpeta: ' . implode(', ', $sucios)
+          . '. Otros programas los ocultan, pero siguen ahí.'
+        : 'No hay mensajes marcados como borrados a medias.',
+        $sucios ? 'ojo' : 'ok');
+
     /* --- prueba de marcado --- */
     if ($probar > 0) {
         $anotar('');

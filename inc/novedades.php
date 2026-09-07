@@ -16,6 +16,18 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.17.0',
+            'fecha'  => '2026-09-07',
+            'icono'  => 'check',
+            'titulo' => 'Eliminar ya no puede mentirte',
+            'que'    => 'Si el servidor no llega a eliminar un correo, ahora te lo dice y el correo vuelve a la lista, en vez de desaparecer y reaparecer al recargar.',
+            'hacer'  => [
+                'Antes la aplicación decía "Mensaje eliminado" en cuanto mandaba la orden, sin esperar respuesta. Ahora comprueba que el correo se fue de verdad.',
+                'Si algo falla, verás el motivo exacto que dio tu servidor.',
+                'En diagnostico.php se puede ver qué sabe hacer tu servidor y si quedaron correos marcados a medias.',
+            ],
+        ],
+        [
             'v'      => '1.16.2',
             'fecha'  => '2026-09-07',
             'icono'  => 'llave',

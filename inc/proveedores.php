@@ -754,19 +754,28 @@ class MjProveedorImapSocket implements MjProveedor
                 // La lista muestra conversaciones: si sólo se mueve el mensaje
                 // visible, los demás se quedan y la fila reaparece.
                 $ok = true;
+                $porque = '';
                 foreach ($delHilo as $u) {
-                    if (!$imap->mover($u, $destino)) { $ok = false; }
+                    if (!$imap->mover($u, $destino)) {
+                        $ok = false;
+                        // El motivo del servidor dice más que "no se pudo"
+                        $porque = $porque ?: $imap->error;
+                    }
                 }
-                $texto = $ok ? '' : 'El servidor no dejó mover algún mensaje.';
+                $texto = $ok ? '' : ($porque ?: 'El servidor no dejó mover algún mensaje.');
                 break;
 
             case 'borrar':
                 // Borrado definitivo: sólo tiene sentido desde la papelera
                 $ok = true;
+                $porque = '';
                 foreach ($delHilo as $u) {
-                    if (!$imap->borrar($u)) { $ok = false; }
+                    if (!$imap->borrar($u)) {
+                        $ok = false;
+                        $porque = $porque ?: $imap->error;
+                    }
                 }
-                $texto = $ok ? '' : 'El servidor no dejó borrar algún mensaje.';
+                $texto = $ok ? '' : ($porque ?: 'El servidor no dejó borrar algún mensaje.');
                 break;
 
             default:

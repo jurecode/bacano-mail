@@ -369,14 +369,28 @@
         if (otro) abrir(otro, false); else vaciarLector();
       }
       var carpeta = destino || (verbo && verbo.indexOf('archiv') === 0 ? 'archivo' : 'papelera');
-      accionServidor('mover', item.dataset.id, carpeta);
 
-      aviso('Mensaje ' + verbo, T.deshacer || 'Deshacer', function () {
+      // La fila se quita al momento porque así responde mejor, pero el aviso
+      // espera al servidor: decir "eliminado" cuando no se eliminó es peor que
+      // tardar medio segundo, y era justo lo que pasaba.
+      accionServidor('mover', item.dataset.id, carpeta).then(function (r) {
+        if (r && r.ok) {
+          aviso('Mensaje ' + verbo, T.deshacer || 'Deshacer', function () {
+            padre.insertBefore(item, sig);
+            if (item.dataset.leido === '0') badge(1);
+            contar(); filtrar();
+            // se devuelve a donde estaba
+            accionServidor('mover', item.dataset.id, item.dataset.carpeta || 'entrada');
+          });
+          return;
+        }
+
+        // No se pudo: la fila vuelve a su sitio y se dice por qué
         padre.insertBefore(item, sig);
         if (item.dataset.leido === '0') badge(1);
         contar(); filtrar();
-        // se devuelve a donde estaba
-        accionServidor('mover', item.dataset.id, item.dataset.carpeta || 'entrada');
+        // accionServidor ya enseñó el motivo si el servidor dio uno
+        if (!(r && r.mensaje)) { aviso('El servidor no pudo mover el mensaje.'); }
       });
     }
 

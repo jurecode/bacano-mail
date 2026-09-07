@@ -10,6 +10,29 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.17.0] — 2026-09-07
+
+### Corregido
+- **Eliminar podía decir que sí y no eliminar nada.** Tres capas se creían el
+  "OK" del servidor sin comprobar el resultado:
+  1. `mover()` devolvía `true` en cuanto el `UID COPY` salía bien, aunque no se
+     quitara el original: el mensaje quedaba en la papelera **y** en su carpeta.
+  2. El proveedor se tragaba el motivo del servidor y decía "no dejó mover
+     algún mensaje".
+  3. `quitar()`, en el navegador, ignoraba por completo la respuesta y
+     anunciaba "Mensaje eliminado" siempre.
+  Ahora se comprueba que el mensaje se fue de la carpeta, el motivo del
+  servidor llega hasta el aviso, y si falla **la fila vuelve a la lista**.
+- **`EXPUNGE` a ciegas.** Sin la extensión UIDPLUS se purgaba la carpeta
+  entera, que se lleva todo lo marcado como borrado —incluido lo que otro
+  programa dejara marcado—. Ahora sólo se hace si el único marcado es el
+  nuestro; si hay más, se avisa y no se purga nada.
+
+### Añadido
+- El cliente IMAP pregunta `CAPABILITY`, y `diagnostico.php` muestra si el
+  servidor tiene `MOVE` y `UIDPLUS`, y si quedaron mensajes marcados como
+  borrados sin purgar.
+
 ## [1.16.2] — 2026-09-07
 
 ### Seguridad

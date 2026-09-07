@@ -13,6 +13,7 @@ class MjImap
 {
     private $sock = null;
     private int $etiqueta = 0;
+    private ?array $capacidades = null;
     public string $error = '';
     public array $registro = [];
 
@@ -129,6 +130,38 @@ class MjImap
         return $salida;
     }
 
+    /**
+     * Lo que este servidor dice saber hacer. Se pregunta una vez.
+     * Importa sobre todo MOVE (mover de una carpeta a otra en un paso) y
+     * UIDPLUS (purgar un mensaje concreto en vez de la carpeta entera).
+     */
+    public function capacidades(): array
+    {
+        if ($this->capacidades !== null) { return $this->capacidades; }
+
+        $r = $this->orden('CAPABILITY');
+        $lista = [];
+        if ($r['ok'] && preg_match('/^\* CAPABILITY (.+)$/mi', $r['texto'], $m)) {
+            $lista = array_map('strtoupper', preg_split('/\s+/', trim($m[1])) ?: []);
+        }
+        return $this->capacidades = $lista;
+    }
+
+    public function sabe(string $que): bool
+    {
+        return in_array(strtoupper($que), $this->capacidades(), true);
+    }
+
+    /** Los UID de la carpeta abierta que están marcados como borrados. */
+    public function marcados_borrados(): array
+    {
+        $r = $this->orden('UID SEARCH DELETED');
+        if ($r['ok'] && preg_match('/^\* SEARCH([0-9 ]*)$/mi', $r['texto'], $m)) {
+            return array_values(array_filter(array_map('intval', preg_split('/\s+/', trim($m[1])) ?: [])));
+        }
+        return [];
+    }
+
     /* --------------------------------------------------------
        Administrar carpetas
        -------------------------------------------------------- */
@@ -234,27 +267,89 @@ class MjImap
             $this->error = 'El servidor rechazó el borrado.';
             return false;
         }
-        // UID EXPUNGE purga sólo ese mensaje; si no está, se purga la carpeta
-        $r = $this->orden("UID EXPUNGE $uid");
-        if (!$r['ok']) { $r = $this->orden('EXPUNGE'); }
-        return $r['ok'];
+        return $this->purgar($uid);
     }
 
     /** Mueve un mensaje a otra carpeta. Usa MOVE, o COPY + borrar si no está. */
     public function mover(int $uid, string $destino): bool
     {
-        $r = $this->orden('UID MOVE ' . $uid . ' ' . $this->citar($destino));
-        if ($r['ok']) {
-            return true;
-        }
-        // Servidores viejos no traen MOVE: se copia, se marca borrado y se purga
-        $c = $this->orden('UID COPY ' . $uid . ' ' . $this->citar($destino));
-        if (!$c['ok']) {
+        if ($this->solo_lectura) {
+            $this->error = 'El servidor abrió la carpeta en sólo lectura.';
             return false;
         }
-        $this->marcar($uid, '\\Deleted');
-        $this->orden('EXPUNGE');
-        return true;
+
+        if ($this->sabe('MOVE')) {
+            $r = $this->orden('UID MOVE ' . $uid . ' ' . $this->citar($destino));
+            if (!$r['ok']) {
+                $this->error = $this->motivo($r['texto']) ?: 'El servidor rechazó mover el mensaje.';
+                return false;
+            }
+            return $this->comprobar_ido($uid, false);
+        }
+
+        // Sin MOVE: copiar, marcar borrado y purgar. Los tres pasos tienen que
+        // salir bien; si sólo sale el primero, el mensaje queda duplicado —en
+        // la papelera y en su carpeta— y la persona ve que "no se eliminó".
+        $c = $this->orden('UID COPY ' . $uid . ' ' . $this->citar($destino));
+        if (!$c['ok']) {
+            $this->error = $this->motivo($c['texto']) ?: 'El servidor no dejó copiar el mensaje.';
+            return false;
+        }
+        if (!$this->orden("UID STORE $uid +FLAGS (\\Deleted)")['ok']) {
+            $this->error = 'Se copió a la carpeta de destino, pero no se pudo quitar del origen.';
+            return false;
+        }
+        if (!$this->purgar($uid)) {
+            // El mensaje queda marcado como borrado: la mayoría de programas ya
+            // no lo enseñan, pero conviene decirlo en vez de cantar victoria.
+            $this->error = 'Se movió, pero el servidor no purgó el original: '
+                         . 'puede seguir apareciendo hasta que se compacte la carpeta.';
+            return false;
+        }
+        return $this->comprobar_ido($uid, true);
+    }
+
+    /**
+     * ¿De verdad se fue de esta carpeta? Un "OK" no es prueba de nada: hay
+     * servidores que contestan que sí y dejan el mensaje donde estaba, y
+     * entonces la persona ve "Mensaje eliminado" y lo sigue teniendo delante.
+     */
+    private function comprobar_ido(int $uid, bool $valeMarcado): bool
+    {
+        $r = $this->orden("UID FETCH $uid (FLAGS)");
+        $sigue = $r['ok'] && preg_match('/UID ' . $uid . '\b/i', $r['texto']);
+
+        if (!$sigue) { return true; }
+
+        // Por el camino antiguo —copiar, marcar y purgar— dejarlo marcado como
+        // borrado es el resultado esperado: los programas ya no lo enseñan.
+        // Tras un MOVE, en cambio, tiene que haber desaparecido.
+        if ($valeMarcado && preg_match('/\\\\Deleted/i', $r['texto'])) { return true; }
+
+        $this->error = 'El servidor aceptó la orden pero el mensaje sigue en la carpeta.';
+        return false;
+    }
+
+    /**
+     * Purga un mensaje concreto. Sin UIDPLUS hay que usar EXPUNGE a secas, que
+     * se lleva TODO lo marcado como borrado en la carpeta: eso puede destruir
+     * correo que otro programa dejó marcado. Sólo se hace si el único marcado
+     * es el nuestro.
+     */
+    private function purgar(int $uid): bool
+    {
+        if ($this->sabe('UIDPLUS')) {
+            return $this->orden("UID EXPUNGE $uid")['ok'];
+        }
+
+        $marcados = $this->marcados_borrados();
+        if ($marcados && $marcados !== [$uid]) {
+            $this->error = 'Este servidor no sabe purgar un mensaje suelto y hay otros '
+                         . count($marcados) . ' marcados como borrados. No se purga nada '
+                         . 'para no llevárselos por delante.';
+            return false;
+        }
+        return $this->orden('EXPUNGE')['ok'];
     }
 
     /** Guarda una copia en una carpeta del servidor (los enviados, por ejemplo). */
