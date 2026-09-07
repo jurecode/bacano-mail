@@ -223,7 +223,24 @@ function mj_protegidos(): array
     'respaldos',          // respaldos anteriores
     '.git',               // si instalaste con git
     'data/.cache-version.json',
+    // Lo que ha ido guardando quien usa el correo. El paquete no los trae, así
+    // que hoy no se tocarían igualmente; se nombran para que una versión futura
+    // no se los lleve por delante sin querer.
+    'data/contactos',
+    'data/cuentas',
+    'data/sesiones',
   ];
+}
+
+/**
+ * Lo que además NO se copia al respaldo. El respaldo existe para poder volver
+ * atrás con el programa, no con los datos: la actualización no los toca. Meter
+ * ahí data/ sólo duplicaría la agenda, las firmas y —lo importante— la llave
+ * que descifra las contraseñas guardadas.
+ */
+function mj_fuera_del_respaldo(): array
+{
+  return array_merge(mj_protegidos(), ['data']);
 }
 
 /** ¿Se puede actualizar desde el panel en este hosting? */
@@ -282,7 +299,13 @@ function mj_aplicar_actualizacion(array $info, array $cfg = []): array
   $sello    = date('Y-m-d_His');
   $respaldo = $raiz . '/respaldos/' . $sello;
   @mkdir($respaldo, 0755, true);
-  mj_copiar_dir($raiz, $respaldo, mj_protegidos());
+
+  // Cinturón además del .htaccess de la raíz: en nginx aquel no se lee
+  if (!is_file($raiz . '/respaldos/.htaccess')) {
+    @file_put_contents($raiz . '/respaldos/.htaccess', "Require all denied\n");
+  }
+
+  mj_copiar_dir($raiz, $respaldo, mj_fuera_del_respaldo());
 
   $copiados = mj_copiar_dir($origen, $raiz, mj_protegidos());
   mj_borrar_dir($tmp);

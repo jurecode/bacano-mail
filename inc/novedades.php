@@ -16,6 +16,16 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.16.2',
+            'fecha'  => '2026-09-07',
+            'icono'  => 'llave',
+            'titulo' => 'Al actualizar no se toca nada tuyo',
+            'que'    => 'Tus contactos, tu firma, tu logo y tus casillas guardadas quedan fuera de la actualización y fuera de la copia de seguridad.',
+            'hacer'  => [
+                'La copia que se guarda antes de actualizar contiene sólo el programa. Antes copiaba también la llave que descifra tus contraseñas, y eso no hacía falta.',
+            ],
+        ],
+        [
             'v'      => '1.16.1',
             'fecha'  => '2026-09-04',
             'icono'  => 'spam',

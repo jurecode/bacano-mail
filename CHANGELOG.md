@@ -10,6 +10,23 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.16.2] — 2026-09-07
+
+### Seguridad
+- **El respaldo previo a una actualización copiaba `data/`**, y ahí viven la
+  agenda, las firmas, los logos y —lo que importa— `data/sesiones/clave.bin`,
+  la llave que descifra las contraseñas guardadas. Cada actualización dejaba
+  una copia más de la llave y del texto cifrado juntos, dentro de la web. El
+  respaldo existe para poder volver atrás con el programa, no con los datos:
+  ahora `data/` queda fuera.
+- La carpeta `respaldos/` recibe su propio `.htaccess`. La raíz ya la bloquea,
+  pero esa regla es de Apache y en nginx no se lee.
+
+### Detalles
+- `data/contactos`, `data/cuentas` y `data/sesiones` entran en la lista de
+  intocables al actualizar. Hoy no se tocarían igualmente —el paquete no los
+  trae— pero nombrarlos evita que una versión futura se los lleve por delante.
+
 ## [1.16.1] — 2026-09-04
 
 ### Corregido
