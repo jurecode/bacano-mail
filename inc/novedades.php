@@ -16,6 +16,19 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.19.0',
+            'fecha'  => '2026-09-07',
+            'icono'  => 'refrescar',
+            'titulo' => 'El correo nuevo llega solo',
+            'que'    => 'Ya no hace falta recargar la página con F5: la bandeja se actualiza sola cada minuto.',
+            'hacer'  => [
+                'Cuando llega algo, aparece arriba de la lista y te avisa con un mensajito.',
+                'El botón de refrescar, arriba de la lista, ahora refresca de verdad; antes sólo giraba.',
+                'Si tienes la pestaña en otra ventana no se consulta nada, para no gastar datos; al volver a ella mira enseguida.',
+            ],
+            'ojo'    => 'Los acentos de los asuntos también se arreglaron: "Notificación" ya no sale como "Notificaci??n".',
+        ],
+        [
             'v'      => '1.18.1',
             'fecha'  => '2026-09-07',
             'icono'  => 'atras',

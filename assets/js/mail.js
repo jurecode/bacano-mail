@@ -143,9 +143,9 @@
           break;
 
         case 'refrescar':
-          btn.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }], { duration: 600, easing: 'ease-in-out' });
-          //  ⇢ API: volver a pedir la lista de mensajes
-          aviso('Bandeja actualizada');
+          btn.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }],
+                      { duration: 600, easing: 'ease-in-out' });
+          refrescar(true);
           break;
 
         case 'redactar':      abrirModal('redactar'); break;
@@ -849,6 +849,118 @@
       var f = raiz.querySelector('[data-rol="form-perfil"]');
       return f ? (f.dataset.token || '') : tokenSesion();
     }
+
+    /* ---------------------------------------------------------
+       Traer el correo nuevo sin recargar la página
+       --------------------------------------------------------- */
+    var firmaLista = null;      // cómo era la lista la última vez
+    var pidiendo   = false;
+    var reloj      = null;
+
+    function refrescar(aMano) {
+      if (pidiendo) return Promise.resolve();
+
+      // Con un cuadro abierto no se toca la lista: se estaría escribiendo
+      if (!aMano && raiz.querySelector('.mj-modal:not([hidden])')) {
+        return Promise.resolve();
+      }
+
+      pidiendo = true;
+      var u = new URL('refrescar.php', location.href);
+      u.searchParams.set('carpeta', OP.carpeta || 'entrada');
+      var abierto = itemActivo();
+      if (abierto) u.searchParams.set('m', abierto.dataset.id);
+
+      return fetch(u, { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          pidiendo = false;
+          if (!r || !r.ok) {
+            if (aMano) aviso((r && r.mensaje) || 'No se pudo consultar la casilla.');
+            return;
+          }
+
+          // La primera vez sólo se toma nota: la lista ya está pintada
+          if (firmaLista === null) { firmaLista = r.firma; if (aMano) aviso('Bandeja al día'); return; }
+          if (r.firma === firmaLista) { if (aMano) aviso('No hay correo nuevo'); return; }
+
+          var sinLeerAntes = contarSinLeer();
+          pintarLista(r.filas);
+          firmaLista = r.firma;
+
+          var nuevos = contarSinLeer() - sinLeerAntes;
+          if (nuevos > 0) {
+            aviso(nuevos === 1 ? 'Tienes un correo nuevo' : 'Tienes ' + nuevos + ' correos nuevos');
+            sonar();
+          } else if (aMano) {
+            aviso('Bandeja actualizada');
+          }
+        })
+        .catch(function () {
+          pidiendo = false;
+          if (aMano) aviso('No se pudo consultar la casilla.');
+        });
+    }
+
+    function contarSinLeer() {
+      return raiz.querySelectorAll('.mj-item.is-nuevo').length;
+    }
+
+    /* Cambia las filas conservando lo que la persona tenía a medias */
+    function pintarLista(html) {
+      if (!lista) return;
+
+      var abierto = itemActivo();
+      var idAbierto = abierto ? abierto.dataset.id : '';
+      var marcados = seleccionados().map(function (i) { return i.dataset.id; });
+      var arriba = lista.scrollTop;
+
+      lista.innerHTML = html;
+
+      // se devuelve el estado: el mensaje abierto y lo que estuviera marcado
+      if (idAbierto) {
+        var v = lista.querySelector('.mj-item[data-id="' + css(idAbierto) + '"]');
+        if (v) v.classList.add('is-activo');
+      }
+      marcados.forEach(function (id) {
+        var v = lista.querySelector('.mj-item[data-id="' + css(id) + '"] input[type="checkbox"]');
+        if (v) { v.checked = true; }
+      });
+
+      lista.scrollTop = arriba;
+      filtrar();
+      contar();
+    }
+
+    /* Un aviso discreto; si el navegador no deja sonar, no pasa nada */
+    function sonar() {
+      if (!OP.avisos) return;
+      try {
+        var a = new (window.AudioContext || window.webkitAudioContext)();
+        var o = a.createOscillator(), g = a.createGain();
+        o.connect(g); g.connect(a.destination);
+        o.frequency.value = 880; g.gain.value = 0.04;
+        o.start(); o.stop(a.currentTime + 0.12);
+      } catch (e) { /* sin sonido, y ya */ }
+    }
+
+    function programarRefresco() {
+      var cada = (OP.refrescoAuto || 0) * 1000;
+      if (reloj) { clearInterval(reloj); reloj = null; }
+      if (cada <= 0) return;
+
+      reloj = setInterval(function () {
+        // Con la pestaña de fondo no se pregunta: gasta batería y datos
+        if (!document.hidden) refrescar(false);
+      }, cada);
+    }
+
+    // Al volver a la pestaña se mira enseguida, que es cuando interesa
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) refrescar(false);
+    });
+
+    if (lista) { refrescar(false); programarRefresco(); }
 
     /* ---------------------------------------------------------
        Carpetas

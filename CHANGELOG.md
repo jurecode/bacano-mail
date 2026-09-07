@@ -10,6 +10,27 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.19.0] — 2026-09-07
+
+### Añadido
+- **La bandeja se actualiza sola.** Cada minuto se consulta la casilla y, si
+  llegó algo, aparece en la lista con un aviso; sin recargar la página. El
+  intervalo se ajusta con `interfaz.refresco_auto` (0 lo apaga).
+- Con la pestaña en segundo plano no se consulta nada —no tiene sentido gastar
+  datos y batería— y al volver a ella se mira enseguida.
+- Al repintar se conserva lo que había a medias: el mensaje abierto sigue
+  marcado, lo seleccionado sigue seleccionado y no se pierde el desplazamiento.
+
+### Corregido
+- **El botón de refrescar no refrescaba.** Giraba y decía "Bandeja
+  actualizada" sin consultar nada. Ahora usa el mismo camino que el refresco
+  automático.
+- **Los acentos de los asuntos.** `mb_decode_mimeheader()` se aplicaba siempre,
+  y sobre un asunto en UTF-8 crudo —que muchos servidores mandan tal cual— se
+  come los caracteres: "Notificación" salía "Notificaci??n". Ahora sólo se
+  descodifica lo que trae palabras codificadas, y lo que no sea UTF-8 válido se
+  convierte desde Latin-1.
+
 ## [1.18.1] — 2026-09-07
 
 ### Añadido

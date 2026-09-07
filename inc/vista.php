@@ -120,32 +120,7 @@ function mj_correo(array $ov = []): void
   if ($carpeta === 'destacado') {
     $lista = array_values(array_filter($msgs, fn($m) => $m['destacado'] || $m['importante']));
   }
-  // Una fila por conversación: se muestra el mensaje más reciente de cada
-  // hilo y se cuenta cuántos lleva, como hace Gmail.
-  if (!empty($cfg['interfaz']['agrupar_conversaciones'])) {
-    $porHilo = [];
-    $cuenta  = [];
-    $alguno_sin_leer = [];
-
-    foreach ($lista as $m) {
-      $h = ($m['hilo'] ?? '') !== '' ? $m['hilo'] : $m['id'];
-      $cuenta[$h] = ($cuenta[$h] ?? 0) + 1;
-      if (!$m['leido']) { $alguno_sin_leer[$h] = true; }
-
-      // se queda el más reciente como cara visible de la conversación
-      if (!isset($porHilo[$h]) || strcmp($m['fecha'], $porHilo[$h]['fecha']) > 0) {
-        $porHilo[$h] = $m;
-      }
-    }
-    foreach ($porHilo as $h => $m) {
-      $porHilo[$h]['en_hilo'] = $cuenta[$h];
-      $porHilo[$h]['leido']   = empty($alguno_sin_leer[$h]);
-    }
-    $lista = array_values($porHilo);
-    usort($lista, fn($a, $b) => strcmp($b['fecha'], $a['fecha']));
-  }
-
-  $lista = array_slice($lista, 0, (int) ($cfg['interfaz']['mensajes_por_pagina'] ?? 50));
+  $lista = mj_agrupar_conversaciones($cfg, $lista);
 
   // Mensaje abierto: el que venga en la URL. Sólo se abre uno solo si está
   // pedido en la configuración; si no, el lector espera a que elijas.
@@ -274,6 +249,7 @@ function mj_correo(array $ov = []): void
         'seleccion'   => (bool) $cfg['interfaz']['seleccion_multiple'],
         'modo'        => $cfg['tema']['modo'],
         // Lo que de verdad deja subir este servidor, para avisar antes de enviar
+        'refrescoAuto'=> max(0, (int) ($cfg['interfaz']['refresco_auto'] ?? 60)),
         'topeSubida'  => mj_limite_subida(),
         'topeTexto'   => mj_limite_legible(),
         'permitirModo'=> (bool) $cfg['tema']['permitir_cambio_modo'],
@@ -738,6 +714,39 @@ function mj_v_nueva_casilla(): void
     </div>
   </div>
 <?php }
+
+/**
+ * Una fila por conversación: se muestra el mensaje más reciente de cada hilo y
+ * se cuenta cuántos lleva, como hace Gmail. La usan la página y el refresco,
+ * para que las dos agrupen igual.
+ */
+function mj_agrupar_conversaciones(array $cfg, array $lista): array
+{
+  if (!empty($cfg['interfaz']['agrupar_conversaciones'])) {
+    $porHilo = [];
+    $cuenta  = [];
+    $alguno_sin_leer = [];
+
+    foreach ($lista as $m) {
+      $h = ($m['hilo'] ?? '') !== '' ? $m['hilo'] : $m['id'];
+      $cuenta[$h] = ($cuenta[$h] ?? 0) + 1;
+      if (!$m['leido']) { $alguno_sin_leer[$h] = true; }
+
+      // se queda el más reciente como cara visible de la conversación
+      if (!isset($porHilo[$h]) || strcmp($m['fecha'], $porHilo[$h]['fecha']) > 0) {
+        $porHilo[$h] = $m;
+      }
+    }
+    foreach ($porHilo as $h => $m) {
+      $porHilo[$h]['en_hilo'] = $cuenta[$h];
+      $porHilo[$h]['leido']   = empty($alguno_sin_leer[$h]);
+    }
+    $lista = array_values($porHilo);
+    usort($lista, fn($a, $b) => strcmp($b['fecha'], $a['fecha']));
+  }
+
+  return array_slice($lista, 0, (int) ($cfg['interfaz']['mensajes_por_pagina'] ?? 50));
+}
 
 /** Las variables de tema que van en el atributo style de la raíz */
 function mj_estilo_tema(array $cfg): string

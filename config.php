@@ -82,6 +82,10 @@ return [
      6. INTERFAZ — enciende o apaga cada pieza
      --------------------------------------------------------- */
   'interfaz' => [
+    // Cada cuántos segundos se mira si llegó correo, sin recargar la página.
+    // 0 lo apaga. Por debajo de 20 se castiga al servidor sin ganar nada.
+    'refresco_auto' => 60,
+
     'mostrar_rail'          => true,
     'rail_mostrar_pendientes' => false,  // secciones sin URL: ocultas (true = visibles, apagadas)
     'rail_colapsable'       => true,

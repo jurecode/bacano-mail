@@ -541,7 +541,19 @@ class MjImap
     public function decodificar(string $s): string
     {
         if ($s === '') return '';
-        $s = function_exists('mb_decode_mimeheader') ? mb_decode_mimeheader($s) : $s;
+
+        // Sólo se descodifica si trae palabras codificadas (=?UTF-8?B?…?=).
+        // Con un asunto en UTF-8 crudo —que muchos servidores mandan tal cual—
+        // mb_decode_mimeheader se come los acentos: "Notificación" salía
+        // "Notificaci??n".
+        if (str_contains($s, '=?') && function_exists('mb_decode_mimeheader')) {
+            $s = mb_decode_mimeheader($s);
+        }
+
+        // Lo que no sea UTF-8 válido viene casi siempre en Latin-1
+        if (function_exists('mb_check_encoding') && !mb_check_encoding($s, 'UTF-8')) {
+            $s = mb_convert_encoding($s, 'UTF-8', 'ISO-8859-1');
+        }
         return trim($s);
     }
 
