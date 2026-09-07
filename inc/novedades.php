@@ -16,6 +16,18 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.18.0',
+            'fecha'  => '2026-09-07',
+            'icono'  => 'check',
+            'titulo' => 'El botón de eliminar de la barra ya elimina de verdad',
+            'que'    => 'Cuando marcabas correos con la casilla y pulsabas la papelera de la barra, desaparecían de la pantalla pero seguían en el servidor: al recargar volvían todos.',
+            'hacer'  => [
+                'Ese botón no llegaba a mandar nada al servidor. Ahora sí, y el aviso espera a que el servidor confirme.',
+                'Si estás en la Papelera, ese mismo botón borra para siempre y te pregunta antes.',
+                'Eliminar con el botón derecho siempre funcionó: por eso a unos les pasaba y a otros no.',
+            ],
+        ],
+        [
             'v'      => '1.17.2',
             'fecha'  => '2026-09-07',
             'icono'  => 'carpeta',

@@ -10,6 +10,20 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.18.0] — 2026-09-07
+
+### Corregido
+- **El botón de eliminar de la barra de selección no eliminaba nada.**
+  `accionMasiva()` quitaba las filas del DOM y anunciaba "N mensajes
+  eliminados" **sin llamar al servidor ni una vez**. Los correos volvían al
+  recargar. Es la causa de lo que se veía en el vídeo, y explica por qué a
+  quien elimina con el botón derecho —que sí llama al servidor— le funcionaba.
+  Lo mismo pasaba con el botón de archivar.
+- Ahora la acción se manda de verdad, el aviso espera la respuesta y las filas
+  que el servidor no acepte **vuelven a la lista**.
+- Dentro de la Papelera, ese botón pasa a borrar definitivamente, con la misma
+  confirmación que el menú del botón derecho.
+
 ## [1.17.2] — 2026-09-07
 
 ### Corregido

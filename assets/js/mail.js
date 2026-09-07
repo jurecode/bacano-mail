@@ -397,18 +397,74 @@
     function accionMasiva(tipo) {
       var sel = seleccionados();
       if (!sel.length) return;
-      sel.forEach(function (it) {
-        if (tipo === 'leido')    marcarLeido(it, true);
-        if (tipo === 'destacar') destacar(it, (d.colores || [])[0]);
-        if (tipo === 'archivar' || tipo === 'eliminar') {
-          if (it.dataset.leido === '0') badge(-1);
-          it.remove();
+
+      // Marcar y destacar ya hablan con el servidor por su cuenta
+      if (tipo === 'leido' || tipo === 'destacar') {
+        sel.forEach(function (it) {
+          if (tipo === 'leido') marcarLeido(it, true);
+          else destacar(it, (d.colores || [])[0]);
+        });
+        limpiarSeleccion();
+        aviso(sel.length + ' mensaje' + (sel.length > 1 ? 's' : '') + ' ' +
+              (tipo === 'leido' ? 'marcados como leídos' : 'destacados'));
+        return;
+      }
+
+      // En la papelera, eliminar es para siempre: se pregunta antes
+      if (tipo === 'eliminar' && OP.carpeta === 'papelera') {
+        confirmar(
+          sel.length === 1
+            ? 'Se borrará definitivamente el mensaje seleccionado.'
+            : 'Se borrarán definitivamente los ' + sel.length + ' mensajes seleccionados.',
+          function () { masivoServidor(sel, 'borrar', '', 'eliminados definitivamente'); },
+          'Eliminar definitivamente', 'Eliminar');
+        return;
+      }
+
+      masivoServidor(sel, 'mover',
+        tipo === 'archivar' ? 'archivo' : 'papelera',
+        tipo === 'archivar' ? 'archivados' : 'eliminados');
+    }
+
+    /**
+     * Aplica una acción a varios mensajes. Las filas se quitan al momento,
+     * pero el aviso espera al servidor y las que fallen vuelven a su sitio:
+     * antes esto no llamaba al servidor siquiera, así que los mensajes
+     * desaparecían de la pantalla y reaparecían al recargar.
+     */
+    function masivoServidor(sel, accion, destino, verbo) {
+      var sitios = sel.map(function (it) {
+        return { it: it, padre: it.parentNode, sig: it.nextSibling };
+      });
+
+      sitios.forEach(function (x) {
+        if (x.it.dataset.leido === '0') badge(-1);
+        x.it.remove();
+      });
+      contar(); vaciarSiFalta();
+      limpiarSeleccion();
+
+      Promise.all(sitios.map(function (x) {
+        return accionServidor(accion, x.it.dataset.id, destino)
+          .then(function (r) { return { x: x, ok: !!(r && r.ok), r: r }; });
+      })).then(function (res) {
+        var fallaron = res.filter(function (y) { return !y.ok; });
+
+        fallaron.forEach(function (y) {
+          y.x.padre.insertBefore(y.x.it, y.x.sig);
+          if (y.x.it.dataset.leido === '0') badge(1);
+        });
+        if (fallaron.length) { contar(); filtrar(); }
+
+        var bien = res.length - fallaron.length;
+        if (bien) {
+          aviso(bien + ' mensaje' + (bien > 1 ? 's' : '') + ' ' + verbo);
+        }
+        if (fallaron.length && !(fallaron[0].r && fallaron[0].r.mensaje)) {
+          aviso('El servidor no pudo con ' + fallaron.length + ' mensaje'
+                + (fallaron.length > 1 ? 's' : '') + '.');
         }
       });
-      if (tipo === 'archivar' || tipo === 'eliminar') { contar(); vaciarSiFalta(); }
-      limpiarSeleccion();
-      aviso(sel.length + ' mensaje' + (sel.length > 1 ? 's' : '') + ' ' +
-            ({ leido: 'marcados como leídos', destacar: 'destacados', archivar: 'archivados', eliminar: 'eliminados' }[tipo] || ''));
     }
 
     /* ---------------------------------------------------
