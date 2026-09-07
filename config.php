@@ -179,14 +179,14 @@ return [
     ['id' => 'reenviar_adj',   'texto' => 'Reenviar como adjunto'],
     ['sep' => true],
     ['id' => 'no_leido',       'texto' => 'Marcar como no leído'],
+    // Sólo aparece donde tiene sentido: papelera, spam y archivados
+    ['id' => 'restaurar',      'texto' => 'Restaurar a Recibidos'],
     ['id' => 'spam',           'texto' => 'Mover a Spam'],
-    ['id' => 'silenciar',      'texto' => 'Silenciar'],
     ['id' => 'eliminar',       'texto' => 'Eliminar'],
     ['id' => 'destacar',       'texto' => 'Destacar', 'tipo' => 'colores'],
     ['sep' => true],
     ['id' => 'archivar',       'texto' => 'Archivar'],
     ['id' => 'mover',          'texto' => 'Mover a',  'tipo' => 'carpetas'],
-    ['id' => 'copiar',         'texto' => 'Copiar a', 'tipo' => 'carpetas'],
   ],
 
   'colores_estrella' => ['#F59E0B', '#EF4444', '#8B5CF6', '#3B82F6', '#10B981', '#6B7280'],

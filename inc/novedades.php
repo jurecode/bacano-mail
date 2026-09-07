@@ -16,6 +16,18 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.18.1',
+            'fecha'  => '2026-09-07',
+            'icono'  => 'atras',
+            'titulo' => 'Devolver un correo desde la papelera, y un menú más corto',
+            'que'    => 'Sacar un correo de la papelera ya estaba, pero escondido dentro de "Mover a". Ahora se ve.',
+            'hacer'  => [
+                'En la Papelera, el botón derecho ofrece "Restaurar a Recibidos". Lo mismo en Spam y en Archivados.',
+                'El menú se quedó sólo con lo que hace algo: "Copiar a" y "Silenciar" no funcionaban, sólo avisaban de que no estaban disponibles.',
+                'Ya no se repiten las opciones: si arriba tienes "Archivar", "Archivados" no vuelve a salir en "Mover a", y no se ofrece la carpeta donde ya estás.',
+            ],
+        ],
+        [
             'v'      => '1.18.0',
             'fecha'  => '2026-09-07',
             'icono'  => 'check',

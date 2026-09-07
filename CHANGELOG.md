@@ -10,6 +10,23 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.18.1] — 2026-09-07
+
+### Añadido
+- **"Restaurar a Recibidos"** en el menú del botón derecho, dentro de Papelera,
+  Spam y Archivados. La función existía —mover a Recibidos— pero estaba
+  escondida en un submenú y no se leía como "devolver".
+
+### Corregido
+- **Opciones que no hacían nada.** "Copiar a" desplegaba un submenú con las
+  siete carpetas y sólo respondía "todavía no está disponible"; "Silenciar",
+  igual. Fuera las dos.
+- **Opciones repetidas.** "Mover a" ofrecía otra vez lo que ya tenía botón
+  propio arriba (Spam, Archivar, Papelera), la carpeta donde ya estabas, y
+  Enviados y Borradores, donde no se mueve correo recibido. Ahora el submenú
+  queda para las carpetas propias, y desaparece si no hay ninguna.
+- En la papelera ya no se ofrece "Mover a Spam" ni "Archivar".
+
 ## [1.18.0] — 2026-09-07
 
 ### Corregido

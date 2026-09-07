@@ -637,7 +637,9 @@ function mj_v_ajustes(array $cfg): void
  */
 function mj_carpetas_destino(array $cfg): array
 {
-  $fuera = ['destacado', 'contactos', 'cuenta', 'novedades'];
+  // Enviados y Borradores los llena el programa, no se mueve correo ahí;
+  // Destacados es un filtro y Contactos una agenda.
+  $fuera = ['destacado', 'contactos', 'cuenta', 'novedades', 'enviados', 'borrador'];
 
   return array_values(array_filter(
     array_merge($cfg['carpetas'], $cfg['carpetas_propias']),
@@ -1440,7 +1442,8 @@ function mj_v_menu(array $cfg): void
         </div>
 
       <?php elseif ($tipo === 'carpetas'): ?>
-        <div class="mj-menu-item mj-menu-sub" tabindex="0" role="menuitem" aria-haspopup="true">
+        <div class="mj-menu-item mj-menu-sub" tabindex="0" role="menuitem" aria-haspopup="true"
+             data-sub="<?= mj_e($it['id']) ?>">
           <span><?= mj_e($it['texto']) ?></span><?= mj_icono('adelante', 14) ?>
           <div class="mj-submenu" role="menu">
             <?php foreach (mj_carpetas_destino($cfg) as $c): ?>

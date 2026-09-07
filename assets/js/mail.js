@@ -503,6 +503,36 @@
       }
       var archivar = menu.querySelector('[data-menu="archivar"]');
       if (archivar) archivar.hidden = (OP.carpeta === 'papelera');
+
+      // Restaurar sólo donde el mensaje está "apartado"; en Recibidos no
+      // significa nada y en el resto sería mover, que ya está más abajo.
+      var apartado = ['papelera', 'spam', 'archivo'].indexOf(OP.carpeta) !== -1;
+      var restaurar = menu.querySelector('[data-menu="restaurar"]');
+      if (restaurar) restaurar.hidden = !apartado;
+
+      // "Mover a Spam" sobra si ya estás en Spam o en la papelera
+      var aspam = menu.querySelector('[data-menu="spam"]');
+      if (aspam) aspam.hidden = (OP.carpeta === 'spam' || OP.carpeta === 'papelera');
+
+      // En "Mover a" sobra la carpeta donde ya estás, y sobran las que ya
+      // tienen su propio botón arriba: repetirlas es lo que hacía el menú
+      // largo y confuso.
+      var conAtajo = [];
+      if (aspam && !aspam.hidden)         { conAtajo.push('spam'); }
+      if (archivar && !archivar.hidden)   { conAtajo.push('archivo'); }
+      if (eliminar && OP.carpeta !== 'papelera') { conAtajo.push('papelera'); }
+      if (restaurar && !restaurar.hidden) { conAtajo.push('entrada'); }
+
+      var quedan = 0;
+      menu.querySelectorAll('.mj-submenu [data-destino]').forEach(function (b) {
+        b.hidden = (b.dataset.destino === OP.carpeta)
+                || conAtajo.indexOf(b.dataset.destino) !== -1;
+        if (!b.hidden) { quedan++; }
+      });
+
+      // Sin destinos que ofrecer, el submenú es una flecha que no lleva a nada
+      var mover = menu.querySelector('[data-sub="mover"]');
+      if (mover) { mover.hidden = quedan === 0; }
     }
 
     function cerrarMenu() { if (menu && !menu.hidden) { menu.hidden = true; objetivo = null; } }
@@ -521,13 +551,10 @@
           break;
         case 'archivar':   quitar(item, 'archivado', 'archivo'); break;
         case 'spam':       quitar(item, 'movido a Spam', 'spam'); break;
-        case 'silenciar':  aviso('Silenciar todavía no está disponible'); break;
+        case 'restaurar':  quitar(item, 'restaurado a Recibidos', 'entrada'); break;
         case 'mover':
-        case 'copiar':
           var destino = btn.dataset.destino;
-          var nom = nombreCarpeta(destino);
-          if (id === 'mover') { quitar(item, 'movido a ' + nom, destino); }
-          else { aviso('Copiar a otra carpeta todavía no está disponible'); }
+          quitar(item, 'movido a ' + nombreCarpeta(destino), destino);
           break;
         case 'responder':      abrir(item, true); responder('uno'); break;
         case 'responder_todo': abrir(item, true); responder('todos'); break;
