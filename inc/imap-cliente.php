@@ -132,7 +132,14 @@ class MjImap
                 in_array($corto, ['archive', 'archivados', 'archivo'], true)      => 'archivo',
                 default => '',
             };
-            $salida[] = ['nombre' => $nombre, 'papel' => $papel];
+            // Si el papel viene de la bandera del servidor es más fiable que
+            // si se dedujo del nombre: hay casillas con dos carpetas que
+            // parecen lo mismo (INBOX.Junk y INBOX.spam, por ejemplo).
+            $porBandera = $papel !== '' && (
+                strcasecmp($nombre, 'INBOX') === 0
+                || preg_match('/\\\\(sent|drafts|trash|junk|archive)/i', $banderas) === 1
+            );
+            $salida[] = ['nombre' => $nombre, 'papel' => $papel, 'oficial' => $porBandera];
         }
         return $salida;
     }
@@ -574,12 +581,28 @@ class MjImap
         fwrite($this->sock, "$etq $orden\r\n");
 
         $texto = '';
+        $sueltas = 0;      // las respuestas del servidor, no la línea final
+
         while (($linea = fgets($this->sock, 8192)) !== false) {
             $texto .= $linea;
+
             if (preg_match('/^' . $etq . ' (OK|NO|BAD)/i', $linea, $m)) {
                 $this->registro[] = '< ' . trim($linea);
                 return ['ok' => strtoupper($m[1]) === 'OK', 'texto' => $texto];
             }
+
+            // Lo que contesta el servidor también se apunta: sin esto el
+            // diálogo enseña un "OK" y esconde las carpetas, las capacidades
+            // y todo lo demás, que es justo lo que se va a mirar aquí.
+            // Se recorta, que un FETCH trae mensajes enteros.
+            if ($sueltas < 40) {
+                $corta = trim($linea);
+                if (mb_strlen($corta) > 240) { $corta = mb_substr($corta, 0, 240) . ' …'; }
+                $this->registro[] = '< ' . $corta;
+            } elseif ($sueltas === 40) {
+                $this->registro[] = '< … (el resto de la respuesta no se apunta)';
+            }
+            $sueltas++;
         }
         return ['ok' => false, 'texto' => $texto];
     }

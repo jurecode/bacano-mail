@@ -10,6 +10,22 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.17.2] — 2026-09-07
+
+### Corregido
+- **Dos carpetas con el mismo papel se pisaban.** Una casilla real tenía
+  `INBOX.Junk` e `INBOX.spam`, y las dos recibían el identificador `spam`. Como
+  los UID son de cada carpeta, `imap-spam-5` dejaba de ser una dirección
+  única: una orden podía abrir una carpeta y actuar sobre el UID de la otra.
+  Ahora sólo la primera —preferiblemente la que el servidor marca con su
+  bandera— se queda con el papel; la otra pasa a verse como carpeta propia,
+  con su nombre.
+- **El diálogo de `diagnostico.php` escondía lo que contesta el servidor.**
+  Sólo se apuntaba la línea final de cada orden, así que `LIST`, `CAPABILITY` y
+  `SEARCH` se veían como un "OK" pelado y las carpetas no aparecían por ningún
+  lado — justo lo que hay que mirar ahí. Ahora se apunta la respuesta entera,
+  recortada para que un `FETCH` no vuelque un mensaje completo.
+
 ## [1.17.1] — 2026-09-07
 
 ### Corregido

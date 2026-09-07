@@ -16,6 +16,16 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.17.2',
+            'fecha'  => '2026-09-07',
+            'icono'  => 'carpeta',
+            'titulo' => 'Casillas con carpetas repetidas',
+            'que'    => 'Si tu casilla tiene dos carpetas que sirven para lo mismo —por ejemplo Junk y spam—, ahora se distinguen bien.',
+            'hacer'  => [
+                'Antes las dos compartían identidad y una orden podía acabar en la carpeta equivocada. Ahora una se queda con el papel y la otra aparece como carpeta aparte, con su nombre.',
+            ],
+        ],
+        [
             'v'      => '1.17.1',
             'fecha'  => '2026-09-07',
             'icono'  => 'papelera',

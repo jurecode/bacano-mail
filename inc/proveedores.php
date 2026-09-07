@@ -77,16 +77,27 @@ function mj_carpetas_con_id(array $carpetas): array
     $salida = [];
     $usados = [];
 
-    foreach ($carpetas as $c) {
+    // Una casilla puede tener dos carpetas que valen para lo mismo —INBOX.Junk
+    // e INBOX.spam, por ejemplo—. Sólo una puede quedarse con el papel: si las
+    // dos lo llevaran, sus mensajes compartirían identificador y una orden
+    // podría acabar en la carpeta equivocada. Manda la que el servidor marca.
+    $ordenadas = $carpetas;
+    usort($ordenadas, fn($a, $b) => (int) ($b['oficial'] ?? false) <=> (int) ($a['oficial'] ?? false));
+
+    foreach ($ordenadas as $c) {
         $papel = (string) ($c['papel'] ?? '');
-        if ($papel !== '') {
+        if ($papel !== '' && !isset($usados[$papel])) {
             $salida[] = ['id' => $papel, 'nombre' => $c['nombre'], 'papel' => $papel, 'propia' => false];
             $usados[$papel] = true;
         }
     }
 
+    $yaEsta = fn(string $n) => (bool) array_filter($salida, fn($x) => $x['nombre'] === $n);
+
     foreach ($carpetas as $c) {
-        if (($c['papel'] ?? '') !== '') { continue; }
+        // Sin papel, o con uno que ya se llevó otra: en ambos casos se trata
+        // como carpeta propia, para que siga siendo visible y direccionable.
+        if ($yaEsta($c['nombre'])) { continue; }
 
         $base = mj_slug_carpeta($c['nombre']);
         $id   = $base;
