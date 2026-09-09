@@ -16,6 +16,19 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.23.0',
+            'fecha'  => '2026-09-09',
+            'icono'  => 'refrescar',
+            'titulo' => 'Barra del celular: Menú y Actualizar',
+            'que'    => 'Los dos botones de abajo ahora sirven para algo estando dentro del correo.',
+            'hacer'  => [
+                'A la izquierda, "Menú": abre tus carpetas sin tener que buscar el botón de arriba.',
+                'A la derecha, "Actualizar": trae el correo nuevo al momento, sin esperar al minuto.',
+                'En el centro sigue el botón azul para escribir.',
+                'El enlace al sitio pasó al menú de carpetas, arriba, junto a la X.',
+            ],
+        ],
+        [
             'v'      => '1.22.0',
             'fecha'  => '2026-09-09',
             'icono'  => 'mas',

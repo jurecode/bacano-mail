@@ -255,10 +255,13 @@
 .mjmail[data-rail="abierto"] .mj-marca-corta{ display:none; }
 .mjmail[data-rail="abierto"] .mj-marca-larga{ display:block; }
 .mj-rail-lista{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px; }
+.mj-rail-movil{ display:none; }   /* sólo aparece en la barra del teléfono */
 .mj-rail-pie{ margin-top:auto; }
 .mj-rail-item{
   display:flex; align-items:center; gap:12px;
   height:42px; padding:0 11px;
+  /* Algunos son <button>: sin esto salen con el borde gris del navegador */
+  border:0; background:none; font:inherit; cursor:pointer;
   border-radius:12px;
   color:var(--mj-rail-txt); text-decoration:none;
   transition:background .15s, color .15s;
@@ -830,8 +833,12 @@
   }
   .mjmail[data-carpetas="abierto"] .mj-carpetas{ transform:none; }
   .mjmail[data-carpetas="abierto"] .mj-ventana::before{
-    content:""; position:absolute; inset:0; z-index:35; background:rgba(10,12,18,.35);
+    content:""; position:fixed; inset:0; z-index:52; background:rgba(10,12,18,.35);
   }
+  /* Con el cajón abierto, la barra de abajo estorba: el cajón y su fondo
+     pasan por encima, y el botón de redactar se aparta. */
+  .mjmail[data-carpetas="abierto"] .mj-carpetas{ z-index:55; }
+  .mjmail[data-carpetas="abierto"] .mj-redactar{ opacity:0; pointer-events:none; }
   .mj-solo-movil{ display:inline-flex !important; }
   .mj-lista-cab .mj-refrescar{ display:none; }
 }
@@ -884,11 +891,14 @@
            drop-shadow(0 2px 6px rgba(10,12,18,.10));
   }
   .mj-rail-marca, .mj-rail-tirador{ display:none; }
+  /* Abajo van las acciones del correo; los enlaces del sitio salen del cajón
+     de carpetas, donde no estorban. */
+  .mj-rail-movil{ display:flex; }
+  .mj-rail > .mj-rail-lista:not(.mj-rail-movil), .mj-rail-pie{ display:none; }
   .mj-rail-lista{
     flex-direction:row; flex:1 1 auto; height:100%;
     justify-content:space-around; align-items:center;
   }
-  .mj-rail-pie{ flex:0 0 auto; margin:0; }
   /* El sitio que ocupa el botón flotante, para que ningún icono quede debajo */
   .mj-rail-hueco{ flex:0 0 auto; width:78px; height:1px; }
 
@@ -899,6 +909,11 @@
   }
   .mj-rail-item:hover{ background:none; color:var(--mj-barra-txt-on); }
   .mj-rail-item.is-activo{ color:var(--mj-barra-txt-on); background:none; }
+  .mj-rail-movil .mj-rail-item{ width:auto; min-width:74px; padding:0 6px; }
+  .mj-rail-movil .mj-rail-item span{
+    display:block; font-size:10.5px; font-weight:600; letter-spacing:.01em;
+    opacity:1; transform:none;
+  }
   .mj-rail-item span{ display:none; }
 
   /* El botón de redactar sale de la cabecera y se planta en el centro */
@@ -919,6 +934,7 @@
     content:""; position:absolute; inset:-8px; border-radius:50%;
     background:var(--mj-fab-halo); filter:blur(12px); opacity:.55; z-index:-1;
   }
+  .mj-redactar{ transition:transform .15s, opacity .2s; }
   .mj-redactar:hover{ transform:translateX(-50%) scale(1.05); }
   .mj-redactar:active{ transform:translateX(-50%) scale(.96); }
   .mj-redactar .mj-i{ width:24px; height:24px; }

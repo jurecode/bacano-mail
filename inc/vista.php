@@ -298,6 +298,25 @@ function mj_v_rail(array $cfg, string $base = '.'): void
               aria-label="Mostrar u ocultar los nombres del menú"><?= mj_icono('adelante', 16) ?></button>
     <?php endif; ?>
 
+    <?php /* En el móvil esta barra es lo único que hay abajo, así que lleva
+             lo que sirve estando dentro del correo —abrir las carpetas y
+             traer lo nuevo— y no los enlaces del sitio, que llevan fuera. */ ?>
+    <ul class="mj-rail-lista mj-rail-movil">
+      <li>
+        <button class="mj-rail-item" type="button" data-accion="abrir-carpetas"
+                aria-label="Abrir el menú de carpetas">
+          <?= mj_icono('menu', 22) ?><span>Menú</span>
+        </button>
+      </li>
+      <li class="mj-rail-hueco" aria-hidden="true"></li>
+      <li>
+        <button class="mj-rail-item" type="button" data-accion="refrescar"
+                aria-label="Buscar correo nuevo">
+          <?= mj_icono('refrescar', 22) ?><span>Actualizar</span>
+        </button>
+      </li>
+    </ul>
+
     <ul class="mj-rail-lista">
       <?php
         // En el móvil este menú es la barra de abajo y el botón de redactar
@@ -910,6 +929,9 @@ function mj_v_carpetas(array $cfg, string $carpeta, array $conteo, int $sinVer =
   <aside class="mj-carpetas" id="mj-carpetas" aria-label="Carpetas de correo">
     <div class="mj-carpetas-cab">
       <h2 class="mj-h2"><?= mj_e($t['correo']) ?></h2>
+      <?php /* En el móvil la barra de abajo ya no lleva al sitio: se deja aquí */ ?>
+      <a class="mj-icono-btn mj-solo-movil" href="<?= mj_e($cfg['marca']['url']) ?>"
+         title="Ir al sitio" aria-label="Ir al sitio"><?= mj_icono('casa', 18) ?></a>
       <button class="mj-icono-btn mj-solo-movil" type="button" data-accion="cerrar-carpetas"
               aria-label="Cerrar el menú de carpetas"><?= mj_icono('cerrar', 18) ?></button>
     </div>

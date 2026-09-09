@@ -10,6 +10,17 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.23.0] — 2026-09-09
+
+### Cambiado
+- **La barra del móvil lleva ahora acciones del correo, no enlaces del sitio.**
+  Estaban la casa —que saca de la aplicación— y el sobre —que lleva a donde ya
+  estás—: ninguno servía desde dentro. En su lugar, **Menú** (abre las
+  carpetas) y **Actualizar** (trae el correo nuevo al momento).
+- El enlace al sitio no se pierde: pasa a la cabecera del cajón de carpetas.
+- Con el cajón abierto, el cajón y su fondo pasan por encima de la barra y el
+  botón de redactar se aparta; antes se veían superpuestos.
+
 ## [1.22.1] — 2026-09-09
 
 ### Cambiado
