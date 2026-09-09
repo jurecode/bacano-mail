@@ -10,6 +10,19 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.22.0] — 2026-09-09
+
+### Cambiado
+- **Barra de navegación del móvil.** Deja de ser una franja pegada al borde y
+  pasa a ser una pastilla flotante, con el botón de redactar en el centro:
+  círculo con degradado y halo, apoyado sobre la barra. El sitio del botón se
+  reserva en el propio menú (`.mj-rail-hueco`), así que ningún icono queda
+  debajo aunque se agreguen secciones.
+- El botón de redactar no se duplica: es el mismo de la cabecera, recolocado
+  con CSS sólo dentro de la media query del móvil. En el computador no cambia
+  nada.
+- Los avisos flotantes y el lector suben para no quedar tapados por la barra.
+
 ## [1.21.0] — 2026-09-09
 
 ### Añadido

@@ -299,7 +299,14 @@ function mj_v_rail(array $cfg, string $base = '.'): void
     <?php endif; ?>
 
     <ul class="mj-rail-lista">
-      <?php foreach ($items as $it): ?>
+      <?php
+        // En el móvil este menú es la barra de abajo y el botón de redactar
+        // va flotando en el centro: se reserva su hueco partiendo la lista.
+        $mitad = (int) ceil(count($items) / 2);
+        foreach ($items as $i => $it):
+          if ($i === $mitad): ?>
+            <li class="mj-rail-hueco" aria-hidden="true"></li>
+          <?php endif; ?>
         <li>
           <?php if ($pendiente($it)): ?>
             <span class="mj-rail-item is-pendiente" title="Todavía no está disponible" aria-disabled="true">

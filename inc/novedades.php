@@ -16,6 +16,17 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.22.0',
+            'fecha'  => '2026-09-09',
+            'icono'  => 'mas',
+            'titulo' => 'Barra de abajo nueva en el celular',
+            'que'    => 'El menú del celular pasa a ser una barra flotante con el botón de escribir en el centro.',
+            'hacer'  => [
+                'El botón azul del medio abre un correo nuevo: es el que más se usa y ahora se llega con el pulgar.',
+                'En el computador no cambia nada.',
+            ],
+        ],
+        [
             'v'      => '1.21.0',
             'fecha'  => '2026-09-09',
             'icono'  => 'clip',
