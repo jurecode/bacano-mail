@@ -365,6 +365,9 @@
 }
 .mj-redactar:hover{ transform:scale(1.06); }
 .mj-redactar:active{ transform:scale(.96); }
+/* El de la barra del teléfono no existe en el escritorio. Va después de la
+   regla de arriba a propósito: con la misma especificidad, manda el último. */
+.mj-redactar-movil{ display:none; }
 
 .mj-buscador{
   position:relative; display:flex; align-items:center;
@@ -841,6 +844,8 @@
   .mjmail[data-carpetas="abierto"] .mj-redactar{ opacity:0; pointer-events:none; }
   .mj-solo-movil{ display:inline-flex !important; }
   .mj-lista-cab .mj-refrescar{ display:none; }
+  /* Sin teclado no hay atajos que enseñar */
+  .mj-lista-pie [data-accion="atajos"]{ display:none; }
 }
 
 /* Tablet vertical: el lector cubre la lista */
@@ -900,7 +905,7 @@
     justify-content:space-around; align-items:center;
   }
   /* El sitio que ocupa el botón flotante, para que ningún icono quede debajo */
-  .mj-rail-hueco{ flex:0 0 auto; width:78px; height:1px; }
+  .mj-rail-hueco{ flex:0 0 auto; width:78px; height:100%; }
 
   .mj-rail-item{
     flex-direction:column; gap:2px; height:100%; width:52px;
@@ -916,7 +921,12 @@
   }
   .mj-rail-item span{ display:none; }
 
-  /* El botón de redactar sale de la cabecera y se planta en el centro */
+  /* El de la cabecera de la lista se calla: en el móvil manda el de la barra,
+     que está en todas las vistas y no sólo donde se pinta la lista. */
+  .mj-lista-cab .mj-redactar{ display:none; }
+  .mj-redactar-movil{ display:grid; }
+
+  /* El botón de redactar se planta en el centro de la barra */
   .mj-redactar{
     position:fixed; z-index:52;
     /* Sobresale por encima de la pastilla, como en la referencia: apoyado
@@ -935,6 +945,12 @@
     background:var(--mj-fab-halo); filter:blur(12px); opacity:.55; z-index:-1;
   }
   .mj-redactar{ transition:transform .15s, opacity .2s; }
+
+  /* Apartada mientras se baja por la lista: en un teléfono, 90px de pantalla
+     son muchos. Vuelve en cuanto se sube. */
+  .mj-rail, .mj-redactar{ transition:transform .26s cubic-bezier(.4,0,.2,1), opacity .2s; }
+  .mjmail.mj-barra-fuera .mj-rail{ transform:translateY(140%); }
+  .mjmail.mj-barra-fuera .mj-redactar{ transform:translateX(-50%) translateY(180%); }
   .mj-redactar:hover{ transform:translateX(-50%) scale(1.05); }
   .mj-redactar:active{ transform:translateX(-50%) scale(.96); }
   .mj-redactar .mj-i{ width:24px; height:24px; }

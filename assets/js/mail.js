@@ -142,11 +142,15 @@
           filtrar();
           break;
 
-        case 'refrescar':
-          btn.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }],
-                      { duration: 600, easing: 'ease-in-out' });
+        case 'refrescar': {
+          // Gira el icono, no el botón entero: en la barra del móvil el botón
+          // lleva también su etiqueta y daba vueltas la palabra.
+          var aspa = btn.querySelector('.mj-i') || btn;
+          aspa.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }],
+                       { duration: 600, easing: 'ease-in-out' });
           refrescar(true);
           break;
+        }
 
         case 'redactar':      abrirModal('redactar'); break;
         case 'atajos':        abrirModal('atajos');   break;
@@ -974,6 +978,31 @@
     });
 
     if (lista) { refrescar(false); programarRefresco(); }
+
+    /* ---------------------------------------------------------
+       La barra del móvil se aparta al bajar y vuelve al subir
+       --------------------------------------------------------- */
+    (function barraAlDesplazar() {
+      var barra = raiz.querySelector('.mj-rail');
+      if (!barra) return;
+
+      // Lo que se desplaza no es la ventana, sino la columna de dentro
+      var zonas = [lista, raiz.querySelector('[data-rol="lector"]'),
+                   raiz.querySelector('.mj-ajustes-cuerpo'),
+                   raiz.querySelector('.mj-novedades-cuerpo'),
+                   raiz.querySelector('.mj-agenda-lista')].filter(Boolean);
+
+      var previo = 0;
+      function alDesplazar(ev) {
+        var y = ev.target.scrollTop || 0;
+        // Un tirón corto no cuenta: si no, la barra parpadea
+        if (Math.abs(y - previo) < 12) return;
+        raiz.classList.toggle('mj-barra-fuera', y > previo && y > 40);
+        previo = y;
+      }
+
+      zonas.forEach(function (z) { z.addEventListener('scroll', alDesplazar, { passive: true }); });
+    })();
 
     /* ---------------------------------------------------------
        Carpetas

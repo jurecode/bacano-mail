@@ -10,6 +10,23 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.23.1] — 2026-09-09
+
+### Corregido
+- **El botón de redactar no aparecía fuera de la bandeja.** Vivía en la
+  cabecera de la lista, y las vistas de Ajustes, Contactos y Novedades no
+  dibujan esa lista. Ahora se emite junto a la barra, en todas las pantallas.
+  Va *fuera* de la barra: la máscara que recorta el hueco recorta también lo
+  que tenga dentro, y metido ahí desaparecía.
+- Al pulsar Actualizar giraba el botón entero, con su etiqueta. Gira sólo el
+  icono.
+- Se quitó "Atajos de teclado" en el móvil, y el icono de la casa que había
+  quedado en la cabecera del cajón de carpetas.
+
+### Añadido
+- La barra se aparta al bajar por la lista y vuelve al subir: en un teléfono,
+  90 px de pantalla se notan.
+
 ## [1.23.0] — 2026-09-09
 
 ### Cambiado

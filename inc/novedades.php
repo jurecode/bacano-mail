@@ -16,6 +16,19 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.23.1',
+            'fecha'  => '2026-09-09',
+            'icono'  => 'check',
+            'titulo' => 'Retoques en el celular',
+            'que'    => 'Detalles de la barra de abajo y de las pantallas de ajustes.',
+            'hacer'  => [
+                'El botón de escribir ya aparece en todas las pantallas, no sólo en la bandeja.',
+                'La barra se aparta al bajar por la lista y vuelve al subir, para dejarte más pantalla.',
+                'Al pulsar Actualizar gira sólo el icono, no la palabra.',
+                'Se quitó "Atajos de teclado" del celular, donde no hay teclado.',
+            ],
+        ],
+        [
             'v'      => '1.23.0',
             'fecha'  => '2026-09-09',
             'icono'  => 'refrescar',

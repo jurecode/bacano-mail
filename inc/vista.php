@@ -352,6 +352,13 @@ function mj_v_rail(array $cfg, string $base = '.'): void
       <?php endforeach; ?>
     </ul>
   </nav>
+
+  <?php /* Fuera de la barra a propósito: la máscara que recorta el hueco
+           recorta también lo que tenga dentro, y el botón desaparecía. */ ?>
+  <?php if ($cfg['interfaz']['boton_redactar']): ?>
+    <button class="mj-redactar mj-redactar-movil" type="button" data-accion="redactar"
+            aria-label="Redactar" title="Redactar"><?= mj_icono('mas', 20) ?></button>
+  <?php endif; ?>
 <?php }
 
 /** Los demás mensajes del hilo de $m, del más antiguo al más nuevo. */
@@ -929,9 +936,6 @@ function mj_v_carpetas(array $cfg, string $carpeta, array $conteo, int $sinVer =
   <aside class="mj-carpetas" id="mj-carpetas" aria-label="Carpetas de correo">
     <div class="mj-carpetas-cab">
       <h2 class="mj-h2"><?= mj_e($t['correo']) ?></h2>
-      <?php /* En el móvil la barra de abajo ya no lleva al sitio: se deja aquí */ ?>
-      <a class="mj-icono-btn mj-solo-movil" href="<?= mj_e($cfg['marca']['url']) ?>"
-         title="Ir al sitio" aria-label="Ir al sitio"><?= mj_icono('casa', 18) ?></a>
       <button class="mj-icono-btn mj-solo-movil" type="button" data-accion="cerrar-carpetas"
               aria-label="Cerrar el menú de carpetas"><?= mj_icono('cerrar', 18) ?></button>
     </div>
