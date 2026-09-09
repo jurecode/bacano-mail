@@ -10,6 +10,17 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.25.0] — 2026-09-09
+
+### Añadido
+- **Los adjuntos viajan en el reenvío.** El compositor lleva el identificador
+  del mensaje original y, al enviar, el servidor saca de él los archivos y los
+  monta en el correo nuevo. Se ven en la lista del compositor y se pueden
+  quitar uno a uno antes de mandar.
+- No pasan por la subida del navegador, así que **no les aplica
+  `upload_max_filesize`**: se puede reenviar un adjunto de 5 MB aunque subir
+  uno de ese tamaño no se pueda. Sí cuentan para el tamaño total del mensaje.
+
 ## [1.24.0] — 2026-09-09
 
 ### Corregido

@@ -100,6 +100,45 @@ foreach (mj_archivos_subidos('adjuntos') as $a) {
     ];
 }
 
+/* --- los adjuntos que vienen del correo que se reenvía --- */
+$deDonde = trim((string) ($_POST['reenvia_de'] ?? ''));
+$cuales  = array_map('intval', (array) ($_POST['reenvia_n'] ?? []));
+
+if ($deDonde !== '' && $cuales && preg_match('/^imap-([a-z0-9]+)-(\d+)$/', $deDonde, $cm)) {
+    require_once __DIR__ . '/inc/imap-cliente.php';
+
+    $imapAdj = new MjImap($cfg['origen']['imap'] ?? []);
+    if ($imapAdj->conectar() && $imapAdj->entrar()) {
+        // Hay que abrir la carpeta donde vive el original
+        $donde = (string) ($cfg['origen']['imap']['carpeta'] ?? 'INBOX');
+        foreach (mj_carpetas_con_id($imapAdj->carpetas()) as $x) {
+            if ($x['id'] === $cm[1]) { $donde = $x['nombre']; break; }
+        }
+        $imapAdj->abrir($donde);
+
+        foreach ($cuales as $n) {
+            if (count($adjuntos) >= MJ_ADJUNTOS_N) { break; }
+
+            $a = $imapAdj->adjunto((int) $cm[2], $n);
+            if ($a === null) { continue; }
+
+            // No pasan por la subida del navegador, así que no les afecta su
+            // límite; sí el tamaño total que el servidor de correo acepte.
+            $pesan += strlen($a['datos']);
+            if ($pesan > MJ_ADJUNTOS_MAX) {
+                $responder(false, 'Entre todos los archivos superan los 25 MB.');
+            }
+
+            $adjuntos[] = [
+                'nombre' => $a['nombre'],
+                'tipo'   => $a['tipo'],
+                'datos'  => $a['datos'],
+            ];
+        }
+        $imapAdj->cerrar();
+    }
+}
+
 /* --- la firma con logo obliga a mandar también una versión en HTML --- */
 $extras = ['adjuntos' => $adjuntos];
 $buzonFirma = mj_buzon_actual($cfg) ?: $conf['remitente'];

@@ -16,6 +16,17 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.25.0',
+            'fecha'  => '2026-09-09',
+            'icono'  => 'clip',
+            'titulo' => 'Los adjuntos también se reenvían',
+            'que'    => 'Al reenviar un correo van también sus archivos, sin que tengas que volver a adjuntarlos.',
+            'hacer'  => [
+                'Aparecen en la lista del compositor, y si alguno no quieres mandarlo, lo quitas con la ×.',
+                'No pasan por tu conexión: los saca el servidor del correo original, así que da igual lo que pesen para el límite de subida.',
+            ],
+        ],
+        [
             'v'      => '1.24.0',
             'fecha'  => '2026-09-09',
             'icono'  => 'reenviar',
@@ -26,7 +37,6 @@ function mj_novedades(): array
                 'Al responder, el original queda citado con ">" delante, como en cualquier programa de correo.',
                 'El cursor queda arriba, listo para escribir.',
             ],
-            'ojo'    => 'Los archivos adjuntos todavía no viajan al reenviar: hay que volver a adjuntarlos.',
         ],
         [
             'v'      => '1.23.1',

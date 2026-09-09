@@ -204,6 +204,11 @@
         case 'quitar-adjunto':
           quitarAdjunto(parseInt(btn.dataset.i, 10));
           break;
+        case 'quitar-heredado': {
+          var j = parseInt(btn.dataset.i, 10);
+          if (!isNaN(j)) { heredados.splice(j, 1); pintarAdjuntos(); }
+          break;
+        }
 
         case 'subir-logo': {
           var f = raiz.querySelector('[data-rol="logo-archivo"]');
@@ -669,6 +674,25 @@
       var oculto = raiz.querySelector('[data-rol="form-redactar"] [name="responde_a"]');
       if (oculto) oculto.value = (tipo === 'reenviar') ? '' : (msg.dataset.idMensaje || '');
 
+      // Los adjuntos del original viajan en el reenvío: el servidor los saca
+      // del propio mensaje, así que no hay que subirlos otra vez.
+      var deDonde = raiz.querySelector('[data-rol="form-redactar"] [name="reenvia_de"]');
+      heredados = [];
+      if (tipo === 'reenviar') {
+        if (deDonde) deDonde.value = msg.dataset.id || '';
+        msg.querySelectorAll('.mj-adjunto-liga').forEach(function (a) {
+          var u = new URL(a.getAttribute('href'), location.href);
+          heredados.push({
+            n: u.searchParams.get('n'),
+            nombre: (a.querySelector('.mj-adjunto-nom') || {}).textContent || 'archivo',
+            peso: (a.querySelector('.mj-adjunto-peso') || {}).textContent || ''
+          });
+        });
+      } else if (deDonde) {
+        deDonde.value = '';
+      }
+      pintarAdjuntos();
+
       abrirModal('redactar', {
         para: tipo === 'reenviar' ? '' : correo,
         cc: tipo === 'todos' ? (msg.dataset.todos || '') : '',
@@ -774,6 +798,9 @@
     var listaAdj = raiz.querySelector('[data-rol="lista-adjuntos"]');
     var elegidos = [];                 // se guardan aparte: un input file no
                                        // deja quitar uno solo de la lista
+    var heredados = [];                // los del correo que se reenvía: no
+                                       // pasan por el navegador, los trae el
+                                       // servidor del mensaje original
 
     function pesoLegible(n) {
       if (n < 1024) return n + ' B';
@@ -808,8 +835,20 @@
     function pintarAdjuntos() {
       if (!listaAdj) return;
       listaAdj.innerHTML = '';
-      listaAdj.hidden = elegidos.length === 0;
+      listaAdj.hidden = elegidos.length === 0 && heredados.length === 0;
       avisoRiesgo();
+
+      heredados.forEach(function (a, i) {
+        var li = document.createElement('li');
+        li.className = 'mj-adjuntar-item';
+        li.innerHTML = '<span class="mj-adjuntar-n"></span>' +
+                       '<span class="mj-adjuntar-p"></span>' +
+                       '<button class="mj-icono-btn" type="button" data-accion="quitar-heredado" ' +
+                       'data-i="' + i + '" aria-label="Quitar archivo">&times;</button>';
+        li.children[0].textContent = a.nombre;
+        li.children[1].textContent = a.peso;
+        listaAdj.appendChild(li);
+      });
 
       elegidos.forEach(function (f, i) {
         var li = document.createElement('li');
@@ -1508,6 +1547,7 @@
 
       var datos = new FormData(form);
       datos.append('token', form.dataset.token || '');
+      heredados.forEach(function (a) { datos.append('reenvia_n[]', a.n); });
 
       bloquear(true);
       if (pesa > 0) { progreso(0, pesa); }
@@ -1535,6 +1575,7 @@
           cerrarModal();
           form.reset();
           elegidos = [];                // y con él, los archivos elegidos
+          heredados = [];
           pintarAdjuntos();
         }
         aviso(r.mensaje);

@@ -1526,6 +1526,8 @@ function mj_v_compositor(array $cfg): void
         <label class="mj-campo">
           <span><?= mj_e($t['para']) ?></span>
           <input type="hidden" name="responde_a" value="">
+          <?php /* Al reenviar, de qué mensaje hay que traer los adjuntos */ ?>
+          <input type="hidden" name="reenvia_de" value="">
           <input type="email" name="para" multiple placeholder="destinatario@correo.cl" autocomplete="off">
         </label>
         <label class="mj-campo">
