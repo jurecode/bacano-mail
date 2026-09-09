@@ -16,6 +16,19 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.24.0',
+            'fecha'  => '2026-09-09',
+            'icono'  => 'reenviar',
+            'titulo' => 'Reenviar y responder llevan el mensaje original',
+            'que'    => 'Antes salía sólo una línea suelta y el correo iba vacío.',
+            'hacer'  => [
+                'Al reenviar se copia el mensaje completo, con De, Fecha, Asunto y Para arriba.',
+                'Al responder, el original queda citado con ">" delante, como en cualquier programa de correo.',
+                'El cursor queda arriba, listo para escribir.',
+            ],
+            'ojo'    => 'Los archivos adjuntos todavía no viajan al reenviar: hay que volver a adjuntarlos.',
+        ],
+        [
             'v'      => '1.23.1',
             'fecha'  => '2026-09-09',
             'icono'  => 'check',

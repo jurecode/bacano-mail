@@ -653,9 +653,16 @@
        REDACCIÓN
        --------------------------------------------------- */
     function responder(tipo) {
-      var msg = lector && lector.querySelector('.mj-msg');
+      // El de más abajo es el mensaje al que se responde: en una conversación,
+      // los de arriba son los anteriores.
+      var todos = lector ? lector.querySelectorAll('.mj-msg') : [];
+      var msg = todos.length ? todos[todos.length - 1] : null;
       if (!msg) { abrirModal('redactar'); return; }
+
       var asunto = msg.dataset.asunto || '';
+      var quien  = (msg.dataset.nombre || '').trim();
+      var correo = (msg.dataset.email || '').trim();
+      var cuando = (msg.querySelector('.mj-msg-fecha') || {}).textContent || '';
 
       // Se guarda a qué mensaje responde: así el correo lleva In-Reply-To y
       // la conversación no se parte en dos.
@@ -663,12 +670,66 @@
       if (oculto) oculto.value = (tipo === 'reenviar') ? '' : (msg.dataset.idMensaje || '');
 
       abrirModal('redactar', {
-        para: tipo === 'reenviar' ? '' : (msg.dataset.email || ''),
+        para: tipo === 'reenviar' ? '' : correo,
         cc: tipo === 'todos' ? (msg.dataset.todos || '') : '',
         asunto: (tipo === 'reenviar' ? 'Rv: ' : 'Re: ') + asunto,
-        cuerpo: '\n\n———\n' + (tipo === 'reenviar' ? 'Mensaje reenviado de ' : 'El ') +
-                (msg.dataset.nombre || '') + ' escribió:\n'
+        cuerpo: tipo === 'reenviar'
+          ? textoReenviado(msg, quien, correo, cuando.trim(), asunto)
+          : textoCitado(msg, quien, correo, cuando.trim())
       });
+
+      // El cursor arriba del todo, que es donde se escribe
+      var area = raiz.querySelector('[data-rol="form-redactar"] [name="cuerpo"]');
+      if (area) { area.focus(); area.setSelectionRange(0, 0); area.scrollTop = 0; }
+    }
+
+    /**
+     * El cuerpo del mensaje, en texto plano. Al responder se quita lo que
+     * estaba plegado —ya viaja en el hilo— y al reenviar se conserva, que es
+     * contexto que quien lo recibe no tiene.
+     */
+    function textoDelMensaje(msg, conCitado) {
+      var c = msg.querySelector('.mj-msg-cuerpo');
+      if (!c) return '';
+
+      var copia = c.cloneNode(true);
+      if (!conCitado) {
+        copia.querySelectorAll('.mj-citado').forEach(function (e) { e.remove(); });
+      } else {
+        // El "···" del desplegable no aporta nada al texto
+        copia.querySelectorAll('.mj-citado summary').forEach(function (e) { e.remove(); });
+      }
+
+      return (copia.innerText || copia.textContent || '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
+    /* Respuesta: el original citado con ">" delante, como en cualquier correo */
+    function textoCitado(msg, quien, correo, cuando) {
+      var cuerpo = textoDelMensaje(msg, false);
+      var de = quien && correo ? quien + ' <' + correo + '>' : (quien || correo);
+      var cabeza = cuando ? 'El ' + cuando + ', ' + de + ' escribió:' : de + ' escribió:';
+
+      if (!cuerpo) return '\n\n' + cabeza + '\n';
+      return '\n\n' + cabeza + '\n' +
+             cuerpo.split('\n').map(function (l) { return '> ' + l; }).join('\n') + '\n';
+    }
+
+    /* Reenvío: la cabecera del original y su cuerpo tal cual, sin citar */
+    function textoReenviado(msg, quien, correo, cuando, asunto) {
+      var cuerpo = textoDelMensaje(msg, true);
+      var de = quien && correo ? quien + ' <' + correo + '>' : (quien || correo);
+
+      var cabecera = '\n\n---------- Mensaje reenviado ----------\n' +
+                     'De: ' + de + '\n' +
+                     (cuando ? 'Fecha: ' + cuando + '\n' : '') +
+                     'Asunto: ' + asunto + '\n';
+
+      var para = (msg.dataset.todos || '').trim();
+      if (para) { cabecera += 'Para: ' + para + '\n'; }
+
+      return cabecera + '\n' + cuerpo + '\n';
     }
 
     /* ---------------------------------------------------------

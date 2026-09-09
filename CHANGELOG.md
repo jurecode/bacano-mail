@@ -10,6 +10,23 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.24.0] — 2026-09-09
+
+### Corregido
+- **Reenviar y responder no llevaban el mensaje original.** El compositor sólo
+  escribía una línea de atribución —y en el reenvío quedaba además mal
+  redactada: "Mensaje reenviado de X escribió:"— pero nunca copiaba el cuerpo.
+- Ahora el reenvío lleva la cabecera del original (De, Fecha, Asunto, Para) y
+  su texto completo; la respuesta lo cita con `>` delante. El cursor queda
+  arriba del todo.
+- En una conversación se toma el mensaje de más abajo, que es al que se
+  responde; antes se tomaba el primero, que puede ser uno viejo.
+- Al responder se descarta lo que ya estuviera plegado —viaja en el hilo— y al
+  reenviar se conserva, que para quien lo recibe es contexto nuevo.
+
+### Pendiente
+- Los adjuntos todavía no se reenvían: hay que volver a adjuntarlos a mano.
+
 ## [1.23.1] — 2026-09-09
 
 ### Corregido
