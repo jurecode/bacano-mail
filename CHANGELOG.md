@@ -10,6 +10,15 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.22.1] — 2026-09-09
+
+### Cambiado
+- La barra del móvil lleva ahora el **hueco circular** alrededor del botón de
+  redactar, recortado con una máscara radial sobre la propia barra. La sombra
+  pasa de `box-shadow` a `filter: drop-shadow()`: así sigue el recorte y rodea
+  el hueco, en vez de desaparecer al aplicar la máscara.
+- El halo del botón se suavizó: tapaba justo la curva que el hueco dibuja.
+
 ## [1.22.0] — 2026-09-09
 
 ### Cambiado

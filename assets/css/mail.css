@@ -56,11 +56,12 @@
   --mj-r-lg:18px;
   /* Barra inferior del móvil y su botón central */
   --mj-barra:rgba(255,255,255,.92);
+  --mj-barra-solido:#ffffff;
   --mj-barra-borde:rgba(17,19,24,.07);
   --mj-barra-txt:#9096a3;
   --mj-barra-txt-on:#151821;
   --mj-fab:linear-gradient(145deg,#5b5bf6 0%,#2563eb 52%,#7c3aed 100%);
-  --mj-fab-halo:rgba(79,90,246,.45);
+  --mj-fab-halo:rgba(79,90,246,.55);
 
   --mj-rail-w:74px;
   --mj-rail-w-abierto:196px;
@@ -114,7 +115,8 @@
   --mj-ventana:rgba(24,27,34,.72);
   --mj-ventana-borde:rgba(255,255,255,.09);
   --mj-rail:#101216; --mj-rail-txt:#7b808c; --mj-rail-on:rgba(255,255,255,.10);
-  --mj-barra:rgba(26,29,36,.92); --mj-barra-borde:rgba(255,255,255,.09);
+  --mj-barra:rgba(26,29,36,.92); --mj-barra-solido:#1a1d24;
+  --mj-barra-borde:rgba(255,255,255,.09);
   --mj-barra-txt:#7f8695; --mj-barra-txt-on:#ffffff;
   --mj-col2:transparent;
   --mj-col3:rgba(18,21,27,.55);
@@ -138,7 +140,8 @@
     --mj-ventana:rgba(24,27,34,.72);
     --mj-ventana-borde:rgba(255,255,255,.09);
     --mj-rail:#101216; --mj-rail-txt:#7b808c; --mj-rail-on:rgba(255,255,255,.10);
-  --mj-barra:rgba(26,29,36,.92); --mj-barra-borde:rgba(255,255,255,.09);
+  --mj-barra:rgba(26,29,36,.92); --mj-barra-solido:#1a1d24;
+  --mj-barra-borde:rgba(255,255,255,.09);
   --mj-barra-txt:#7f8695; --mj-barra-txt-on:#ffffff;
     --mj-col3:rgba(18,21,27,.55);
     --mj-lector:linear-gradient(160deg,rgba(26,30,38,.72),rgba(18,21,28,.72));
@@ -858,15 +861,27 @@
   /* Barra de abajo: una pastilla que flota, con el botón de redactar en
      medio, sobresaliendo por encima. */
   .mj-rail{
+    /* El hueco redondo del centro se recorta de la propia barra con una
+       máscara; el radio va algo por encima del botón (30px) para que quede
+       un anillo de aire alrededor. */
+    --mj-hueco:42px;
+
     position:fixed; z-index:50; inset:auto 14px calc(14px + env(safe-area-inset-bottom,0px)) 14px;
     flex-direction:row; align-items:center; gap:2px;
     width:auto !important; height:64px; margin:0; padding:0 10px;
     border-radius:26px;
-    background:var(--mj-barra);
-    border:1px solid var(--mj-barra-borde);
-    box-shadow:0 10px 30px rgba(10,12,18,.16), 0 2px 8px rgba(10,12,18,.10);
-    backdrop-filter:blur(18px) saturate(160%);
-    -webkit-backdrop-filter:blur(18px) saturate(160%);
+    background:var(--mj-barra-solido);
+    border:0;
+
+    -webkit-mask-image:radial-gradient(circle var(--mj-hueco) at 50% 0,
+                        transparent 98%, #000 100%);
+            mask-image:radial-gradient(circle var(--mj-hueco) at 50% 0,
+                        transparent 98%, #000 100%);
+
+    /* drop-shadow y no box-shadow: la sombra sigue el recorte y rodea el
+       hueco. Una box-shadow se recortaría con la máscara y desaparecería. */
+    filter:drop-shadow(0 8px 22px rgba(10,12,18,.16))
+           drop-shadow(0 2px 6px rgba(10,12,18,.10));
   }
   .mj-rail-marca, .mj-rail-tirador{ display:none; }
   .mj-rail-lista{
@@ -891,16 +906,18 @@
     position:fixed; z-index:52;
     /* Sobresale por encima de la pastilla, como en la referencia: apoyado
        en ella, no hundido dentro. */
-    left:50%; bottom:calc(54px + env(safe-area-inset-bottom,0px));
+    left:50%; bottom:calc(48px + env(safe-area-inset-bottom,0px));
     transform:translateX(-50%);
     width:60px; height:60px;
     background:var(--mj-fab);
     color:#fff;
-    box-shadow:0 10px 26px var(--mj-fab-halo), 0 4px 10px rgba(10,12,18,.22);
+    box-shadow:0 6px 16px rgba(10,12,18,.22);
   }
+  /* Halo suave: tiene que teñir el aire alrededor, no tapar la curva que el
+     hueco recorta en la barra. */
   .mj-redactar::after{
-    content:""; position:absolute; inset:-14px; border-radius:50%;
-    background:var(--mj-fab-halo); filter:blur(16px); z-index:-1;
+    content:""; position:absolute; inset:-8px; border-radius:50%;
+    background:var(--mj-fab-halo); filter:blur(12px); opacity:.55; z-index:-1;
   }
   .mj-redactar:hover{ transform:translateX(-50%) scale(1.05); }
   .mj-redactar:active{ transform:translateX(-50%) scale(.96); }
