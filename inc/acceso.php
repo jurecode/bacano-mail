@@ -456,6 +456,12 @@ function mj_pantalla_acceso(array $cfg, string $error = '', bool $soloAviso = fa
     transition:border-color .2s, box-shadow .2s;
   }
   input::placeholder{ color:#b8b8b8 }
+
+  /* En el teléfono, 16px: por debajo de eso Safari amplía la página al tocar
+     el campo y ya no vuelve. */
+  @media (hover:none) and (pointer:coarse){
+    input[type=email],input[type=password],input[type=text]{ font-size:16px }
+  }
   input:focus{
     outline:none; border-color:var(--tinta);
     box-shadow:0 0 0 3px rgba(10,10,10,.06);

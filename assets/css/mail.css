@@ -1524,3 +1524,18 @@ a.mj-btn{ text-decoration:none; }
   background:rgba(245,158,11,.12);
   font-size:12px; line-height:1.5; color:var(--mj-txt2);
 }
+
+/* ============================================================
+   18. SIN ZOOM AL TOCAR UN CAMPO
+   Safari en iPhone amplía la página cuando el campo que recibe
+   el foco tiene la letra por debajo de 16px, y luego no vuelve
+   a su sitio. No se toca el viewport para arreglarlo: eso
+   quitaría también el zoom con dos dedos, que hace falta.
+   ============================================================ */
+@media (hover:none) and (pointer:coarse){
+  input, textarea, select,
+  .mj-campo input, .mj-campo textarea,
+  .mj-buscador input, .mj-set-c{
+    font-size:16px;
+  }
+}

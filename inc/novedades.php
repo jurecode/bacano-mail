@@ -16,6 +16,17 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.25.1',
+            'fecha'  => '2026-09-09',
+            'icono'  => 'check',
+            'titulo' => 'El celular ya no hace zoom al escribir',
+            'que'    => 'Al tocar un campo —entrar, buscar, escribir un correo— la pantalla se acercaba sola y ya no volvía a su sitio.',
+            'hacer'  => [
+                'Era el iPhone: amplía cuando la letra del campo es pequeña. Ahora los campos usan el tamaño que evita ese salto.',
+                'El zoom con dos dedos sigue funcionando; sólo se quitó el que se hacía solo.',
+            ],
+        ],
+        [
             'v'      => '1.25.0',
             'fecha'  => '2026-09-09',
             'icono'  => 'clip',

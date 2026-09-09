@@ -10,6 +10,17 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.25.1] — 2026-09-09
+
+### Corregido
+- **El teléfono ampliaba la página al tocar cualquier campo**, y no volvía a
+  su sitio: en el acceso, en el buscador, al redactar y en los ajustes. Safari
+  en iOS hace zoom cuando el campo que recibe el foco tiene la letra por debajo
+  de 16px; los de la aplicación estaban a 13,5 y los del acceso a 14. En
+  pantallas táctiles pasan a 16px.
+- No se toca el `viewport` para conseguirlo: poner `maximum-scale=1` quitaría
+  también el zoom con dos dedos, que hace falta.
+
 ## [1.25.0] — 2026-09-09
 
 ### Añadido
