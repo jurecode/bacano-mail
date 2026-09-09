@@ -59,6 +59,16 @@ foreach ($lista as $m) {
 }
 $filas = (string) ob_get_clean();
 
+// Las plantillas del lector, para los mensajes que acaban de llegar: sin
+// ellas, al abrir uno nuevo el lector se quedaba mostrando el anterior.
+ob_start();
+foreach ($lista as $m) {
+    echo '<template data-mensaje="' . mj_e($m['id']) . '">';
+    mj_v_lector_contenido($cfg, $m, mj_conversacion($msgs, $m));
+    echo '</template>';
+}
+$plantillas = (string) ob_get_clean();
+
 $sinLeer = 0;
 foreach ($msgs as $m) {
     if ($m['carpeta'] === 'entrada' && !$m['leido']) { $sinLeer++; }
@@ -67,6 +77,7 @@ foreach ($msgs as $m) {
 $responder([
     'ok'      => true,
     'filas'   => $filas,
+    'plantillas' => $plantillas,
     'firma'   => sha1($filas),      // para no repintar si no cambió nada
     'cuantos' => count($lista),
     'sinLeer' => $sinLeer,

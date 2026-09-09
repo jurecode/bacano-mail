@@ -214,11 +214,19 @@ class MjProveedorJson implements MjProveedor
     if (empty($m['extracto'])) {
       $m['extracto'] = mj_recorte($m['cuerpo'], 180);
     }
-    $m['adjuntos'] = array_map(static fn($a) => [
-      'nombre' => $a['nombre'] ?? 'archivo',
-      'peso'   => (int) ($a['peso'] ?? 0),
-      'tipo'   => $a['tipo'] ?? pathinfo($a['nombre'] ?? '', PATHINFO_EXTENSION),
-    ], (array) $m['adjuntos']);
+    $m['adjuntos'] = array_map(static function ($a) {
+      $nombre = $a['nombre'] ?? 'archivo';
+      // 'tipo' es la etiqueta corta que se pinta (PDF, DOCX); el tipo MIME
+      // completo se guarda aparte, que es lo que hace falta al descargar.
+      $ext = strtolower((string) pathinfo($nombre, PATHINFO_EXTENSION));
+      return [
+        'i'      => (int) ($a['i'] ?? 0),
+        'nombre' => $nombre,
+        'peso'   => (int) ($a['peso'] ?? 0),
+        'tipo'   => $ext ?: 'archivo',
+        'mime'   => (string) ($a['tipo'] ?? 'application/octet-stream'),
+      ];
+    }, (array) $m['adjuntos']);
 
     return $m;
   }
@@ -676,14 +684,27 @@ class MjProveedorImapSocket implements MjProveedor
                     'asunto'     => $m['asunto'],
                     'extracto'   => '',
                     // el cuerpo se pide aquí: el lector lo necesita al dibujar
-                    'cuerpo'     => $imap->cuerpo($m['uid']),
+                    'cuerpo'     => ($leido = $imap->leer($m['uid']))['cuerpo'],
                     'fecha'      => $m['fecha'],
                     'leido'      => $m['leido'],
                     'destacado'  => $m['destacado'],
                     'importante' => false,
                     'silenciado' => false,
                     'etiquetas'  => [],
-                    'adjuntos'   => [],
+                    // Sin los datos: pesan, y sólo hacen falta al descargar.
+                    // Las imágenes incrustadas de una firma no son adjuntos.
+                    'adjuntos'   => array_values(array_map(
+                        // 'tipo' es la etiqueta corta que se pinta (PDF, CSV);
+                        // el MIME completo hace falta al descargar.
+                        fn($a) => [
+                            'i'      => $a['i'],
+                            'nombre' => $a['nombre'],
+                            'tipo'   => strtolower((string) pathinfo($a['nombre'], PATHINFO_EXTENSION)) ?: 'archivo',
+                            'mime'   => $a['tipo'],
+                            'peso'   => $a['peso'],
+                        ],
+                        array_filter($leido['adjuntos'], fn($a) => !$a['inline'])
+                    )),
                 ];
             }
         }

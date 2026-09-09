@@ -537,21 +537,35 @@
 .mj-msg-destinos{ display:flex; flex-wrap:wrap; gap:4px 16px; font-size:12px; color:var(--mj-txt3); }
 .mj-msg-destinos em{ font-style:normal; font-weight:600; color:var(--mj-txt3); opacity:.75; }
 .mj-msg-tags{ display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
+/* El correo trae sus propios colores, pensados para papel blanco: un
+   "color:#222" del remitente sobre nuestro fondo oscuro es texto invisible.
+   Por eso el mensaje se pinta sobre su propia hoja clara, como en Gmail. */
 .mj-msg-cuerpo{
-  margin-top:22px; padding-top:20px; border-top:1px solid var(--mj-borde2);
-  font-size:14.5px; line-height:1.72; color:var(--mj-txt2);
+  margin-top:22px; padding:18px 20px;
+  border-radius:var(--mj-r-md);
+  background:#ffffff; color:#1f2328;
+  font-size:14.5px; line-height:1.72;
   overflow-wrap:anywhere;
+  overflow-x:auto;                 /* una tabla ancha no arrastra la página */
+  -webkit-overflow-scrolling:touch;
 }
+/* Nada de lo que venga dentro puede ser más ancho que la hoja */
+.mj-msg-cuerpo img,
+.mj-msg-cuerpo table,
+.mj-msg-cuerpo pre,
+.mj-msg-cuerpo video{ max-width:100%; }
+.mj-msg-cuerpo table{ table-layout:auto; word-break:break-word; }
+
 .mj-msg-cuerpo p{ margin:0 0 15px; }
-.mj-msg-cuerpo strong{ color:var(--mj-txt); }
-.mj-msg-cuerpo a{ color:var(--mj-acento); }
-.mjmail[data-modo="oscuro"] .mj-msg-cuerpo a{ text-decoration:underline; }
+.mj-msg-cuerpo strong{ color:inherit; }
+.mj-msg-cuerpo a{ color:#1a56db; }
+.mj-msg-cuerpo a:visited{ color:#5b21b6; }
 .mj-msg-cuerpo ul,.mj-msg-cuerpo ol{ margin:0 0 15px; padding-left:20px; }
 .mj-msg-cuerpo li{ margin-bottom:5px; }
 .mj-msg-cuerpo img{ max-width:100%; height:auto; border-radius:var(--mj-r-sm); }
 .mj-msg-cuerpo blockquote{
   margin:0 0 15px; padding:2px 0 2px 14px;
-  border-left:2px solid var(--mj-borde); color:var(--mj-txt3);
+  border-left:2px solid #d7dbe0; color:#5b6570;
 }
 .mj-aviso-img{
   display:flex; align-items:center; gap:8px; flex-wrap:wrap;
@@ -561,13 +575,22 @@
 .mj-adjuntos{ margin-top:26px; padding-top:18px; border-top:1px solid var(--mj-borde2); }
 .mj-adjuntos ul{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px; }
 .mj-adjunto{
-  display:flex; align-items:center; gap:9px;
-  padding:8px 12px 8px 8px; border-radius:var(--mj-r-sm);
+  border-radius:var(--mj-r-sm);
   background:var(--mj-flotante); border:1px solid var(--mj-borde2);
-  box-shadow:var(--mj-sombra-sm); font-size:12.5px; cursor:pointer;
-  transition:transform .15s;
+  box-shadow:var(--mj-sombra-sm); font-size:12.5px;
+  transition:transform .15s, border-color .15s;
 }
-.mj-adjunto:hover{ transform:translateY(-1px); }
+.mj-adjunto:hover{ transform:translateY(-1px); border-color:var(--mj-borde); }
+/* La tarjeta entera es el enlace de descarga: sin subrayado ni azul de
+   navegador, que parecía texto suelto pegado debajo del correo. */
+.mj-adjunto-liga{
+  display:flex; align-items:center; gap:9px;
+  padding:8px 12px 8px 8px;
+  color:var(--mj-txt); text-decoration:none;
+}
+.mj-adjunto-liga:visited{ color:var(--mj-txt); }
+.mj-adjunto-liga .mj-i{ margin-left:2px; color:var(--mj-txt3); }
+.mj-adjunto:hover .mj-adjunto-liga .mj-i{ color:var(--mj-txt); }
 .mj-adjunto-tipo{
   display:grid; place-items:center; width:32px; height:32px; border-radius:8px;
   background:var(--mj-hover); font-size:9.5px; font-weight:700; color:var(--mj-txt2);
@@ -576,6 +599,11 @@
 .mj-adjunto-tipo[data-tipo="docx"],.mj-adjunto-tipo[data-tipo="doc"]{ background:#dbeafe; color:#1d4ed8; }
 .mj-adjunto-tipo[data-tipo="xlsx"],.mj-adjunto-tipo[data-tipo="csv"]{ background:#dcfce7; color:#15803d; }
 .mj-adjunto-nom{ max-width:210px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:500; }
+@media (max-width:640px){
+  .mj-adjuntos ul{ display:block; }
+  .mj-adjunto{ margin-bottom:8px; }
+  .mj-adjunto-nom{ max-width:none; flex:1 1 auto; }
+}
 .mj-adjunto-peso{ color:var(--mj-txt3); font-size:11.5px; }
 .mj-msg-pie{ display:flex; gap:8px; margin-top:28px; }
 

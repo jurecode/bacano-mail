@@ -263,6 +263,15 @@
       if (tpl) {
         lector.replaceChildren(tpl.content.cloneNode(true));
         lector.scrollTop = 0;
+      } else {
+        // Sin plantilla —un mensaje llegado después de cargar la página— se
+        // pide antes que dejar el correo anterior puesto, que es engañoso.
+        lector.replaceChildren();
+        refrescar(false).then(function () {
+          var t = plant && plant.querySelector('template[data-mensaje="' + css(id) + '"]');
+          if (t) { lector.replaceChildren(t.content.cloneNode(true)); lector.scrollTop = 0; }
+          else   { aviso('No se pudo abrir ese mensaje. Actualiza la bandeja.'); }
+        });
       }
       if (OP.autoLeer) marcarLeido(item, true);
       raiz.dataset.vista = 'lector';
@@ -885,7 +894,7 @@
           if (r.firma === firmaLista) { if (aMano) aviso('No hay correo nuevo'); return; }
 
           var sinLeerAntes = contarSinLeer();
-          pintarLista(r.filas);
+          pintarLista(r.filas, r.plantillas);
           firmaLista = r.firma;
 
           var nuevos = contarSinLeer() - sinLeerAntes;
@@ -907,8 +916,12 @@
     }
 
     /* Cambia las filas conservando lo que la persona tenía a medias */
-    function pintarLista(html) {
+    function pintarLista(html, plantillas) {
       if (!lista) return;
+
+      // Las plantillas del lector se cambian con las filas: si no, al abrir un
+      // mensaje recién llegado no habría de dónde sacar su contenido.
+      if (plant && plantillas) { plant.innerHTML = plantillas; }
 
       var abierto = itemActivo();
       var idAbierto = abierto ? abierto.dataset.id : '';

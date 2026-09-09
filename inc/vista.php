@@ -1414,9 +1414,14 @@ function mj_v_lector_contenido(array $cfg, array $m, array $conversacion = []): 
         <ul>
           <?php foreach ($m['adjuntos'] as $a): ?>
             <li class="mj-adjunto">
-              <span class="mj-adjunto-tipo" data-tipo="<?= mj_e($a['tipo']) ?>"><?= mj_e(strtoupper($a['tipo'] ?: '?')) ?></span>
-              <span class="mj-adjunto-nom"><?= mj_e($a['nombre']) ?></span>
-              <span class="mj-adjunto-peso"><?= mj_e(mj_peso($a['peso'])) ?></span>
+              <a class="mj-adjunto-liga"
+                 href="adjunto.php?id=<?= rawurlencode($m['id']) ?>&amp;n=<?= (int) ($a['i'] ?? 0) ?>"
+                 download="<?= mj_e($a['nombre']) ?>">
+                <span class="mj-adjunto-tipo" data-tipo="<?= mj_e($a['tipo']) ?>"><?= mj_e(strtoupper($a['tipo'] ?: '?')) ?></span>
+                <span class="mj-adjunto-nom"><?= mj_e($a['nombre']) ?></span>
+                <span class="mj-adjunto-peso"><?= mj_e(mj_peso($a['peso'])) ?></span>
+                <?= mj_icono('descargar', 15) ?>
+              </a>
             </li>
           <?php endforeach; ?>
         </ul>

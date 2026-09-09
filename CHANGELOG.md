@@ -10,6 +10,30 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.21.0] — 2026-09-09
+
+### Añadido
+- **Adjuntos.** No existían: el proveedor ponía `'adjuntos' => []` en cada
+  mensaje y el cliente IMAP se saltaba esas partes al armar el cuerpo. Ahora se
+  leen del propio mensaje —nombre, tipo y peso, incluidos los nombres
+  codificados tipo `filename*=UTF-8''Notificaci%C3%B3n.pdf`— se listan al final
+  del correo y se descargan desde `adjunto.php`, que los pide al servidor en el
+  momento y sólo a quien tiene sesión.
+- Las imágenes incrustadas en una firma no se cuentan como archivos adjuntos.
+
+### Corregido
+- **El texto de los correos no se leía.** El mensaje trae sus propios colores,
+  escritos para papel blanco; un `color:#222` del remitente sobre nuestro fondo
+  oscuro es texto invisible. Ahora el cuerpo se pinta sobre su propia hoja
+  blanca, como en Gmail.
+- **Las tablas anchas descuadraban la pantalla** en el móvil. El cuerpo se
+  desplaza en horizontal dentro de su hoja y nada de lo que venga dentro puede
+  ser más ancho que ella.
+- **Al abrir un correo recién llegado se quedaba el anterior en pantalla.** El
+  lector usa plantillas dibujadas al cargar la página, y el refresco automático
+  de 1.19.0 cambiaba las filas pero no las plantillas. Ahora las cambia; y si
+  aun así faltara, se pide el mensaje en vez de dejar el anterior puesto.
+
 ## [1.20.0] — 2026-09-07
 
 ### Añadido

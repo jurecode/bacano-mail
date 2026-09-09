@@ -14,6 +14,7 @@ class MjImap
     private $sock = null;
     private int $etiqueta = 0;
     private ?array $capacidades = null;
+    private array $adjuntosVistos = [];
     public string $error = '';
     public array $registro = [];
 
@@ -430,6 +431,33 @@ class MjImap
     /** Cuerpo de un mensaje (texto plano o HTML, ya decodificado). */
     public function cuerpo(int $uid): string
     {
+        return $this->leer($uid)['cuerpo'];
+    }
+
+    /** El mensaje entero: cuerpo ya en HTML y la lista de sus adjuntos. */
+    public function leer(int $uid): array
+    {
+        $crudo = $this->crudo($uid);
+        if ($crudo === '') { return ['cuerpo' => '', 'adjuntos' => []]; }
+
+        $this->adjuntosVistos = [];
+        $cuerpo = $this->extraerCuerpo($crudo);
+        return ['cuerpo' => $cuerpo, 'adjuntos' => $this->adjuntosVistos];
+    }
+
+    /** Un adjunto concreto, para descargarlo. */
+    public function adjunto(int $uid, int $indice): ?array
+    {
+        $todo = $this->leer($uid);
+        foreach ($todo['adjuntos'] as $a) {
+            if ($a['i'] === $indice) { return $a; }
+        }
+        return null;
+    }
+
+    /** El mensaje tal cual lo manda el servidor. */
+    private function crudo(int $uid): string
+    {
         $r = $this->orden("UID FETCH $uid (BODY.PEEK[])");
         if (!$r['ok']) return '';
 
@@ -440,11 +468,11 @@ class MjImap
         // línea de cierre del servidor.
         if (preg_match('/\{(\d+)\}\r?\n/', $crudo, $m, PREG_OFFSET_CAPTURE)) {
             $inicio = $m[0][1] + strlen($m[0][0]);
-            return $this->extraerCuerpo(substr($crudo, $inicio, (int) $m[1][0]));
+            return substr($crudo, $inicio, (int) $m[1][0]);
         }
 
         $corte = strpos($crudo, "\r\n");
-        return $corte === false ? '' : $this->extraerCuerpo(substr($crudo, $corte + 2));
+        return $corte === false ? '' : substr($crudo, $corte + 2);
     }
 
     /* ---------- MIME ---------- */
@@ -472,8 +500,24 @@ class MjImap
                     $html = $html ?: $this->extraerCuerpo($parte, $nivel + 1);
                     continue;
                 }
-                if (str_contains($ptipo, 'attachment') || stripos($pc['content-disposition'] ?? '', 'attachment') === 0) {
-                    continue;                            // los adjuntos no van en el cuerpo
+                // Los adjuntos no van en el cuerpo, pero sí se apuntan: antes
+                // se descartaban aquí y por eso no aparecían por ninguna parte.
+                $nombre = $this->nombreDeParte($pc);
+                $disp   = strtolower($pc['content-disposition'] ?? '');
+
+                if ($nombre !== '' || str_starts_with($disp, 'attachment')) {
+                    $datos = $this->desarmarBinario($pcuerpo, $pc);
+                    $this->adjuntosVistos[] = [
+                        'i'      => count($this->adjuntosVistos),
+                        'nombre' => $nombre ?: 'archivo',
+                        'tipo'   => trim(explode(';', $ptipo)[0]),
+                        'peso'   => strlen($datos),
+                        // Una imagen incrustada en la firma no es un archivo
+                        // que la persona haya adjuntado: se marca aparte.
+                        'inline' => str_starts_with($disp, 'inline') && isset($pc['content-id']),
+                        'datos'  => $datos,
+                    ];
+                    continue;
                 }
 
                 $contenido = $this->desarmar($pcuerpo, $pc);
@@ -534,6 +578,36 @@ class MjImap
             }
         }
         return trim($cuerpo);
+    }
+
+    /**
+     * Igual que desarmar(), pero sin tocar el contenido: un PDF o un JPG no
+     * son texto y convertirles el juego de caracteres los rompe.
+     */
+    private function desarmarBinario(string $cuerpo, array $cab): string
+    {
+        $cod = strtolower(trim($cab['content-transfer-encoding'] ?? ''));
+        if ($cod === 'base64')               { return (string) base64_decode($cuerpo, true); }
+        if ($cod === 'quoted-printable')     { return quoted_printable_decode($cuerpo); }
+        return $cuerpo;
+    }
+
+    /** El nombre del archivo, venga en el Content-Disposition o en el tipo. */
+    private function nombreDeParte(array $cab): string
+    {
+        foreach (['content-disposition', 'content-type'] as $x) {
+            $v = $cab[$x] ?? '';
+            if ($v === '') { continue; }
+
+            // filename*=UTF-8''nombre%20con%20acentos.pdf
+            if (preg_match("/(?:file)?name\*=(?:([\w\-]+)'[^']*')?([^;\r\n]+)/i", $v, $m)) {
+                return $this->decodificar(rawurldecode(trim($m[2], " \"'")));
+            }
+            if (preg_match('/(?:file)?name="?([^";\r\n]+)"?/i', $v, $m)) {
+                return $this->decodificar(trim($m[1]));
+            }
+        }
+        return '';
     }
 
     /* ---------- utilidades ---------- */

@@ -16,6 +16,19 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.21.0',
+            'fecha'  => '2026-09-09',
+            'icono'  => 'clip',
+            'titulo' => 'Los adjuntos que llegan, y los correos legibles',
+            'que'    => 'Ahora se ven y se descargan los archivos que te mandan, y el texto de los correos se lee.',
+            'hacer'  => [
+                'Al final del mensaje aparece "Adjuntos" con cada archivo: pulsa uno y se descarga.',
+                'El correo se muestra sobre fondo blanco, como lo escribió quien te lo manda. Antes sus colores oscuros quedaban invisibles sobre el fondo negro.',
+                'Las tablas anchas ya no descuadran la pantalla en el celular: se desplazan dentro del mensaje.',
+                'Al abrir un correo recién llegado ya no se queda el anterior en pantalla.',
+            ],
+        ],
+        [
             'v'      => '1.20.0',
             'fecha'  => '2026-09-07',
             'icono'  => 'llave',
