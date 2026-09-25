@@ -9,6 +9,18 @@
    puedes actualizar el módulo sin perder tu configuración.
    ============================================================ */
 
+/* ------------------------------------------------------------
+   PHP 8 o superior. Debajo de esa versión el resto del programa
+   ni siquiera se puede leer y el navegador muestra una página en
+   blanco, sin explicación. Por eso esto va antes de todos los
+   require y está escrito a propósito en PHP antiguo: así se
+   ejecuta siempre y manda a la pantalla que sí lo cuenta.
+   ------------------------------------------------------------ */
+if (version_compare(PHP_VERSION, '8.0', '<')) {
+    require __DIR__ . '/comprobar.php';
+    exit;
+}
+
 require_once __DIR__ . '/inc/cargar.php';
 require_once __DIR__ . '/inc/ayuda.php';
 require_once __DIR__ . '/inc/modulos.php';
@@ -176,6 +188,13 @@ $req = [
   ['Extensión json',     extension_loaded('json'), '', true],
   ['Carpeta con permiso de escritura', is_writable(__DIR__), __DIR__, true],
   ['OpenSSL (para leer la casilla)', extension_loaded('openssl'), 'Sin OpenSSL no se puede conectar con el servidor de correo.', true],
+  ['Carpeta data con permiso de escritura (agenda, firmas, sesiones)',
+     is_writable(__DIR__ . '/data') || (!file_exists(__DIR__ . '/data') && is_writable(__DIR__)),
+     __DIR__ . '/data', true],
+  ['Extensión fileinfo (reconocer los archivos adjuntos)', extension_loaded('fileinfo'), '', false],
+  ['Extensión zip (instalar actualizaciones desde el panel)', extension_loaded('zip'), '', false],
+  ['Extensión curl (hablar con GitHub y con cPanel)',
+     extension_loaded('curl') || ini_get('allow_url_fopen'), '', false],
   ['Extensión imap (opcional: si falta, se lee por sockets)', extension_loaded('imap'), '', false],
   ['Conexión segura HTTPS', !empty($_SERVER['HTTPS']) || ($_SERVER['SERVER_NAME'] ?? '') === 'localhost', '', false],
 ];
@@ -454,7 +473,20 @@ $modo_login = $instalado && !$autenticado;
         <a class="btn sec" href="./">Ver la bandeja</a>
       </div>
     </form>
-    <p class="pie">¿Olvidaste la clave? Borra el archivo <code>config.local.php</code> por FTP y vuelve a instalar.</p>
+    <p class="pie">
+      ¿Olvidaste la clave? Borra el archivo <code>config.local.php</code> por FTP y vuelve a instalar.
+    </p>
+    <p class="pie" style="margin-top:10px">
+      <strong>¿Acabas de mudar el correo a otro servidor?</strong>
+      Si copiaste la carpeta entera, <code>config.local.php</code> vino con ella y trae la clave
+      del servidor anterior: por eso no se abre el asistente. Bórralo o renómbralo
+      <strong>dejando la terminación <code>.php</code></strong> —por ejemplo
+      <code>anterior.config.local.php</code>— y al recargar empezará la instalación
+      de cero. La terminación importa: si lo dejas en <code>.viejo</code> o
+      <code>.txt</code>, el archivo se puede descargar desde el navegador con tus
+      contraseñas dentro.
+      También puedes revisar el servidor nuevo en <a href="comprobar.php">comprobar.php</a>.
+    </p>
   </div>
 
 <?php else: /* ============ ASISTENTE / PANEL ============ */ ?>
@@ -479,7 +511,9 @@ $modo_login = $instalado && !$autenticado;
   <!-- Requisitos -->
   <div class="tarjeta">
     <h2>Requisitos del servidor</h2>
-    <p class="desc">Los tres primeros son obligatorios; los últimos solo hacen falta para conectar la cuenta real.</p>
+    <p class="desc">Los marcados con ✕ son obligatorios; los de ! son opcionales y el correo funciona sin ellos.
+       Si estás mudando el correo a otro servidor, <a href="comprobar.php">comprobar.php</a> revisa lo mismo
+       y se abre aunque el PHP sea demasiado antiguo para el resto del programa.</p>
     <ul class="reqs">
       <?php foreach ($req as [$txt, $ok, $extra, $obl]): ?>
         <li>
@@ -579,8 +613,8 @@ $modo_login = $instalado && !$autenticado;
         <h2><?= mj_e($titulo) ?></h2>
 
         <?php /* Interruptores agrupados aparte, se ven mejor */
-        $normales = array_filter($campos, fn($d) => $d['t'] !== 'bool');
-        $bools    = array_filter($campos, fn($d) => $d['t'] === 'bool'); ?>
+        $normales = array_filter($campos, function ($d) { return $d['t'] !== 'bool'; });
+        $bools    = array_filter($campos, function ($d) { return $d['t'] === 'bool'; }); ?>
 
         <?php if ($normales): ?>
           <div class="campos">

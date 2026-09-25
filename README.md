@@ -40,6 +40,39 @@ Requisitos: **PHP 8.0+** con `mbstring` y `json`. La extensión `imap` solo hace
 falta al conectar la casilla real. El instalador comprueba todo y lo muestra en
 pantalla antes de empezar.
 
+Si algo falla y la página sale en blanco, abre `comprobar.php`: está escrito en
+PHP antiguo a propósito, así que se lee en cualquier servidor y dice qué falta.
+
+---
+
+## Mudar el correo a otro servidor
+
+Dos cosas se atraviesan casi siempre, y las dos se ven igual: «no me lee la
+instalación».
+
+**1. El PHP del servidor nuevo es anterior a la 8.0.** La página sale en blanco,
+sin mensaje, porque el programa ni siquiera se puede leer. En cPanel se cambia
+en *Selector de versión de PHP*. Para comprobarlo antes:
+
+```
+https://el-sitio-nuevo.cl/mail/comprobar.php
+```
+
+**2. Copiaste la carpeta entera, con `config.local.php` dentro.** Ese archivo
+lleva la clave de administración del servidor viejo, así que `instalar.php` no
+abre el asistente: pide esa clave. Bórralo y vuelve a instalar.
+
+> Si prefieres conservarlo, renómbralo **dejando la terminación `.php`**
+> (`anterior.config.local.php`). Con cualquier otra —`.viejo`, `.bak`, `.txt`—
+> el servidor lo entrega como texto plano y tus contraseñas quedan a la vista
+> de cualquiera que adivine el nombre.
+
+Lo que **no** se copia: `config.local.php` y la carpeta `data/`, donde viven la
+agenda, las firmas, las sesiones y la clave que cifra las casillas guardadas.
+Se rehacen solas en el servidor nuevo. Y comprueba que subió el `.htaccess`:
+empieza por punto y muchos programas de FTP lo esconden, pero es el que impide
+descargar la configuración desde el navegador.
+
 ---
 
 ## Actualizar los sitios ya instalados

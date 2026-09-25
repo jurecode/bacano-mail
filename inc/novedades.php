@@ -16,6 +16,18 @@ function mj_novedades(): array
 {
     return [
         [
+            'v'      => '1.26.0',
+            'fecha'  => '2026-09-24',
+            'icono'  => 'llave',
+            'titulo' => 'Tu configuración queda mejor guardada',
+            'que'    => 'Se cerró una rendija por la que el archivo con las claves del correo podía llegar a leerse desde internet.',
+            'hacer'  => [
+                'No hay nada que hacer de tu parte: el cambio ya está puesto y no se nota al usar el correo.',
+                'Pasaba sólo si alguien dejaba una copia del archivo de configuración en el servidor, algo que ocurre al mudar el correo de hosting.',
+                'De paso, la carpeta con la agenda y las firmas tampoco se puede abrir desde el navegador.',
+            ],
+        ],
+        [
             'v'      => '1.25.1',
             'fecha'  => '2026-09-09',
             'icono'  => 'check',

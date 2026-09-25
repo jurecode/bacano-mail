@@ -10,6 +10,40 @@ Este proyecto usa [versionado semántico](https://semver.org/lang/es/):
 
 ---
 
+## [1.26.0] — 2026-09-24
+
+### Añadido
+- **`comprobar.php`**: una pantalla que revisa el servidor antes de instalar
+  —versión de PHP, extensiones, permisos de escritura, copias sueltas de la
+  configuración, `.htaccess`— y explica qué hacer con cada fallo. Está escrita
+  a propósito sin sintaxis de PHP 8 (nada de `match`, ni funciones flecha, ni
+  tipos), así que se lee en un servidor con PHP 7 o anterior, que es justo
+  donde hace falta. Con `?host=mail.dominio.cl` prueba además si el servidor
+  alcanza el puerto 993.
+- Guardia de versión al principio de `index.php` e `instalar.php`: por debajo de
+  PHP 8.0 ya no sale la página en blanco, sale `comprobar.php` diciendo por qué.
+  Va antes de todos los `require` y en sintaxis antigua, que es la única forma
+  de que llegue a ejecutarse.
+- La pantalla de requisitos del instalador mira también `fileinfo`, `zip`,
+  `curl` y si se puede escribir en `data/`.
+- Al mudar el correo de servidor, el instalador ya no deja al usuario a oscuras:
+  si encuentra un `config.local.php` que no es suyo, explica que viene del
+  servidor anterior y cómo empezar de cero.
+
+### Seguridad
+- El `.htaccess` tapaba `config.local.php`, pero no sus copias. Renombrar un
+  `.php` a `.viejo` o `.bak` —lo que uno hace al mudarse— hacía que el servidor
+  lo entregara como **texto plano**, con la contraseña de la casilla y el token
+  de cPanel dentro. Ahora se bloquea cualquier nombre que empiece por
+  `config.local.php` o `config.php.`, y `comprobar.php` avisa si encuentra una.
+- El `.htaccess` tampoco cubría `data/`, donde están la clave de cifrado, las
+  sesiones y la agenda. Ahora sí.
+
+### Cambiado
+- `instalar.php` se puede leer desde PHP 7.0 (se quitaron dos funciones flecha).
+  No es que funcione ahí —necesita PHP 8—, pero así llega a mostrar el aviso en
+  vez de una página en blanco.
+
 ## [1.25.1] — 2026-09-09
 
 ### Corregido

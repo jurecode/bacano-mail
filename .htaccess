@@ -1,5 +1,10 @@
-# Bloquea el acceso directo a configuración y respaldos.
-<FilesMatch "^(config\.local\.php|config\.php|VERSION)$">
+# Bloquea el acceso directo a configuración, datos y respaldos.
+
+# Cualquier variante de los archivos de configuración, incluidas las copias
+# que uno deja al mudar de servidor (config.local.php.viejo, .bak, .txt...).
+# Renombrar un .php a otra extensión hace que el servidor lo entregue como
+# texto plano, con las contraseñas dentro: esto lo impide.
+<FilesMatch "^(config\.local\.php|config\.php|VERSION)($|[.~-])">
   Require all denied
   <IfModule !mod_authz_core.c>
     Order allow,deny
@@ -7,5 +12,8 @@
   </IfModule>
 </FilesMatch>
 
+# Nada de lo que hay en data/ se sirve por web: ahí viven la clave de cifrado,
+# las sesiones, la agenda y las casillas guardadas.
+RedirectMatch 404 ^/.*/data/
 RedirectMatch 404 ^/.*/respaldos/
 RedirectMatch 404 ^/.*/\.git
